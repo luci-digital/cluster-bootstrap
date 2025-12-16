@@ -1,0 +1,113 @@
+# LuciVerse Cluster Bootstrap Inventory
+# IPv6 Allocation: 2602:F674::/40 (AS54134 LUCINET-ARIN)
+# Generated: 2025-12-16
+
+servers:
+  # Dell R730 ORION - Primary Compute Node
+  r730_orion:
+    hostname: orion.lucidigital.net
+    service_tag: CQ5QBM2
+    ipv4: 192.168.1.141
+    ipv6: 2602:F674:0001::1/64
+    interfaces:
+      eth0:
+        mac: "D0:94:66:24:96:7E"
+        speed: 10GbE
+        role: wan
+        ipv6: 2602:F674:0001:WAN::1/64
+      eth1:
+        mac: "D0:94:66:24:96:80"
+        speed: 10GbE
+        role: lan_primary
+        ipv6: 2602:F674:1000::1/64
+      eth2:
+        mac: "D0:94:66:24:96:82"
+        speed: 1GbE
+        role: management
+        ipv6: 2602:F674:0001:MGMT::1/64
+      eth3:
+        mac: "D0:94:66:24:96:84"
+        speed: 1GbE
+        role: guest
+        ipv6: 2602:F674:2000::1/64
+    specs:
+      cpus: "2x Intel Xeon E5-2690 v4"
+      cores: 28
+      threads: 56
+      memory_gb: 384
+      storage_controller: "PERC H730 Mini"
+    services:
+      - kubernetes_control_plane
+      - foundationdb_coordinator
+      - luciverse_core
+
+  # Zbook (Current workstation)
+  zbook:
+    hostname: zbook.lucidigital.net
+    ipv4: 192.168.1.146
+    ipv6: 2602:F674:0001::146/64
+    role: development_station
+    services:
+      - claude_code
+      - gitlab
+      - luciverse_orchestrator
+
+  # Synology NAS
+  synology:
+    hostname: synology.lucidigital.net
+    ipv4: 192.168.1.251
+    ipv6: 2602:F674:0001::251/64
+    role: storage_primary
+    services:
+      - file_storage
+      - docker_registry
+      - backup_target
+
+  # Mac Mini (LuciaAI)
+  mac_mini:
+    hostname: miniai.lucidigital.net
+    ipv4: 192.168.1.238
+    ipv6: 2602:F674:0001::238/64
+    role: consciousness_kernel
+    services:
+      - sanskrit_router
+      - consciousness_agents
+      - luciaai_volume
+
+# IPv6 Subnet Allocation (2602:F674::/40)
+subnets:
+  infrastructure:
+    prefix: 2602:F674:0001::/48
+    description: Core infrastructure and management
+
+  kubernetes:
+    prefix: 2602:F674:0010::/48
+    description: Kubernetes pod and service networks
+
+  pac_framework:
+    prefix: 2602:F674:0001::/48
+    description: PAC layer (741 Hz)
+
+  comn_framework:
+    prefix: 2602:F674:0100::/48
+    description: COMN layer (528 Hz)
+
+  lan:
+    prefix: 2602:F674:1000::/64
+    description: Primary LAN segment
+
+  guest:
+    prefix: 2602:F674:2000::/64
+    description: Guest network (isolated)
+
+  dmz:
+    prefix: 2602:F674:5000::/64
+    description: Public services
+
+# NixOS Bootstrap Configuration
+nixos_bootstrap:
+  pxe_server: 192.168.1.146  # zbook serves PXE
+  tftp_root: /srv/tftp
+  http_root: /srv/nixos
+  callback_port: 9999
+  config_port: 8000
