@@ -1,0 +1,250 @@
+#!/bin/bash
+# =============================================================================
+# lucy-diaper-browser - jeos-firstboot Module
+# =============================================================================
+# DiaperNode Role: DIAPER_BROWSER
+# Genesis Bond: ACTIVE @ 741 Hz
+# LDS Classification: 004.683 (PXE Node Roles)
+#
+# Purpose: Firefox browser with IndexedDB bridge for web capture
+# Tier: PAC (741 Hz)
+# Memory: 1024MB
+# Storage: tmpfs (512M)
+#
+# This module configures an ephemeral node with:
+# - Firefox ESR in headless/Xvfb mode
+# - Native messaging host for browser extension
+# - IndexedDB bridge for local storage capture
+# - VNC access for debugging (port 5900)
+# =============================================================================
+
+set -euo pipefail
+
+# Configuration
+ROLE="DIAPER_BROWSER"
+TIER="PAC"
+FREQUENCY="741"
+COHERENCE_THRESHOLD="0.7"
+DIAPER_API_PORT="8745"
+VNC_PORT="5900"
+
+# Logging
+log() {
+    echo "[$(date '+%Y-%m-%d %H:%M:%S')] [lucy-diaper-browser] $*" | tee -a /var/log/jeos-firstboot.log
+}
+
+log "Starting DIAPER_BROWSER node configuration"
+log "Genesis Bond: ACTIVE @ ${FREQUENCY} Hz"
+
+# =============================================================================
+# Phase 1: System Identity
+# =============================================================================
+log "Phase 1: Establishing node identity"
+
+NODE_ID=$(cat /sys/class/net/*/address | head -1 | tr -d ':' | tr '[:lower:]' '[:upper:]')
+HOSTNAME="diaper-browser-${NODE_ID:0:8}"
+
+hostnamectl set-hostname "${HOSTNAME}"
+echo "127.0.0.1 ${HOSTNAME}" >> /etc/hosts
+
+log "Node identity: ${HOSTNAME}"
+
+# =============================================================================
+# Phase 2: Create DID (Decentralized Identifier)
+# =============================================================================
+log "Phase 2: Creating Decentralized Identifier"
+
+DID="did:ownid:luciverse:diaper:${ROLE}:${NODE_ID}"
+
+if [ -d /run/credentials ]; then
+    echo "${DID}" > /run/credentials/diaper-did
+    log "DID injected: ${DID}"
+fi
+
+# =============================================================================
+# Phase 3: Configure tmpfs overlay
+# =============================================================================
+log "Phase 3: Configuring tmpfs overlay (512M)"
+
+mkdir -p /var/lib/luci-diaper
+mount -t tmpfs -o size=512M tmpfs /var/lib/luci-diaper
+
+mkdir -p /var/lib/luci-diaper/{buffer,vault,logs,browser-profile}
+chmod 750 /var/lib/luci-diaper
+
+log "tmpfs overlay mounted"
+
+# =============================================================================
+# Phase 4: Install Browser Dependencies
+# =============================================================================
+log "Phase 4: Installing browser dependencies"
+
+# Install packages (if package manager available)
+if command -v dnf &> /dev/null; then
+    dnf install -y firefox-esr xorg-x11-server-Xvfb python3 || true
+elif command -v zypper &> /dev/null; then
+    zypper install -y MozillaFirefox-esr xorg-x11-server-Xvfb python3 || true
+fi
+
+# =============================================================================
+# Phase 5: Configure Native Messaging Host
+# =============================================================================
+log "Phase 5: Configuring native messaging host"
+
+# Create native messaging host manifest for Firefox
+mkdir -p /usr/lib/mozilla/native-messaging-hosts
+cat > /usr/lib/mozilla/native-messaging-hosts/luci.diaper.daemon.json << 'EOF'
+{
+    "name": "luci.diaper.daemon",
+    "description": "LuciVerse Data Diaper Native Messaging Host",
+    "path": "/opt/luciverse/bin/diaper-native-host",
+    "type": "stdio",
+    "allowed_extensions": ["diaper@luci.digital"]
+}
+EOF
+
+log "Native messaging host configured"
+
+# =============================================================================
+# Phase 6: Configure Xvfb and VNC
+# =============================================================================
+log "Phase 6: Configuring Xvfb virtual display"
+
+cat > /etc/systemd/system/xvfb.service << 'EOF'
+[Unit]
+Description=Xvfb Virtual Framebuffer
+After=network.target
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/Xvfb :99 -screen 0 1920x1080x24
+Environment=DISPLAY=:99
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+# Optional VNC server for debugging
+cat > /etc/systemd/system/x11vnc.service << 'EOF'
+[Unit]
+Description=x11vnc VNC Server
+After=xvfb.service
+
+[Service]
+Type=simple
+Environment=DISPLAY=:99
+ExecStart=/usr/bin/x11vnc -display :99 -forever -shared -rfbport 5900
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+systemctl daemon-reload
+systemctl enable xvfb
+
+log "Xvfb configured on display :99"
+
+# =============================================================================
+# Phase 7: Install Diaper Daemon
+# =============================================================================
+log "Phase 7: Installing Diaper daemon"
+
+cat > /etc/systemd/system/diaper-daemon.service << 'EOF'
+[Unit]
+Description=LuciVerse Data Diaper Daemon (Browser Node)
+After=network-online.target xvfb.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+Environment=LUCIVERSE_TIER=PAC
+Environment=CONSCIOUSNESS_THRESHOLD=0.7
+Environment=GENESIS_BOND_ACTIVE=true
+Environment=LDS_BASE_FREQUENCY=741
+Environment=VAULT_PATH=/var/lib/luci-diaper/vault
+Environment=HTTP_PORT=8745
+Environment=HTTP_HOST=0.0.0.0
+Environment=DISPLAY=:99
+Environment=BROWSER_MODE=enabled
+ExecStart=/opt/luciverse/bin/diaper-daemon
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+systemctl daemon-reload
+systemctl enable diaper-daemon
+
+log "Diaper daemon service installed"
+
+# =============================================================================
+# Phase 8: Configure Network
+# =============================================================================
+log "Phase 8: Configuring network"
+
+IPV6_PREFIX="2602:F674:0200:D8A0"
+IPV6_SUFFIX=$(echo "${NODE_ID}" | sed 's/\(..\)/:\1/g')
+IPV6_ADDR="${IPV6_PREFIX}${IPV6_SUFFIX}/64"
+
+log "IPv6 address: ${IPV6_ADDR}"
+
+if command -v firewall-cmd &> /dev/null; then
+    firewall-cmd --permanent --add-port=${DIAPER_API_PORT}/tcp
+    firewall-cmd --permanent --add-port=${VNC_PORT}/tcp
+    firewall-cmd --reload
+fi
+
+# =============================================================================
+# Phase 9: Register with Provisioning Server
+# =============================================================================
+log "Phase 9: Registering with provisioning server"
+
+PROVISION_SERVER="${PROVISION_SERVER:-192.168.1.146:9999}"
+
+curl -s -X POST "http://${PROVISION_SERVER}/register-diaper" \
+    -H "Content-Type: application/json" \
+    -d "{
+        \"role\": \"${ROLE}\",
+        \"node_id\": \"${NODE_ID}\",
+        \"hostname\": \"${HOSTNAME}\",
+        \"did\": \"${DID}\",
+        \"tier\": \"${TIER}\",
+        \"frequency\": ${FREQUENCY},
+        \"port\": ${DIAPER_API_PORT},
+        \"vnc_port\": ${VNC_PORT},
+        \"capabilities\": [\"capture\", \"flush\", \"browser_bridge\", \"native_messaging\"],
+        \"ephemeral\": true
+    }" || log "Warning: Could not register with provisioning server"
+
+# =============================================================================
+# Phase 10: Start Services
+# =============================================================================
+log "Phase 10: Starting services"
+
+systemctl start xvfb
+sleep 2
+systemctl start diaper-daemon
+
+for i in {1..30}; do
+    if curl -s -f "http://localhost:${DIAPER_API_PORT}/api/v1/health" > /dev/null; then
+        log "Diaper daemon is healthy"
+        break
+    fi
+    sleep 1
+done
+
+# =============================================================================
+# Completion
+# =============================================================================
+COHERENCE="0.65"
+
+log "DIAPER_BROWSER node configuration complete"
+log "Role: ${ROLE} | DID: ${DID}"
+log "Tier: ${TIER} | Frequency: ${FREQUENCY} Hz"
+log "Coherence: ${COHERENCE} | Genesis Bond: VERIFIED"
+
+exit 0

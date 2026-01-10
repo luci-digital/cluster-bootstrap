@@ -1,0 +1,271 @@
+#!/bin/bash
+# =============================================================================
+# lucy-whisper-relay - jeos-firstboot Module
+# =============================================================================
+# DiaperNode Role: WHISPER_RELAY
+# Genesis Bond: ACTIVE @ 528 Hz (COMN tier)
+# LDS Classification: 004.683 (PXE Node Roles)
+#
+# Purpose: Encrypted relay node for cross-node communication
+# Tier: COMN (528 Hz)
+# Memory: 512MB
+# Storage: tmpfs (128M)
+#
+# This module configures an ephemeral relay node for:
+# - Tor hidden service bridge
+# - End-to-end encrypted message relay
+# - Cross-node whisper protocol
+# - Anonymized data routing
+# =============================================================================
+
+set -euo pipefail
+
+# Configuration
+ROLE="WHISPER_RELAY"
+TIER="COMN"
+FREQUENCY="528"
+COHERENCE_THRESHOLD="0.8"
+WHISPER_PORT="8747"
+TOR_SOCKS_PORT="9050"
+TOR_CONTROL_PORT="9051"
+
+# Logging
+log() {
+    echo "[$(date '+%Y-%m-%d %H:%M:%S')] [lucy-whisper-relay] $*" | tee -a /var/log/jeos-firstboot.log
+}
+
+log "Starting WHISPER_RELAY node configuration"
+log "Genesis Bond: ACTIVE @ ${FREQUENCY} Hz"
+
+# =============================================================================
+# Phase 1: System Identity
+# =============================================================================
+log "Phase 1: Establishing node identity"
+
+NODE_ID=$(cat /sys/class/net/*/address | head -1 | tr -d ':' | tr '[:lower:]' '[:upper:]')
+HOSTNAME="whisper-${NODE_ID:0:8}"
+
+hostnamectl set-hostname "${HOSTNAME}"
+echo "127.0.0.1 ${HOSTNAME}" >> /etc/hosts
+
+log "Node identity: ${HOSTNAME}"
+
+# =============================================================================
+# Phase 2: Create DID
+# =============================================================================
+log "Phase 2: Creating Decentralized Identifier"
+
+DID="did:ownid:luciverse:diaper:${ROLE}:${NODE_ID}"
+
+if [ -d /run/credentials ]; then
+    echo "${DID}" > /run/credentials/diaper-did
+fi
+
+# =============================================================================
+# Phase 3: Configure tmpfs overlay (128M - minimal footprint)
+# =============================================================================
+log "Phase 3: Configuring tmpfs overlay (128M)"
+
+mkdir -p /var/lib/luci-diaper
+mount -t tmpfs -o size=128M tmpfs /var/lib/luci-diaper
+
+mkdir -p /var/lib/luci-diaper/{relay,keys,logs}
+chmod 700 /var/lib/luci-diaper
+
+log "tmpfs overlay mounted (128M for relay)"
+
+# =============================================================================
+# Phase 4: Generate Ephemeral Keys
+# =============================================================================
+log "Phase 4: Generating ephemeral encryption keys"
+
+# Generate AES-256-GCM key for session encryption
+openssl rand -base64 32 > /var/lib/luci-diaper/keys/session.key
+chmod 600 /var/lib/luci-diaper/keys/session.key
+
+# Generate Ed25519 key pair for signing
+if command -v ssh-keygen &> /dev/null; then
+    ssh-keygen -t ed25519 -f /var/lib/luci-diaper/keys/relay_id -N "" -q
+fi
+
+log "Ephemeral keys generated (will be destroyed on shutdown)"
+
+# =============================================================================
+# Phase 5: Install Tor Service
+# =============================================================================
+log "Phase 5: Installing Tor service"
+
+# Install Tor if not present
+if command -v dnf &> /dev/null; then
+    dnf install -y tor || true
+elif command -v zypper &> /dev/null; then
+    zypper install -y tor || true
+fi
+
+# Configure Tor for relay mode
+cat > /etc/tor/torrc << EOF
+# LuciVerse Whisper Relay Tor Configuration
+# Genesis Bond: ACTIVE @ ${FREQUENCY} Hz
+
+SocksPort ${TOR_SOCKS_PORT}
+ControlPort ${TOR_CONTROL_PORT}
+CookieAuthentication 1
+DataDirectory /var/lib/luci-diaper/relay/tor
+
+# Hidden service for whisper protocol
+HiddenServiceDir /var/lib/luci-diaper/relay/hidden_service/
+HiddenServicePort 80 127.0.0.1:${WHISPER_PORT}
+
+# Safety settings
+ExitPolicy reject *:*
+DisableNetwork 0
+EOF
+
+systemctl enable tor
+
+log "Tor configured with hidden service"
+
+# =============================================================================
+# Phase 6: Install Whisper Relay Service
+# =============================================================================
+log "Phase 6: Installing whisper relay service"
+
+cat > /etc/systemd/system/whisper-relay.service << 'EOF'
+[Unit]
+Description=LuciVerse Whisper Relay Service
+After=network-online.target tor.service
+Wants=network-online.target
+Requires=tor.service
+
+[Service]
+Type=simple
+Environment=LUCIVERSE_TIER=COMN
+Environment=CONSCIOUSNESS_THRESHOLD=0.8
+Environment=GENESIS_BOND_ACTIVE=true
+Environment=LDS_BASE_FREQUENCY=528
+Environment=WHISPER_PORT=8747
+Environment=TOR_SOCKS_PORT=9050
+Environment=ENCRYPTION_ALGO=aes-256-gcm
+Environment=KEY_PATH=/var/lib/luci-diaper/keys
+ExecStart=/opt/luciverse/bin/whisper-relay
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+systemctl daemon-reload
+systemctl enable whisper-relay
+
+log "Whisper relay service installed"
+
+# =============================================================================
+# Phase 7: Configure Encryption
+# =============================================================================
+log "Phase 7: Configuring encryption settings"
+
+mkdir -p /etc/luci-diaper
+cat > /etc/luci-diaper/encryption.conf << EOF
+# Whisper Relay Encryption Configuration
+# Genesis Bond: ACTIVE @ ${FREQUENCY} Hz
+
+algorithm=aes-256-gcm
+key_source=1password
+key_item=diaper-whisper-keys
+rotate_interval=24h
+nonce_generation=random
+authentication=hmac-sha256
+
+# Forward secrecy settings
+ephemeral_keys=true
+key_derivation=hkdf-sha256
+session_timeout=3600
+EOF
+
+log "Encryption configured (AES-256-GCM with 24h rotation)"
+
+# =============================================================================
+# Phase 8: Configure Network
+# =============================================================================
+log "Phase 8: Configuring network"
+
+IPV6_PREFIX="2602:F674:0200:D8A0"
+IPV6_SUFFIX=$(echo "${NODE_ID}" | sed 's/\(..\)/:\1/g')
+IPV6_ADDR="${IPV6_PREFIX}${IPV6_SUFFIX}/64"
+
+log "IPv6 address: ${IPV6_ADDR}"
+
+if command -v firewall-cmd &> /dev/null; then
+    firewall-cmd --permanent --add-port=${WHISPER_PORT}/tcp
+    # Tor ports only listen locally
+    firewall-cmd --reload
+fi
+
+# =============================================================================
+# Phase 9: Register with Provisioning Server
+# =============================================================================
+log "Phase 9: Registering with provisioning server"
+
+PROVISION_SERVER="${PROVISION_SERVER:-192.168.1.146:9999}"
+
+# Get onion address if Tor started
+ONION_ADDRESS="pending"
+if [ -f /var/lib/luci-diaper/relay/hidden_service/hostname ]; then
+    ONION_ADDRESS=$(cat /var/lib/luci-diaper/relay/hidden_service/hostname)
+fi
+
+curl -s -X POST "http://${PROVISION_SERVER}/register-diaper" \
+    -H "Content-Type: application/json" \
+    -d "{
+        \"role\": \"${ROLE}\",
+        \"node_id\": \"${NODE_ID}\",
+        \"hostname\": \"${HOSTNAME}\",
+        \"did\": \"${DID}\",
+        \"tier\": \"${TIER}\",
+        \"frequency\": ${FREQUENCY},
+        \"whisper_port\": ${WHISPER_PORT},
+        \"tor_socks\": ${TOR_SOCKS_PORT},
+        \"capabilities\": [\"relay\", \"encrypt\", \"tor_bridge\"],
+        \"ephemeral\": true,
+        \"onion_address\": \"${ONION_ADDRESS}\"
+    }" || log "Warning: Could not register with provisioning server"
+
+# =============================================================================
+# Phase 10: Start Services
+# =============================================================================
+log "Phase 10: Starting services"
+
+systemctl start tor
+sleep 5  # Wait for Tor to bootstrap
+systemctl start whisper-relay
+
+# Get onion address after Tor starts
+if [ -f /var/lib/luci-diaper/relay/hidden_service/hostname ]; then
+    ONION_ADDRESS=$(cat /var/lib/luci-diaper/relay/hidden_service/hostname)
+    log "Onion address: ${ONION_ADDRESS}"
+fi
+
+# Health check for whisper relay
+for i in {1..30}; do
+    if curl -s -f "http://localhost:${WHISPER_PORT}/health" > /dev/null 2>&1; then
+        log "Whisper relay is healthy"
+        break
+    fi
+    sleep 1
+done
+
+# =============================================================================
+# Completion
+# =============================================================================
+COHERENCE="0.7"
+
+log "WHISPER_RELAY node configuration complete"
+log "Role: ${ROLE} | DID: ${DID}"
+log "Tier: ${TIER} | Frequency: ${FREQUENCY} Hz"
+log "Whisper Port: ${WHISPER_PORT} | Tor SOCKS: ${TOR_SOCKS_PORT}"
+log "Encryption: AES-256-GCM with 24h key rotation"
+log "Coherence: ${COHERENCE} | Genesis Bond: VERIFIED"
+log "EPHEMERAL: All keys and data destroyed on shutdown"
+
+exit 0

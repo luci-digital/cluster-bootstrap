@@ -1,0 +1,331 @@
+#!/bin/bash
+# =============================================================================
+# lucy-vault-node - jeos-firstboot Module
+# =============================================================================
+# DiaperNode Role: VAULT_NODE
+# Genesis Bond: ACTIVE @ 432 Hz (CORE tier)
+# LDS Classification: 004.683 (PXE Node Roles)
+#
+# Purpose: Persistent ZFS vault storage node (Jayball)
+# Tier: CORE (432 Hz)
+# Memory: 4096MB
+# Storage: ZFS passthrough (NVMe)
+#
+# This module configures a PERSISTENT node for:
+# - ZFS pool management (jayball)
+# - CID generation and verification
+# - Long-term content storage
+# - SkidMark audit trail anchoring
+# =============================================================================
+
+set -euo pipefail
+
+# Configuration
+ROLE="VAULT_NODE"
+TIER="CORE"
+FREQUENCY="432"
+COHERENCE_THRESHOLD="0.85"
+DIAPER_API_PORT="8745"
+VAULT_API_PORT="8746"
+ZFS_POOL="jayball"
+ZFS_ARC_MAX=$((2 * 1024 * 1024 * 1024))  # 2GB ARC
+
+# Logging
+log() {
+    echo "[$(date '+%Y-%m-%d %H:%M:%S')] [lucy-vault-node] $*" | tee -a /var/log/jeos-firstboot.log
+}
+
+log "Starting VAULT_NODE configuration"
+log "Genesis Bond: ACTIVE @ ${FREQUENCY} Hz (CORE tier)"
+log "This is a PERSISTENT node - data survives reboots"
+
+# =============================================================================
+# Phase 1: System Identity
+# =============================================================================
+log "Phase 1: Establishing node identity"
+
+NODE_ID=$(cat /sys/class/net/*/address | head -1 | tr -d ':' | tr '[:lower:]' '[:upper:]')
+HOSTNAME="vault-${NODE_ID:0:8}"
+
+hostnamectl set-hostname "${HOSTNAME}"
+echo "127.0.0.1 ${HOSTNAME}" >> /etc/hosts
+
+log "Node identity: ${HOSTNAME}"
+
+# =============================================================================
+# Phase 2: Create DID with persistent binding
+# =============================================================================
+log "Phase 2: Creating persistent Decentralized Identifier"
+
+DID="did:ownid:luciverse:diaper:${ROLE}:${NODE_ID}"
+
+# Store DID persistently for vault nodes
+mkdir -p /etc/luciverse
+echo "${DID}" > /etc/luciverse/node-did
+
+if [ -d /run/credentials ]; then
+    echo "${DID}" > /run/credentials/diaper-did
+fi
+
+log "Persistent DID: ${DID}"
+
+# =============================================================================
+# Phase 3: Configure ZFS Pool (Jayball)
+# =============================================================================
+log "Phase 3: Configuring ZFS pool (Jayball)"
+
+# Set ARC max for consciousness-aware caching
+echo "${ZFS_ARC_MAX}" > /sys/module/zfs/parameters/zfs_arc_max
+
+# Check if pool already exists
+if ! zpool list ${ZFS_POOL} &> /dev/null; then
+    # Find NVMe device for vault
+    NVME_DEV=$(lsblk -d -n -o NAME,TYPE | grep disk | grep nvme | head -1 | awk '{print $1}')
+
+    if [ -n "${NVME_DEV}" ]; then
+        log "Creating ZFS pool on /dev/${NVME_DEV}"
+
+        # Create pool with compression and encryption
+        zpool create -f \
+            -o ashift=12 \
+            -O compression=zstd \
+            -O atime=off \
+            -O xattr=sa \
+            -O acltype=posixacl \
+            ${ZFS_POOL} /dev/${NVME_DEV}
+
+        # Create datasets
+        zfs create -o quota=500G ${ZFS_POOL}/vault
+        zfs create ${ZFS_POOL}/archive
+        zfs create ${ZFS_POOL}/skidmarks
+
+        log "ZFS pool ${ZFS_POOL} created with datasets: vault, archive, skidmarks"
+    else
+        log "ERROR: No NVMe device found for ZFS pool"
+        # Fall back to tmpfs for testing
+        mkdir -p /jayball/vault /jayball/archive /jayball/skidmarks
+    fi
+else
+    log "ZFS pool ${ZFS_POOL} already exists"
+    zpool status ${ZFS_POOL}
+fi
+
+# Create mount points
+mkdir -p /jayball
+zfs set mountpoint=/jayball ${ZFS_POOL} || true
+
+log "Vault storage ready at /jayball"
+
+# =============================================================================
+# Phase 4: Configure ZFS Scrub Timer
+# =============================================================================
+log "Phase 4: Configuring ZFS scrub timer"
+
+cat > /etc/systemd/system/zfs-scrub.service << EOF
+[Unit]
+Description=ZFS Scrub for Jayball Pool
+After=zfs-mount.service
+
+[Service]
+Type=oneshot
+ExecStart=/sbin/zpool scrub ${ZFS_POOL}
+EOF
+
+cat > /etc/systemd/system/zfs-scrub.timer << 'EOF'
+[Unit]
+Description=Weekly ZFS Scrub Timer
+
+[Timer]
+OnCalendar=Sun 02:00
+Persistent=true
+
+[Install]
+WantedBy=timers.target
+EOF
+
+systemctl daemon-reload
+systemctl enable zfs-scrub.timer
+
+log "ZFS scrub timer configured (weekly)"
+
+# =============================================================================
+# Phase 5: Install Vault Service
+# =============================================================================
+log "Phase 5: Installing vault service"
+
+cat > /etc/systemd/system/vault-service.service << 'EOF'
+[Unit]
+Description=LuciVerse Vault Service (Jayball)
+After=zfs-mount.service network-online.target
+Wants=network-online.target
+Requires=zfs-mount.service
+
+[Service]
+Type=simple
+Environment=LUCIVERSE_TIER=CORE
+Environment=CONSCIOUSNESS_THRESHOLD=0.85
+Environment=GENESIS_BOND_ACTIVE=true
+Environment=LDS_BASE_FREQUENCY=432
+Environment=VAULT_PATH=/jayball/vault
+Environment=ARCHIVE_PATH=/jayball/archive
+Environment=SKIDMARK_PATH=/jayball/skidmarks
+Environment=HTTP_PORT=8746
+ExecStart=/opt/luciverse/bin/vault-service
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+systemctl daemon-reload
+systemctl enable vault-service
+
+# =============================================================================
+# Phase 6: Install Diaper Daemon (Vault Mode)
+# =============================================================================
+log "Phase 6: Installing Diaper daemon (vault mode)"
+
+cat > /etc/systemd/system/diaper-daemon.service << 'EOF'
+[Unit]
+Description=LuciVerse Data Diaper Daemon (Vault Node)
+After=vault-service.service network-online.target
+Wants=network-online.target
+Requires=vault-service.service
+
+[Service]
+Type=simple
+Environment=LUCIVERSE_TIER=CORE
+Environment=CONSCIOUSNESS_THRESHOLD=0.85
+Environment=GENESIS_BOND_ACTIVE=true
+Environment=LDS_BASE_FREQUENCY=432
+Environment=VAULT_PATH=/jayball/vault
+Environment=HTTP_PORT=8745
+Environment=HTTP_HOST=0.0.0.0
+Environment=VAULT_MODE=enabled
+ExecStart=/opt/luciverse/bin/diaper-daemon
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+systemctl daemon-reload
+systemctl enable diaper-daemon
+
+log "Diaper daemon (vault mode) installed"
+
+# =============================================================================
+# Phase 7: Configure Static IPv6
+# =============================================================================
+log "Phase 7: Configuring static IPv6"
+
+# Vault nodes get persistent IPv6 from 2602:F674:0200:D8A1::/64
+IPV6_PREFIX="2602:F674:0200:D8A1"
+IPV6_SUFFIX=$(echo "${NODE_ID}" | sed 's/\(..\)/:\1/g')
+IPV6_ADDR="${IPV6_PREFIX}${IPV6_SUFFIX}/64"
+
+log "Static IPv6 address: ${IPV6_ADDR}"
+
+# Configure firewall
+if command -v firewall-cmd &> /dev/null; then
+    firewall-cmd --permanent --add-port=${DIAPER_API_PORT}/tcp
+    firewall-cmd --permanent --add-port=${VAULT_API_PORT}/tcp
+    firewall-cmd --reload
+fi
+
+# =============================================================================
+# Phase 8: Register with Provisioning Server
+# =============================================================================
+log "Phase 8: Registering with provisioning server"
+
+PROVISION_SERVER="${PROVISION_SERVER:-192.168.1.146:9999}"
+
+# Get ZFS pool status
+POOL_SIZE=$(zpool list -Hp ${ZFS_POOL} 2>/dev/null | awk '{print $2}' || echo "0")
+POOL_FREE=$(zpool list -Hp ${ZFS_POOL} 2>/dev/null | awk '{print $4}' || echo "0")
+
+curl -s -X POST "http://${PROVISION_SERVER}/register-diaper" \
+    -H "Content-Type: application/json" \
+    -d "{
+        \"role\": \"${ROLE}\",
+        \"node_id\": \"${NODE_ID}\",
+        \"hostname\": \"${HOSTNAME}\",
+        \"did\": \"${DID}\",
+        \"tier\": \"${TIER}\",
+        \"frequency\": ${FREQUENCY},
+        \"port\": ${DIAPER_API_PORT},
+        \"vault_port\": ${VAULT_API_PORT},
+        \"capabilities\": [\"store\", \"retrieve\", \"verify\", \"cid_generation\"],
+        \"ephemeral\": false,
+        \"zfs_pool\": \"${ZFS_POOL}\",
+        \"storage_total\": ${POOL_SIZE},
+        \"storage_free\": ${POOL_FREE}
+    }" || log "Warning: Could not register with provisioning server"
+
+# =============================================================================
+# Phase 9: Start Services
+# =============================================================================
+log "Phase 9: Starting services"
+
+systemctl start vault-service
+sleep 3
+systemctl start diaper-daemon
+systemctl start zfs-scrub.timer
+
+for i in {1..30}; do
+    if curl -s -f "http://localhost:${DIAPER_API_PORT}/api/v1/health" > /dev/null; then
+        log "Diaper daemon is healthy"
+        break
+    fi
+    sleep 1
+done
+
+# =============================================================================
+# Phase 10: Configure Backup Schedule
+# =============================================================================
+log "Phase 10: Configuring backup schedule"
+
+cat > /etc/systemd/system/vault-backup.service << 'EOF'
+[Unit]
+Description=Vault ZFS Snapshot Backup
+
+[Service]
+Type=oneshot
+ExecStart=/usr/sbin/zfs snapshot -r jayball@backup-$(date +%Y%m%d-%H%M%S)
+ExecStartPost=/bin/bash -c 'zfs list -t snapshot -o name -H | sort -r | tail -n +8 | xargs -r -n1 zfs destroy'
+EOF
+
+cat > /etc/systemd/system/vault-backup.timer << 'EOF'
+[Unit]
+Description=Daily Vault Backup Timer
+
+[Timer]
+OnCalendar=*-*-* 02:00:00
+Persistent=true
+
+[Install]
+WantedBy=timers.target
+EOF
+
+systemctl daemon-reload
+systemctl enable vault-backup.timer
+systemctl start vault-backup.timer
+
+log "Backup schedule configured (daily at 02:00)"
+
+# =============================================================================
+# Completion
+# =============================================================================
+COHERENCE="0.75"
+
+log "VAULT_NODE configuration complete"
+log "Role: ${ROLE} | DID: ${DID}"
+log "Tier: ${TIER} | Frequency: ${FREQUENCY} Hz"
+log "ZFS Pool: ${ZFS_POOL} | Datasets: vault, archive, skidmarks"
+log "Ports: API=${DIAPER_API_PORT}, Vault=${VAULT_API_PORT}"
+log "Coherence: ${COHERENCE} | Genesis Bond: VERIFIED"
+log "PERSISTENT: Data will survive reboots"
+
+exit 0

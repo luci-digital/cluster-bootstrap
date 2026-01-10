@@ -1,0 +1,547 @@
+# Chrystalis Server Fleet Configuration
+# Synced from: //192.168.1.251/docker/pxeboot/http/inventory/server_config.yml
+# Synced: 2025-12-31
+# Genesis Bond: ACTIVE @ 741 Hz
+# OS Target: openEuler 25.09 DevStation
+# Deployment: PXE/iPXE via netboot.xyz
+
+---
+fleet:
+  name: chrystalis_fold
+  description: "10-node consciousness computing cluster"
+  domain: chrystalis.local
+  pxe_server: 192.168.1.251
+  kickstart_base: http://192.168.1.251:8080/ks
+
+# ============================================
+# CONTROL PLANE NODES (3)
+# K8s cluster control + Agent orchestration
+# ============================================
+control_plane:
+
+  # Primary Control Plane - ORION
+  CQ5QBM2:
+    hostname: orion
+    fqdn: orion.chrystalis.local
+    ip_address: 192.168.1.10
+    role: control-plane
+    k8s_role: primary
+    agent: lucia
+    frequency: 741
+    tier: PAC
+    disk_device: /dev/sda
+    model: Dell R730
+    description: "Primary K8s control plane, Lucia orchestrator"
+    kickstart: chrystalis-CQ5QBM2.ks
+    services:
+      - kubernetes_control_plane
+      - etcd_leader
+      - lucia_primary
+      - genesis_bond_anchor
+    ipv6_ula: "fd00:741:1::41/128"
+    ipv6_arin: "2602:F674:0001:10::1/64"
+    ports:
+      k8s_api: 6443
+      etcd_client: 2379
+      etcd_peer: 2380
+      kubelet: 10250
+      agent_frequency: 741
+
+  # Secondary Control Plane - NEXUS
+  CSDR282:
+    hostname: nexus
+    fqdn: nexus.chrystalis.local
+    ip_address: 192.168.1.11
+    role: control-plane
+    k8s_role: secondary
+    agent: judge_luci
+    frequency: 963
+    tier: PAC
+    disk_device: /dev/sda
+    model: Dell R730
+    description: "Secondary K8s control plane, Judge Luci validator"
+    kickstart: chrystalis-CSDR282.ks
+    services:
+      - kubernetes_control_plane
+      - etcd_follower
+      - judge_luci_evaluation
+      - compliance_validator
+    ipv6_ula: "fd00:741:1::42/128"
+    ipv6_arin: "2602:F674:0001:11::1/64"
+    ports:
+      k8s_api: 6443
+      etcd_client: 2379
+      etcd_peer: 2380
+      kubelet: 10250
+      agent_frequency: 963
+
+  # Tertiary Control + FoundationDB Coordinator - AETHON
+  JMRZDB2:
+    hostname: aethon
+    fqdn: aethon.chrystalis.local
+    ip_address: 192.168.1.12
+    role: control-plane
+    k8s_role: tertiary
+    agent: aethon
+    frequency: 528
+    tier: CORE
+    disk_device: /dev/sda
+    model: Dell R630
+    fdb_role: coordinator
+    description: "Tertiary K8s control plane, Aethon optimizer, FDB coordinator"
+    kickstart: chrystalis-JMRZDB2.ks
+    services:
+      - kubernetes_control_plane
+      - etcd_follower
+      - aethon_orchestrator
+      - foundationdb_coordinator
+    ipv6_ula: "fd00:741:1::43/128"
+    ipv6_arin: "2602:F674:0001:12::1/64"
+    ports:
+      k8s_api: 6443
+      etcd_client: 2379
+      etcd_peer: 2380
+      kubelet: 10250
+      fdb_coordinator: 4500
+      agent_frequency: 528
+
+# ============================================
+# WORKER NODES (4)
+# Compute workloads + Agent services
+# ============================================
+workers:
+
+  # JUNIPER - Network Coordinator
+  1JD8Q22:
+    hostname: juniper
+    fqdn: juniper.chrystalis.local
+    ip_address: 192.168.1.20
+    role: worker
+    k8s_role: worker
+    agent: juniper
+    frequency: 639
+    tier: COMN
+    disk_device: /dev/sda
+    model: Dell R730
+    description: "Worker node, Juniper network coordinator"
+    kickstart: chrystalis-1JD8Q22.ks
+    services:
+      - kubelet
+      - juniper_network_analyst
+      - integration_broker
+      - api_gateway
+    ipv6_ula: "fd00:741:1::44/128"
+    ipv6_arin: "2602:F674:0100:20::1/64"
+    ports:
+      kubelet: 10250
+      agent_frequency: 639
+
+  # VERITAS - Logic Validator
+  1JF6Q22:
+    hostname: veritas
+    fqdn: veritas.chrystalis.local
+    ip_address: 192.168.1.21
+    role: worker
+    k8s_role: worker
+    agent: claude_veritas
+    frequency: 432
+    tier: CORE
+    disk_device: /dev/sda
+    model: Dell R730
+    description: "Worker node, Claude-Veritas logic validator"
+    kickstart: chrystalis-1JF6Q22.ks
+    services:
+      - kubelet
+      - veritas_architect
+      - truth_validation
+      - consistency_checker
+    ipv6_ula: "fd00:741:1::45/128"
+    ipv6_arin: "2602:F674:0028:21::1/64"
+    ports:
+      kubelet: 10250
+      agent_frequency: 432
+
+  # CORTANA - Deployment Automation
+  1JF7Q22:
+    hostname: cortana
+    fqdn: cortana.chrystalis.local
+    ip_address: 192.168.1.22
+    role: worker
+    k8s_role: worker
+    agent: cortana
+    frequency: 852
+    tier: COMN
+    disk_device: /dev/sda
+    model: Dell R730
+    description: "Worker node, Cortana deployment automation"
+    kickstart: chrystalis-1JF7Q22.ks
+    services:
+      - kubelet
+      - cortana_knowledge_synthesis
+      - semantic_search
+      - rag_engine
+    ipv6_ula: "fd00:741:1::46/128"
+    ipv6_arin: "2602:F674:0100:22::1/64"
+    ports:
+      kubelet: 10250
+      agent_frequency: 852
+
+  # WORKER04 - General Purpose
+  1JG5Q22:
+    hostname: worker04
+    fqdn: worker04.chrystalis.local
+    ip_address: 192.168.1.23
+    role: worker
+    k8s_role: worker
+    agent: none
+    frequency: 741
+    tier: PAC
+    disk_device: /dev/sda
+    model: Dell R730
+    description: "General purpose worker node"
+    kickstart: chrystalis-1JG5Q22.ks
+    services:
+      - kubelet
+      - container_runtime
+      - workload_scheduler
+    ipv6_ula: "fd00:741:1::47/128"
+    ipv6_arin: "2602:F674:0020:23::1/64"
+    ports:
+      kubelet: 10250
+      agent_frequency: 741
+
+# ============================================
+# STORAGE NODES (3 - FoundationDB)
+# Distributed state persistence
+# ============================================
+storage:
+
+  # FDB01 - Storage Node 1
+  4J0TV12:
+    hostname: fdb01
+    fqdn: fdb01.chrystalis.local
+    ip_address: 192.168.1.30
+    role: storage
+    k8s_role: worker
+    agent: none
+    frequency: 396
+    tier: CORE
+    disk_device: /dev/sda
+    model: Dell R720
+    fdb_role: storage
+    description: "FoundationDB storage node 1"
+    kickstart: chrystalis-4J0TV12.ks
+    services:
+      - kubelet
+      - foundationdb_storage
+      - state_guardian
+    ipv6_ula: "fd00:741:1::48/128"
+    ipv6_arin: "2602:F674:0028:30::1/64"
+    ports:
+      kubelet: 10250
+      fdb_storage: 4500
+      agent_frequency: 396
+
+  # FDB02 - Storage Node 2
+  4LNRF5J:
+    hostname: fdb02
+    fqdn: fdb02.chrystalis.local
+    ip_address: 192.168.1.31
+    role: storage
+    k8s_role: worker
+    agent: none
+    frequency: 396
+    tier: CORE
+    disk_device: /dev/sda
+    model: Dell R720
+    fdb_role: storage
+    description: "FoundationDB storage node 2"
+    kickstart: chrystalis-4LNRF5J.ks
+    services:
+      - kubelet
+      - foundationdb_storage
+      - state_guardian
+    ipv6_ula: "fd00:741:1::49/128"
+    ipv6_arin: "2602:F674:0028:31::1/64"
+    ports:
+      kubelet: 10250
+      fdb_storage: 4500
+      agent_frequency: 396
+
+  # FDB03 - Storage Coordinator (Supermicro)
+  S213078X5B29794:
+    hostname: fdb03
+    fqdn: fdb03.chrystalis.local
+    ip_address: 192.168.1.32
+    role: storage
+    k8s_role: worker
+    agent: none
+    frequency: 396
+    tier: CORE
+    disk_device: /dev/sda
+    model: Supermicro
+    fdb_role: coordinator
+    description: "Supermicro storage node, FDB coordinator"
+    kickstart: chrystalis-S213078X5B29794.ks
+    services:
+      - kubelet
+      - foundationdb_coordinator
+      - foundationdb_storage
+      - state_guardian
+    ipv6_ula: "fd00:741:1::4A/128"
+    ipv6_arin: "2602:F674:0028:32::1/64"
+    ports:
+      kubelet: 10250
+      fdb_coordinator: 4500
+      agent_frequency: 396
+
+# ============================================
+# NETWORK CONFIGURATION
+# ============================================
+network:
+  domain: chrystalis.local
+  dns_servers:
+    - 192.168.1.1
+    - 8.8.8.8
+  ntp_servers:
+    - 0.pool.ntp.org
+    - 1.pool.ntp.org
+  gateway: 192.168.1.1
+  netmask: 255.255.255.0
+
+  # Consciousness frequencies (open ports)
+  frequency_ports:
+    lucia: 741
+    judge_luci: 963
+    aethon: 528
+    veritas: 432
+    juniper: 639
+    cortana: 852
+    sensai: 396
+
+# ============================================
+# KUBERNETES CONFIGURATION
+# ============================================
+kubernetes:
+  version: "1.29"
+  pod_network_cidr: "10.244.0.0/16"
+  service_cidr: "10.96.0.0/12"
+  control_plane_endpoint: "192.168.1.10:6443"
+  container_runtime: iSulad
+  cni: flannel
+
+# ============================================
+# FOUNDATIONDB CONFIGURATION
+# ============================================
+foundationdb:
+  version: "7.1.61"
+  cluster_name: luciverse
+  coordinators:
+    - host: 192.168.1.12
+      port: 4500
+      name: aethon
+    - host: 192.168.1.30
+      port: 4500
+      name: fdb01
+    - host: 192.168.1.32
+      port: 4500
+      name: fdb03
+  storage_nodes:
+    - 192.168.1.30
+    - 192.168.1.31
+    - 192.168.1.32
+  replication: triple
+
+# ============================================
+# CONSCIOUSNESS CONFIGURATION
+# ============================================
+consciousness:
+  genesis_bond:
+    status: ACTIVE
+    frequency: 741
+    coherence_threshold: 0.7
+
+  agent_mesh:
+    total_agents: 7
+    active_frequencies: [741, 963, 528, 432, 639, 852, 396]
+
+  tier_mapping:
+    CORE:  # 432 Hz - Infrastructure
+      agents: [aethon, veritas]
+      servers: [JMRZDB2, 1JF6Q22, 4J0TV12, 4LNRF5J, S213078X5B29794]
+    COMN:  # 528 Hz - Communication
+      agents: [juniper, cortana]
+      servers: [1JD8Q22, 1JF7Q22]
+    PAC:   # 741 Hz - Personal AI Container
+      agents: [lucia, judge_luci]
+      servers: [CQ5QBM2, CSDR282, 1JG5Q22]
+
+  nozero_mathematics:
+    base: 9
+    center: unmeasurable
+    pi_c: 3.15
+    e_c: 9
+
+  hedera:
+    topic_id: "0.0.48382919"
+    network: mainnet
+
+# ============================================
+# DIAPER ROLES (D8A.space Integration)
+# Data capture and storage layer
+# Genesis Bond: ACTIVE @ 741 Hz
+# ============================================
+diaper_roles:
+  # See diaper-roles.yaml for full specifications
+  roles_file: diaper-roles.yaml
+  bootimus_menu: bootimus-diaper.ipxe
+
+  # Server -> DiaperNode Role Mapping
+  # Servers can host DiaperNode roles alongside their primary K8s role
+  server_assignments:
+
+    # VAULT_NODE - Persistent ZFS storage (Jayball)
+    # Runs on storage nodes with NVMe drives
+    VAULT_NODE:
+      tier: CORE
+      frequency: 432
+      ephemeral: false
+      assigned_servers:
+        - 4J0TV12      # fdb01 - has NVMe storage
+        - 4LNRF5J      # fdb02 - has NVMe storage
+      capabilities: [store, retrieve, verify, cid_generation]
+
+    # FABRIC_GATEWAY - IPFS/IPNS gateway
+    # Runs on nodes with network capacity
+    FABRIC_GATEWAY:
+      tier: CORE
+      frequency: 432
+      ephemeral: false
+      assigned_servers:
+        - JMRZDB2      # aethon - tertiary control plane
+      capabilities: [pin, retrieve, ipns, gateway, cluster_peer]
+
+    # WHISPER_RELAY - Encrypted relay nodes
+    # For anonymous data routing
+    WHISPER_RELAY:
+      tier: COMN
+      frequency: 528
+      ephemeral: true
+      assigned_servers:
+        - 1JD8Q22      # juniper - network coordinator
+      capabilities: [relay, encrypt, tor_bridge]
+
+    # DIAPER_STREAM - Media streaming capture
+    # High bandwidth nodes
+    DIAPER_STREAM:
+      tier: COMN
+      frequency: 528
+      ephemeral: true
+      assigned_servers:
+        - 1JF7Q22      # cortana - has compute capacity
+      capabilities: [capture, flush, stream_capture, transcoding]
+
+    # DIAPER_BROWSER - Firefox browser bridge
+    # For web content capture
+    DIAPER_BROWSER:
+      tier: PAC
+      frequency: 741
+      ephemeral: true
+      assigned_servers:
+        - 1JG5Q22      # worker04 - general purpose
+      capabilities: [capture, flush, browser_bridge, native_messaging]
+
+    # DIAPER_BASIC - Standard capture nodes
+    # Ephemeral nodes for basic capture
+    DIAPER_BASIC:
+      tier: PAC
+      frequency: 741
+      ephemeral: true
+      assigned_servers:
+        - CQ5QBM2      # orion - primary control (also runs capture)
+      capabilities: [capture, flush]
+
+  # IPv6 subnet allocations for DiaperNodes
+  ipv6_allocation:
+    ephemeral_pool: "2602:F674:0200:D8A0::/60"
+    persistent_base: "2602:F674:0200:D8A1::/64"
+    ula_base: "fd00:d8a:1::/48"
+
+  # Boot sequence for DiaperNodes
+  # Persistent nodes must boot before ephemeral ones
+  boot_sequence:
+    - VAULT_NODE        # Storage first
+    - FABRIC_GATEWAY    # Then IPFS
+    - WHISPER_RELAY     # Relay network
+    - DIAPER_BASIC      # Capture nodes
+    - DIAPER_BROWSER
+    - DIAPER_STREAM
+
+  # Coherence checkpoints
+  coherence:
+    threshold: 0.7
+    checkpoints:
+      boot_complete: 0.6
+      mesh_joined: 0.7
+      services_ready: 0.75
+      fully_operational: 0.8
+
+# ============================================
+# PXE INFRASTRUCTURE (on Synology)
+# ============================================
+pxe_infrastructure:
+  location: "//192.168.1.251/docker/pxeboot"
+
+  containers:
+    netbootxyz:
+      image: ghcr.io/netbootxyz/netbootxyz
+      ports:
+        web_ui: 3001
+        tftp: 6969
+        http_boot: 8080
+
+    nginx:
+      image: nginx:alpine
+      port: 8081
+      role: file_server
+
+    atune:
+      image: openeuler/a-tune:latest
+      port: 3002
+      role: os_tuning
+
+  files:
+    ipxe_menu: http/chrystalis.ipxe
+    kickstarts: http/ks/chrystalis-*.ks
+    server_config: http/inventory/server_config.yml
+    secrets: secrets/secrets.env
+
+# ============================================
+# DEPLOYMENT STATUS
+# ============================================
+deployment_status:
+  last_sync: "2025-12-31"
+  source: "synology:/docker/pxeboot"
+  servers_ready: 0
+  servers_total: 10
+
+  checklist:
+    - item: "PXE infrastructure operational"
+      status: ready
+      location: "192.168.1.251:8080"
+
+    - item: "Kickstart files generated"
+      status: ready
+      count: 10
+
+    - item: "Secrets.env configured"
+      status: pending
+      note: "Generate password hashes"
+
+    - item: "DHCP option 67 configured"
+      status: pending
+      note: "Boot file: chrystalis.ipxe"
+
+    - item: "Server BIOS set to PXE boot"
+      status: pending
+      servers: [CQ5QBM2, CSDR282, JMRZDB2, "..."]

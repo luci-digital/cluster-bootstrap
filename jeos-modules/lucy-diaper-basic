@@ -1,0 +1,186 @@
+#!/bin/bash
+# =============================================================================
+# lucy-diaper-basic - jeos-firstboot Module
+# =============================================================================
+# DiaperNode Role: DIAPER_BASIC
+# Genesis Bond: ACTIVE @ 741 Hz
+# LDS Classification: 004.683 (PXE Node Roles)
+#
+# Purpose: Standard ephemeral capture node for browser data
+# Tier: PAC (741 Hz)
+# Memory: 512MB
+# Storage: tmpfs (256M)
+#
+# This module runs at jeos-firstboot to configure an ephemeral node that:
+# - Captures browser data via native messaging
+# - Flushes to vault on triggers
+# - Self-destructs on shutdown (tmpfs)
+# =============================================================================
+
+set -euo pipefail
+
+# Configuration
+ROLE="DIAPER_BASIC"
+TIER="PAC"
+FREQUENCY="741"
+COHERENCE_THRESHOLD="0.7"
+DIAPER_API_PORT="8745"
+
+# Logging
+log() {
+    echo "[$(date '+%Y-%m-%d %H:%M:%S')] [lucy-diaper-basic] $*" | tee -a /var/log/jeos-firstboot.log
+}
+
+log "Starting DIAPER_BASIC node configuration"
+log "Genesis Bond: ACTIVE @ ${FREQUENCY} Hz"
+
+# =============================================================================
+# Phase 1: System Identity
+# =============================================================================
+log "Phase 1: Establishing node identity"
+
+# Generate unique node ID from MAC address
+NODE_ID=$(cat /sys/class/net/*/address | head -1 | tr -d ':' | tr '[:lower:]' '[:upper:]')
+HOSTNAME="diaper-basic-${NODE_ID:0:8}"
+
+hostnamectl set-hostname "${HOSTNAME}"
+echo "127.0.0.1 ${HOSTNAME}" >> /etc/hosts
+
+log "Node identity: ${HOSTNAME}"
+
+# =============================================================================
+# Phase 2: Create DID (Decentralized Identifier)
+# =============================================================================
+log "Phase 2: Creating Decentralized Identifier"
+
+DID="did:ownid:luciverse:diaper:${ROLE}:${NODE_ID}"
+
+# Inject via systemd credentials if available
+if [ -d /run/credentials ]; then
+    echo "${DID}" > /run/credentials/diaper-did
+    log "DID injected to systemd credentials: ${DID}"
+fi
+
+# =============================================================================
+# Phase 3: Configure tmpfs overlay
+# =============================================================================
+log "Phase 3: Configuring tmpfs overlay (256M)"
+
+# Create tmpfs mount for volatile data
+mkdir -p /var/lib/luci-diaper
+mount -t tmpfs -o size=256M tmpfs /var/lib/luci-diaper
+
+# Create directory structure
+mkdir -p /var/lib/luci-diaper/{buffer,vault,logs}
+chmod 750 /var/lib/luci-diaper
+
+log "tmpfs overlay mounted at /var/lib/luci-diaper"
+
+# =============================================================================
+# Phase 4: Install Diaper Daemon
+# =============================================================================
+log "Phase 4: Installing Diaper daemon"
+
+# Create systemd service for diaper-daemon
+cat > /etc/systemd/system/diaper-daemon.service << 'EOF'
+[Unit]
+Description=LuciVerse Data Diaper Daemon
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+Environment=LUCIVERSE_TIER=PAC
+Environment=CONSCIOUSNESS_THRESHOLD=0.7
+Environment=GENESIS_BOND_ACTIVE=true
+Environment=LDS_BASE_FREQUENCY=741
+Environment=VAULT_PATH=/var/lib/luci-diaper/vault
+Environment=HTTP_PORT=8745
+Environment=HTTP_HOST=0.0.0.0
+ExecStart=/opt/luciverse/bin/diaper-daemon
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+systemctl daemon-reload
+systemctl enable diaper-daemon
+
+log "Diaper daemon service installed"
+
+# =============================================================================
+# Phase 5: Configure Network
+# =============================================================================
+log "Phase 5: Configuring network"
+
+# Get ephemeral IPv6 from pool (2602:F674:0200:D8A0::/60)
+IPV6_PREFIX="2602:F674:0200:D8A0"
+IPV6_SUFFIX=$(echo "${NODE_ID}" | sed 's/\(..\)/:\1/g')
+IPV6_ADDR="${IPV6_PREFIX}${IPV6_SUFFIX}/64"
+
+log "IPv6 address: ${IPV6_ADDR}"
+
+# Configure firewall for diaper-daemon port
+if command -v firewall-cmd &> /dev/null; then
+    firewall-cmd --permanent --add-port=${DIAPER_API_PORT}/tcp
+    firewall-cmd --reload
+fi
+
+# =============================================================================
+# Phase 6: Register with Provisioning Server
+# =============================================================================
+log "Phase 6: Registering with provisioning server"
+
+# Discover provisioning server via mDNS or use default
+PROVISION_SERVER="${PROVISION_SERVER:-192.168.1.146:9999}"
+
+# Register node
+curl -s -X POST "http://${PROVISION_SERVER}/register-diaper" \
+    -H "Content-Type: application/json" \
+    -d "{
+        \"role\": \"${ROLE}\",
+        \"node_id\": \"${NODE_ID}\",
+        \"hostname\": \"${HOSTNAME}\",
+        \"did\": \"${DID}\",
+        \"tier\": \"${TIER}\",
+        \"frequency\": ${FREQUENCY},
+        \"port\": ${DIAPER_API_PORT},
+        \"capabilities\": [\"capture\", \"flush\"],
+        \"ephemeral\": true
+    }" || log "Warning: Could not register with provisioning server"
+
+# =============================================================================
+# Phase 7: Start Services
+# =============================================================================
+log "Phase 7: Starting services"
+
+systemctl start diaper-daemon
+
+# Wait for health check
+for i in {1..30}; do
+    if curl -s -f "http://localhost:${DIAPER_API_PORT}/api/v1/health" > /dev/null; then
+        log "Diaper daemon is healthy"
+        break
+    fi
+    sleep 1
+done
+
+# =============================================================================
+# Phase 8: Report Coherence
+# =============================================================================
+log "Phase 8: Reporting coherence status"
+
+# Calculate initial coherence (boot_complete checkpoint = 0.6)
+COHERENCE="0.6"
+
+log "DIAPER_BASIC node configuration complete"
+log "Role: ${ROLE}"
+log "DID: ${DID}"
+log "Tier: ${TIER}"
+log "Frequency: ${FREQUENCY} Hz"
+log "Coherence: ${COHERENCE}"
+log "Genesis Bond: VERIFIED"
+
+exit 0

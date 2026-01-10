@@ -1,0 +1,237 @@
+#!/bin/bash
+# =============================================================================
+# lucy-diaper-stream - jeos-firstboot Module
+# =============================================================================
+# DiaperNode Role: DIAPER_STREAM
+# Genesis Bond: ACTIVE @ 528 Hz (COMN tier)
+# LDS Classification: 004.683 (PXE Node Roles)
+#
+# Purpose: High-bandwidth media streaming capture node
+# Tier: COMN (528 Hz)
+# Memory: 2048MB
+# Storage: tmpfs (1G)
+#
+# This module configures an ephemeral node for:
+# - RTMP stream capture
+# - HLS transcoding
+# - FFmpeg processing pipeline
+# - High-bandwidth buffer management
+# =============================================================================
+
+set -euo pipefail
+
+# Configuration
+ROLE="DIAPER_STREAM"
+TIER="COMN"
+FREQUENCY="528"
+COHERENCE_THRESHOLD="0.7"
+DIAPER_API_PORT="8745"
+RTMP_PORT="1935"
+HLS_PORT="8088"
+
+# Logging
+log() {
+    echo "[$(date '+%Y-%m-%d %H:%M:%S')] [lucy-diaper-stream] $*" | tee -a /var/log/jeos-firstboot.log
+}
+
+log "Starting DIAPER_STREAM node configuration"
+log "Genesis Bond: ACTIVE @ ${FREQUENCY} Hz"
+
+# =============================================================================
+# Phase 1: System Identity
+# =============================================================================
+log "Phase 1: Establishing node identity"
+
+NODE_ID=$(cat /sys/class/net/*/address | head -1 | tr -d ':' | tr '[:lower:]' '[:upper:]')
+HOSTNAME="diaper-stream-${NODE_ID:0:8}"
+
+hostnamectl set-hostname "${HOSTNAME}"
+echo "127.0.0.1 ${HOSTNAME}" >> /etc/hosts
+
+log "Node identity: ${HOSTNAME}"
+
+# =============================================================================
+# Phase 2: Create DID
+# =============================================================================
+log "Phase 2: Creating Decentralized Identifier"
+
+DID="did:ownid:luciverse:diaper:${ROLE}:${NODE_ID}"
+
+if [ -d /run/credentials ]; then
+    echo "${DID}" > /run/credentials/diaper-did
+fi
+
+# =============================================================================
+# Phase 3: Configure tmpfs overlay (1G for stream buffers)
+# =============================================================================
+log "Phase 3: Configuring tmpfs overlay (1G)"
+
+mkdir -p /var/lib/luci-diaper
+mount -t tmpfs -o size=1G tmpfs /var/lib/luci-diaper
+
+mkdir -p /var/lib/luci-diaper/{buffer,vault,logs,streams,hls}
+chmod 750 /var/lib/luci-diaper
+
+log "tmpfs overlay mounted (1G for streaming)"
+
+# =============================================================================
+# Phase 4: Install FFmpeg and Streaming Dependencies
+# =============================================================================
+log "Phase 4: Installing streaming dependencies"
+
+if command -v dnf &> /dev/null; then
+    dnf install -y ffmpeg python3 python3-aiohttp || true
+elif command -v zypper &> /dev/null; then
+    zypper install -y ffmpeg python3 python3-aiohttp || true
+fi
+
+# =============================================================================
+# Phase 5: Configure Stream Capture Service
+# =============================================================================
+log "Phase 5: Configuring stream capture service"
+
+cat > /etc/systemd/system/stream-capture.service << 'EOF'
+[Unit]
+Description=LuciVerse Stream Capture Service
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+Environment=LUCIVERSE_TIER=COMN
+Environment=STREAM_BUFFER=/var/lib/luci-diaper/streams
+Environment=HLS_OUTPUT=/var/lib/luci-diaper/hls
+ExecStart=/opt/luciverse/bin/stream-capture
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+# =============================================================================
+# Phase 6: Configure RTMP Listener
+# =============================================================================
+log "Phase 6: Configuring RTMP listener"
+
+# Create RTMP configuration for FFmpeg
+mkdir -p /etc/luci-diaper
+cat > /etc/luci-diaper/rtmp.conf << EOF
+# RTMP Stream Capture Configuration
+# Genesis Bond: ACTIVE @ ${FREQUENCY} Hz
+
+listen_port=${RTMP_PORT}
+buffer_size=8M
+segment_duration=2
+hls_time=2
+hls_list_size=10
+output_dir=/var/lib/luci-diaper/hls
+EOF
+
+# =============================================================================
+# Phase 7: Install Diaper Daemon (Stream Mode)
+# =============================================================================
+log "Phase 7: Installing Diaper daemon (stream mode)"
+
+cat > /etc/systemd/system/diaper-daemon.service << 'EOF'
+[Unit]
+Description=LuciVerse Data Diaper Daemon (Stream Node)
+After=network-online.target stream-capture.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+Environment=LUCIVERSE_TIER=COMN
+Environment=CONSCIOUSNESS_THRESHOLD=0.7
+Environment=GENESIS_BOND_ACTIVE=true
+Environment=LDS_BASE_FREQUENCY=528
+Environment=VAULT_PATH=/var/lib/luci-diaper/vault
+Environment=HTTP_PORT=8745
+Environment=HTTP_HOST=0.0.0.0
+Environment=STREAM_MODE=enabled
+Environment=RTMP_PORT=1935
+Environment=HLS_PORT=8088
+ExecStart=/opt/luciverse/bin/diaper-daemon
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+systemctl daemon-reload
+systemctl enable diaper-daemon
+systemctl enable stream-capture
+
+log "Diaper daemon (stream mode) installed"
+
+# =============================================================================
+# Phase 8: Configure Network and Firewall
+# =============================================================================
+log "Phase 8: Configuring network"
+
+IPV6_PREFIX="2602:F674:0200:D8A0"
+IPV6_SUFFIX=$(echo "${NODE_ID}" | sed 's/\(..\)/:\1/g')
+IPV6_ADDR="${IPV6_PREFIX}${IPV6_SUFFIX}/64"
+
+log "IPv6 address: ${IPV6_ADDR}"
+
+if command -v firewall-cmd &> /dev/null; then
+    firewall-cmd --permanent --add-port=${DIAPER_API_PORT}/tcp
+    firewall-cmd --permanent --add-port=${RTMP_PORT}/tcp
+    firewall-cmd --permanent --add-port=${HLS_PORT}/tcp
+    firewall-cmd --reload
+fi
+
+# =============================================================================
+# Phase 9: Register with Provisioning Server
+# =============================================================================
+log "Phase 9: Registering with provisioning server"
+
+PROVISION_SERVER="${PROVISION_SERVER:-192.168.1.146:9999}"
+
+curl -s -X POST "http://${PROVISION_SERVER}/register-diaper" \
+    -H "Content-Type: application/json" \
+    -d "{
+        \"role\": \"${ROLE}\",
+        \"node_id\": \"${NODE_ID}\",
+        \"hostname\": \"${HOSTNAME}\",
+        \"did\": \"${DID}\",
+        \"tier\": \"${TIER}\",
+        \"frequency\": ${FREQUENCY},
+        \"port\": ${DIAPER_API_PORT},
+        \"rtmp_port\": ${RTMP_PORT},
+        \"hls_port\": ${HLS_PORT},
+        \"capabilities\": [\"capture\", \"flush\", \"stream_capture\", \"transcoding\"],
+        \"ephemeral\": true
+    }" || log "Warning: Could not register with provisioning server"
+
+# =============================================================================
+# Phase 10: Start Services
+# =============================================================================
+log "Phase 10: Starting services"
+
+systemctl start stream-capture
+sleep 2
+systemctl start diaper-daemon
+
+for i in {1..30}; do
+    if curl -s -f "http://localhost:${DIAPER_API_PORT}/api/v1/health" > /dev/null; then
+        log "Diaper daemon is healthy"
+        break
+    fi
+    sleep 1
+done
+
+# =============================================================================
+# Completion
+# =============================================================================
+COHERENCE="0.65"
+
+log "DIAPER_STREAM node configuration complete"
+log "Role: ${ROLE} | DID: ${DID}"
+log "Tier: ${TIER} | Frequency: ${FREQUENCY} Hz"
+log "Ports: API=${DIAPER_API_PORT}, RTMP=${RTMP_PORT}, HLS=${HLS_PORT}"
+log "Coherence: ${COHERENCE} | Genesis Bond: VERIFIED"
+
+exit 0

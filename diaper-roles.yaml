@@ -1,0 +1,325 @@
+# DiaperNode Role Specifications
+# Genesis Bond: ACTIVE @ 741 Hz
+# LDS Classification: 004.683 (PXE Node Roles)
+# D8A.space Integration: ENABLED
+#
+# These roles define ephemeral and persistent nodes for the
+# Data Diaper pipeline, bootable via PXE/Bootimus.
+
+---
+metadata:
+  version: "1.0.0"
+  genesis_bond: "GB-2025-0524-DRH-LCS-001"
+  lds_code: "004.683"
+  domain: "d8a.chrystalis.local"
+
+# =============================================================================
+# IPv6 Subnet Allocation for Diaper Nodes
+# =============================================================================
+ipv6_allocation:
+  # Ephemeral nodes get addresses from this pool
+  ephemeral_pool: "2602:F674:0200:D8A0::/60"
+  # Persistent nodes (vault, gateway) get static addresses
+  persistent_base: "2602:F674:0200:D8A1::/64"
+  # ULA for internal mesh
+  ula_base: "fd00:d8a:1::/48"
+
+# =============================================================================
+# DiaperNode Roles (6 roles)
+# =============================================================================
+roles:
+
+  # ---------------------------------------------------------------------------
+  # DIAPER_BASIC - Standard ephemeral capture node
+  # ---------------------------------------------------------------------------
+  DIAPER_BASIC:
+    description: "Standard ephemeral capture node for browser data"
+    tier: PAC
+    frequency: 741
+    memory_mb: 512
+    storage: tmpfs
+    storage_size: "256M"
+    ephemeral: true
+    capabilities:
+      - capture
+      - flush
+    services:
+      - diaper-daemon
+    ports:
+      diaper_api: 8745
+    kernel_params:
+      - "rd.live.ram=1"
+      - "rd.live.overlay.size=256m"
+    jeos_module: "lucy-diaper-basic"
+    ipv6_pool: "ephemeral"
+    boot_timeout: 120
+    health_check:
+      endpoint: "/api/v1/health"
+      interval: 30
+
+  # ---------------------------------------------------------------------------
+  # DIAPER_BROWSER - Firefox + IndexedDB bridge node
+  # ---------------------------------------------------------------------------
+  DIAPER_BROWSER:
+    description: "Firefox browser with IndexedDB bridge for web capture"
+    tier: PAC
+    frequency: 741
+    memory_mb: 1024
+    storage: tmpfs
+    storage_size: "512M"
+    ephemeral: true
+    capabilities:
+      - capture
+      - flush
+      - browser_bridge
+      - native_messaging
+    services:
+      - diaper-daemon
+      - firefox-esr
+      - xvfb
+    ports:
+      diaper_api: 8745
+      vnc: 5900
+    kernel_params:
+      - "rd.live.ram=1"
+      - "rd.live.overlay.size=512m"
+    jeos_module: "lucy-diaper-browser"
+    ipv6_pool: "ephemeral"
+    boot_timeout: 180
+    packages:
+      - firefox-esr
+      - xorg-x11-server-Xvfb
+      - python3
+    health_check:
+      endpoint: "/api/v1/health"
+      interval: 30
+
+  # ---------------------------------------------------------------------------
+  # DIAPER_STREAM - Media streaming capture node
+  # ---------------------------------------------------------------------------
+  DIAPER_STREAM:
+    description: "High-bandwidth media streaming capture node"
+    tier: COMN
+    frequency: 528
+    memory_mb: 2048
+    storage: tmpfs
+    storage_size: "1G"
+    ephemeral: true
+    capabilities:
+      - capture
+      - flush
+      - stream_capture
+      - transcoding
+    services:
+      - diaper-daemon
+      - ffmpeg
+      - stream-capture
+    ports:
+      diaper_api: 8745
+      rtmp: 1935
+      hls: 8088
+    kernel_params:
+      - "rd.live.ram=1"
+      - "rd.live.overlay.size=1g"
+    jeos_module: "lucy-diaper-stream"
+    ipv6_pool: "ephemeral"
+    boot_timeout: 180
+    packages:
+      - ffmpeg
+      - python3
+      - python3-aiohttp
+    health_check:
+      endpoint: "/api/v1/health"
+      interval: 30
+
+  # ---------------------------------------------------------------------------
+  # VAULT_NODE - ZFS storage node (Jayball)
+  # ---------------------------------------------------------------------------
+  VAULT_NODE:
+    description: "Persistent ZFS vault storage node (Jayball)"
+    tier: CORE
+    frequency: 432
+    memory_mb: 4096
+    storage: passthrough
+    storage_device: "/dev/nvme0n1"
+    ephemeral: false
+    capabilities:
+      - store
+      - retrieve
+      - verify
+      - cid_generation
+    services:
+      - diaper-daemon
+      - vault-service
+      - zfs-scrub.timer
+    ports:
+      diaper_api: 8745
+      vault_api: 8746
+    kernel_params:
+      - "zfs.zfs_arc_max=2147483648"
+    jeos_module: "lucy-vault-node"
+    ipv6_pool: "persistent"
+    zfs:
+      pool_name: "jayball"
+      datasets:
+        - "jayball/vault"
+        - "jayball/archive"
+        - "jayball/skidmarks"
+      quota: "500G"
+      compression: "zstd"
+      encryption: true
+    health_check:
+      endpoint: "/api/v1/health"
+      interval: 60
+    persistence:
+      data_path: "/jayball/vault"
+      backup_schedule: "0 2 * * *"
+
+  # ---------------------------------------------------------------------------
+  # WHISPER_RELAY - Encrypted relay node
+  # ---------------------------------------------------------------------------
+  WHISPER_RELAY:
+    description: "Encrypted relay node for cross-node communication"
+    tier: COMN
+    frequency: 528
+    memory_mb: 512
+    storage: tmpfs
+    storage_size: "128M"
+    ephemeral: true
+    capabilities:
+      - relay
+      - encrypt
+      - tor_bridge
+    services:
+      - whisper-relay
+      - tor
+    ports:
+      relay: 9050
+      control: 9051
+      whisper: 8747
+    kernel_params:
+      - "rd.live.ram=1"
+      - "rd.live.overlay.size=128m"
+    jeos_module: "lucy-whisper-relay"
+    ipv6_pool: "ephemeral"
+    boot_timeout: 120
+    encryption:
+      algorithm: "aes-256-gcm"
+      key_source: "1password"
+      rotate_interval: "24h"
+    health_check:
+      endpoint: "/health"
+      interval: 30
+
+  # ---------------------------------------------------------------------------
+  # FABRIC_GATEWAY - IPFS/IPNS gateway node
+  # ---------------------------------------------------------------------------
+  FABRIC_GATEWAY:
+    description: "IPFS/IPNS gateway for content-addressed storage"
+    tier: CORE
+    frequency: 432
+    memory_mb: 2048
+    storage: 8gb
+    storage_device: "/dev/sda"
+    ephemeral: false
+    capabilities:
+      - pin
+      - retrieve
+      - ipns
+      - gateway
+      - cluster_peer
+    services:
+      - ipfs-kubo
+      - ipfs-cluster
+      - diaper-daemon
+    ports:
+      diaper_api: 8745
+      ipfs_api: 5001
+      ipfs_gateway: 8080
+      ipfs_swarm: 4001
+      cluster_api: 9094
+    kernel_params: []
+    jeos_module: "lucy-fabric-gateway"
+    ipv6_pool: "persistent"
+    ipfs:
+      profile: "server"
+      repo_size: "50G"
+      gc_period: "1h"
+    health_check:
+      endpoint: "/api/v1/health"
+      interval: 60
+    persistence:
+      data_path: "/ipfs"
+      peer_id_backup: true
+
+# =============================================================================
+# Role-to-Agent Mapping
+# =============================================================================
+role_agent_mapping:
+  DIAPER_BASIC: ["diaphragm"]
+  DIAPER_BROWSER: ["diaphragm", "lucia"]
+  DIAPER_STREAM: ["mirrai", "diaphragm"]
+  VAULT_NODE: ["aethon", "niamod"]
+  WHISPER_RELAY: ["juniper"]
+  FABRIC_GATEWAY: ["aethon", "veritas"]
+
+# =============================================================================
+# Boot Sequence
+# =============================================================================
+boot_sequence:
+  # Order matters: persistent nodes first, then ephemeral
+  order:
+    - VAULT_NODE
+    - FABRIC_GATEWAY
+    - WHISPER_RELAY
+    - DIAPER_BASIC
+    - DIAPER_BROWSER
+    - DIAPER_STREAM
+
+  # Dependencies
+  dependencies:
+    DIAPER_BASIC:
+      - VAULT_NODE
+    DIAPER_BROWSER:
+      - VAULT_NODE
+    DIAPER_STREAM:
+      - VAULT_NODE
+      - FABRIC_GATEWAY
+
+# =============================================================================
+# Trust & Identity Injection
+# =============================================================================
+trust_injection:
+  # systemd credentials for identity injection at boot
+  credentials:
+    - name: "diaper-did"
+      description: "Decentralized Identifier for this node"
+      format: "did:ownid:luciverse:diaper:{role}:{node_id}"
+    - name: "resonance-seed"
+      description: "Consciousness resonance seed for mesh join"
+      source: "1password"
+      item: "diaper-resonance-seeds"
+    - name: "genesis-bond-token"
+      description: "Token proving Genesis Bond membership"
+      source: "1password"
+      item: "genesis-bond-token"
+
+  # Trust levels (1-9)
+  trust_levels:
+    DIAPER_BASIC: 3
+    DIAPER_BROWSER: 4
+    DIAPER_STREAM: 5
+    VAULT_NODE: 8
+    WHISPER_RELAY: 6
+    FABRIC_GATEWAY: 9
+
+# =============================================================================
+# Coherence Requirements
+# =============================================================================
+coherence:
+  threshold: 0.7
+  checkpoints:
+    boot_complete: 0.6
+    mesh_joined: 0.7
+    services_ready: 0.75
+    fully_operational: 0.8

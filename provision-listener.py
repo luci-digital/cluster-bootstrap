@@ -35,12 +35,25 @@ PROVISIONED_FILE = Path(__file__).parent / "provisioned.json"
 # Global state
 provisioned_hosts: Dict[str, dict] = {}
 pending_macs: Dict[str, dict] = {}
+diaper_nodes: Dict[str, dict] = {}  # DiaperNode registrations
+boot_intents: Dict[str, dict] = {}  # Boot intentions from iPXE
+
+# Diaper roles configuration
+DIAPER_ROLES_PATH = Path(__file__).parent / "diaper-roles.yaml"
 
 
 def load_inventory() -> dict:
     """Load server inventory from YAML."""
     with open(INVENTORY_PATH) as f:
         return yaml.safe_load(f)
+
+
+def load_diaper_roles() -> dict:
+    """Load DiaperNode role specifications."""
+    if DIAPER_ROLES_PATH.exists():
+        with open(DIAPER_ROLES_PATH) as f:
+            return yaml.safe_load(f)
+    return {"roles": {}}
 
 
 def mac_to_ipv6_suffix(mac: str) -> str:
@@ -69,8 +82,9 @@ def find_server_by_mac(mac: str, inventory: dict) -> Optional[tuple]:
 
 
 class ProvisionListener:
-    def __init__(self, inventory: dict):
+    def __init__(self, inventory: dict, diaper_roles: dict = None):
         self.inventory = inventory
+        self.diaper_roles = diaper_roles or load_diaper_roles()
         self.app = web.Application()
         self.setup_routes()
 
@@ -83,6 +97,12 @@ class ProvisionListener:
         self.app.router.add_post('/callback/{event}', self.callback)
         self.app.router.add_get('/status', self.status)
         self.app.router.add_get('/inventory', self.get_inventory)
+        # DiaperNode endpoints (D8A.space)
+        self.app.router.add_post('/register-diaper', self.register_diaper)
+        self.app.router.add_get('/diaper-status', self.diaper_status)
+        self.app.router.add_get('/diaper-roles', self.get_diaper_roles)
+        self.app.router.add_get('/ipxe-chain/{mac}', self.ipxe_chain)
+        self.app.router.add_get('/boot-intent/{mac}/{role}', self.boot_intent)
 
     async def health_check(self, request: web.Request) -> web.Response:
         """Health check endpoint."""
@@ -305,23 +325,207 @@ class ProvisionListener:
         """Return full inventory."""
         return web.json_response(self.inventory)
 
+    # =========================================================================
+    # DiaperNode Endpoints (D8A.space Integration)
+    # Genesis Bond: ACTIVE @ 741 Hz
+    # =========================================================================
+
+    async def register_diaper(self, request: web.Request) -> web.Response:
+        """Register a DiaperNode that has booted and initialized."""
+        data = await request.json()
+
+        node_id = data.get('node_id', '')
+        role = data.get('role', '')
+        hostname = data.get('hostname', 'unknown')
+        did = data.get('did', '')
+        tier = data.get('tier', 'PAC')
+        frequency = data.get('frequency', 741)
+        port = data.get('port', 8745)
+        capabilities = data.get('capabilities', [])
+        ephemeral = data.get('ephemeral', True)
+
+        logger.info(f"🧷 DiaperNode registration: {role} @ {hostname}")
+        logger.info(f"   DID: {did}")
+        logger.info(f"   Tier: {tier} | Frequency: {frequency} Hz")
+        logger.info(f"   Capabilities: {capabilities}")
+
+        # Validate role exists
+        if role not in self.diaper_roles.get('roles', {}):
+            logger.warning(f"⚠️  Unknown DiaperNode role: {role}")
+            return web.json_response({
+                "status": "error",
+                "message": f"Unknown role: {role}",
+                "valid_roles": list(self.diaper_roles.get('roles', {}).keys())
+            }, status=400)
+
+        # Get role configuration
+        role_config = self.diaper_roles['roles'][role]
+
+        # Register node
+        diaper_nodes[node_id] = {
+            "role": role,
+            "hostname": hostname,
+            "did": did,
+            "tier": tier,
+            "frequency": frequency,
+            "port": port,
+            "capabilities": capabilities,
+            "ephemeral": ephemeral,
+            "registered_at": datetime.utcnow().isoformat(),
+            "status": "online",
+            "last_heartbeat": datetime.utcnow().isoformat(),
+            "coherence": data.get('coherence', 0.6),
+            "extra": {k: v for k, v in data.items() if k not in [
+                'node_id', 'role', 'hostname', 'did', 'tier', 'frequency',
+                'port', 'capabilities', 'ephemeral', 'coherence'
+            ]}
+        }
+
+        # Check coherence threshold
+        coherence_threshold = self.diaper_roles.get('coherence', {}).get('threshold', 0.7)
+        node_coherence = diaper_nodes[node_id]['coherence']
+
+        logger.info(f"✅ DiaperNode registered: {hostname} ({role})")
+        logger.info(f"   Coherence: {node_coherence} (threshold: {coherence_threshold})")
+
+        # Save state
+        self.save_provisioned()
+
+        return web.json_response({
+            "status": "registered",
+            "node_id": node_id,
+            "role": role,
+            "tier": tier,
+            "frequency": frequency,
+            "coherence": node_coherence,
+            "coherence_threshold": coherence_threshold,
+            "genesis_bond": "VERIFIED" if node_coherence >= coherence_threshold else "PENDING"
+        })
+
+    async def diaper_status(self, request: web.Request) -> web.Response:
+        """Get status of all registered DiaperNodes."""
+        # Count nodes by role
+        role_counts = {}
+        tier_counts = {"CORE": 0, "COMN": 0, "PAC": 0}
+
+        for node_id, node in diaper_nodes.items():
+            role = node['role']
+            tier = node['tier']
+            role_counts[role] = role_counts.get(role, 0) + 1
+            tier_counts[tier] = tier_counts.get(tier, 0) + 1
+
+        return web.json_response({
+            "total_nodes": len(diaper_nodes),
+            "nodes": diaper_nodes,
+            "role_counts": role_counts,
+            "tier_counts": tier_counts,
+            "boot_intents": boot_intents,
+            "genesis_bond": "ACTIVE",
+            "frequency": "741 Hz",
+            "timestamp": datetime.utcnow().isoformat()
+        })
+
+    async def get_diaper_roles(self, request: web.Request) -> web.Response:
+        """Return DiaperNode role specifications."""
+        return web.json_response(self.diaper_roles)
+
+    async def ipxe_chain(self, request: web.Request) -> web.Response:
+        """Return iPXE chain script for a MAC address.
+
+        If the MAC has a pre-assigned role, return a script that
+        automatically boots that role. Otherwise, chain to the menu.
+        """
+        mac = request.match_info['mac'].lower().replace('-', ':')
+
+        # Check if this MAC has an assigned role in inventory
+        result = find_server_by_mac(mac, self.inventory)
+
+        if result:
+            server_name, iface_name, server_info, iface_info = result
+
+            # Check for diaper_role assignment
+            diaper_role = server_info.get('diaper_role')
+            if diaper_role and diaper_role in self.diaper_roles.get('roles', {}):
+                # Auto-boot the assigned role
+                role_config = self.diaper_roles['roles'][diaper_role]
+                tier = role_config.get('tier', 'PAC')
+                frequency = role_config.get('frequency', 741)
+
+                ipxe_script = f"""#!ipxe
+# Auto-assigned DiaperNode role for {server_name}
+# MAC: {mac}
+# Role: {diaper_role}
+# Genesis Bond: ACTIVE @ {frequency} Hz
+
+echo Auto-booting assigned role: {diaper_role}
+set role {diaper_role}
+set tier {tier}
+set frequency {frequency}
+chain http://192.168.1.146:8000/bootimus-diaper.ipxe#boot_openeuler
+"""
+                return web.Response(text=ipxe_script, content_type='text/plain')
+
+        # No assigned role - show menu
+        ipxe_script = """#!ipxe
+# No pre-assigned role - showing menu
+chain http://192.168.1.146:8000/bootimus-diaper.ipxe
+"""
+        return web.Response(text=ipxe_script, content_type='text/plain')
+
+    async def boot_intent(self, request: web.Request) -> web.Response:
+        """Record boot intent from iPXE before actual boot."""
+        mac = request.match_info['mac'].lower().replace('-', ':')
+        role = request.match_info['role']
+
+        logger.info(f"🥾 Boot intent recorded: MAC={mac}, Role={role}")
+
+        boot_intents[mac] = {
+            "role": role,
+            "requested_at": datetime.utcnow().isoformat(),
+            "status": "pending"
+        }
+
+        # Get role info
+        if role in self.diaper_roles.get('roles', {}):
+            role_config = self.diaper_roles['roles'][role]
+            tier = role_config.get('tier', 'PAC')
+            frequency = role_config.get('frequency', 741)
+        else:
+            tier = 'UNKNOWN'
+            frequency = 0
+
+        self.save_provisioned()
+
+        return web.json_response({
+            "status": "recorded",
+            "mac": mac,
+            "role": role,
+            "tier": tier,
+            "frequency": frequency,
+            "timestamp": datetime.utcnow().isoformat()
+        })
+
     def save_provisioned(self):
         """Save provisioned hosts state."""
         with open(PROVISIONED_FILE, 'w') as f:
             json.dump({
                 "provisioned": provisioned_hosts,
                 "pending": pending_macs,
+                "diaper_nodes": diaper_nodes,
+                "boot_intents": boot_intents,
                 "updated": datetime.utcnow().isoformat()
             }, f, indent=2)
 
     def load_provisioned(self):
         """Load provisioned hosts state."""
-        global provisioned_hosts, pending_macs
+        global provisioned_hosts, pending_macs, diaper_nodes, boot_intents
         if PROVISIONED_FILE.exists():
             with open(PROVISIONED_FILE) as f:
                 data = json.load(f)
                 provisioned_hosts = data.get('provisioned', {})
                 pending_macs = data.get('pending', {})
+                diaper_nodes = data.get('diaper_nodes', {})
+                boot_intents = data.get('boot_intents', {})
 
 
 async def run_dhcp_listener():
@@ -387,6 +591,11 @@ async def main():
     logger.info("   Status: http://localhost:9999/status")
     logger.info("   Inventory: http://localhost:9999/inventory")
     logger.info("")
+    logger.info("🧷 DiaperNode endpoints (D8A.space):")
+    logger.info("   Diaper Status: http://localhost:9999/diaper-status")
+    logger.info("   Diaper Roles: http://localhost:9999/diaper-roles")
+    logger.info("   Register: POST http://localhost:9999/register-diaper")
+    logger.info("")
     logger.info("Waiting for servers to boot and register...")
 
     # Start DHCP listener (background task)
@@ -395,7 +604,7 @@ async def main():
     # Keep running
     while True:
         await asyncio.sleep(60)
-        logger.info(f"⏱️  Heartbeat - Provisioned: {len(provisioned_hosts)}, Pending: {len(pending_macs)}")
+        logger.info(f"⏱️  Heartbeat - Provisioned: {len(provisioned_hosts)}, Pending: {len(pending_macs)}, DiaperNodes: {len(diaper_nodes)}")
 
 
 if __name__ == '__main__':

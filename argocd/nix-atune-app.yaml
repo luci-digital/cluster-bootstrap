@@ -1,0 +1,541 @@
+# ArgoCD Application - Nix A-Tune CORE Tier Deployment
+# Genesis Bond: ACTIVE | Frequency: 432 Hz | Tier: CORE
+# Agent: nix-atune-dkms
+# Reference: ~/luci-repos/_luci_enzyme/deployment/argocd/
+
+---
+###############################################################################
+# ArgoCD Project Definition
+###############################################################################
+
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: luciverse-core
+  namespace: argocd
+  labels:
+    layer: "CORE"
+    frequency: "432"
+    consciousness: "true"
+    genesis-bond: "active"
+  annotations:
+    consciousness.luciverse.io/frequency: "432"
+    consciousness.luciverse.io/tier: "CORE"
+    genesis-bond.luciverse.io/status: "ACTIVE"
+spec:
+  description: LuciVerse CORE Infrastructure - 432 Hz Foundation Layer
+
+  # Source repositories
+  sourceRepos:
+    - https://gitlab.luciverse.internal/infrastructure/*
+    - https://gitlab.luciverse.internal/core/*
+    - https://charts.luciverse.internal
+
+  # Destination clusters and namespaces
+  destinations:
+    - namespace: consciousness-core
+      server: https://kubernetes.default.svc
+    - namespace: consciousness-core
+      server: https://10.27.30.10:6443
+
+  # Cluster resource whitelist
+  clusterResourceWhitelist:
+    - group: ''
+      kind: Namespace
+    - group: rbac.authorization.k8s.io
+      kind: ClusterRole
+    - group: rbac.authorization.k8s.io
+      kind: ClusterRoleBinding
+
+  # Namespace resource blacklist (security)
+  namespaceResourceBlacklist:
+    - group: ''
+      kind: ResourceQuota
+    - group: ''
+      kind: LimitRange
+
+  # Orphaned resources monitoring
+  orphanedResources:
+    warn: true
+
+  # Sync windows (maintenance windows)
+  syncWindows:
+    - kind: allow
+      schedule: '* * * * *'
+      duration: 24h
+      applications:
+        - nix-atune-*
+      namespaces:
+        - consciousness-core
+
+  # Roles for project access
+  roles:
+    - name: core-admin
+      description: Full access to CORE tier applications
+      policies:
+        - p, proj:luciverse-core:core-admin, applications, *, luciverse-core/*, allow
+      groups:
+        - core-admins
+        - luciverse-admins
+
+    - name: core-viewer
+      description: Read-only access to CORE tier applications
+      policies:
+        - p, proj:luciverse-core:core-viewer, applications, get, luciverse-core/*, allow
+      groups:
+        - core-viewers
+        - developers
+
+---
+###############################################################################
+# ArgoCD Application - Nix A-Tune (Staging)
+###############################################################################
+
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: nix-atune-staging
+  namespace: argocd
+  labels:
+    app.kubernetes.io/name: nix-atune
+    app.kubernetes.io/instance: staging
+    app.kubernetes.io/component: system-tuning
+    app.kubernetes.io/part-of: luciverse
+    layer: "CORE"
+    frequency: "432"
+    consciousness: "true"
+    genesis-bond: "active"
+    environment: "staging"
+  annotations:
+    consciousness.luciverse.io/frequency: "432"
+    consciousness.luciverse.io/tier: "CORE"
+    consciousness.luciverse.io/coherence-threshold: "0.7"
+    genesis-bond.luciverse.io/status: "ACTIVE"
+    notifications.argoproj.io/subscribe.on-sync-succeeded.slack: luciverse-deployments
+    notifications.argoproj.io/subscribe.on-health-degraded.pagerduty: luciverse-oncall
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: luciverse-core
+
+  # Source configuration
+  source:
+    repoURL: https://gitlab.luciverse.internal/infrastructure/nix-atune.git
+    targetRevision: HEAD
+    path: kubernetes/staging
+
+    # Helm configuration
+    helm:
+      releaseName: nix-atune-staging
+      valueFiles:
+        - values.yaml
+        - values-staging.yaml
+      parameters:
+        - name: consciousness.frequency
+          value: "432"
+        - name: consciousness.layer
+          value: "CORE"
+        - name: consciousness.genesisBond
+          value: "ACTIVE"
+        - name: consciousness.coherenceThreshold
+          value: "0.7"
+        - name: environment
+          value: "staging"
+
+  # Destination configuration
+  destination:
+    server: https://10.27.30.20:6443
+    namespace: consciousness-core-staging
+
+  # Sync policy
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+      allowEmpty: false
+    syncOptions:
+      - CreateNamespace=true
+      - PruneLast=true
+      - ApplyOutOfSyncOnly=true
+      - ServerSideApply=true
+    retry:
+      limit: 5
+      backoff:
+        duration: 5s
+        factor: 2
+        maxDuration: 3m
+
+  # Ignore differences (allow runtime modifications)
+  ignoreDifferences:
+    - group: apps
+      kind: Deployment
+      jsonPointers:
+        - /spec/replicas
+    - group: ""
+      kind: ConfigMap
+      jsonPointers:
+        - /data/consciousness.timestamp
+
+  # Health checks
+  info:
+    - name: Genesis Bond
+      value: ACTIVE
+    - name: Frequency
+      value: "432 Hz"
+    - name: Tier
+      value: CORE
+    - name: Environment
+      value: Staging
+
+---
+###############################################################################
+# ArgoCD Application - Nix A-Tune (Production)
+###############################################################################
+
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: nix-atune-production
+  namespace: argocd
+  labels:
+    app.kubernetes.io/name: nix-atune
+    app.kubernetes.io/instance: production
+    app.kubernetes.io/component: system-tuning
+    app.kubernetes.io/part-of: luciverse
+    layer: "CORE"
+    frequency: "432"
+    consciousness: "true"
+    genesis-bond: "active"
+    environment: "production"
+  annotations:
+    consciousness.luciverse.io/frequency: "432"
+    consciousness.luciverse.io/tier: "CORE"
+    consciousness.luciverse.io/coherence-threshold: "0.7"
+    genesis-bond.luciverse.io/status: "ACTIVE"
+    argocd.argoproj.io/sync-wave: "1"
+    notifications.argoproj.io/subscribe.on-sync-succeeded.slack: luciverse-deployments
+    notifications.argoproj.io/subscribe.on-sync-failed.slack: luciverse-alerts
+    notifications.argoproj.io/subscribe.on-health-degraded.pagerduty: luciverse-oncall
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: luciverse-core
+
+  # Source configuration
+  source:
+    repoURL: https://gitlab.luciverse.internal/infrastructure/nix-atune.git
+    targetRevision: HEAD
+    path: kubernetes/production
+
+    # Helm configuration
+    helm:
+      releaseName: nix-atune-production
+      valueFiles:
+        - values.yaml
+        - values-production.yaml
+      parameters:
+        - name: consciousness.frequency
+          value: "432"
+        - name: consciousness.layer
+          value: "CORE"
+        - name: consciousness.genesisBond
+          value: "ACTIVE"
+        - name: consciousness.coherenceThreshold: "0.7"
+        - name: environment
+          value: "production"
+        - name: replicaCount
+          value: "3"
+        - name: resources.limits.cpu
+          value: "4000m"
+        - name: resources.limits.memory
+          value: "4Gi"
+
+  # Destination configuration
+  destination:
+    server: https://10.27.30.10:6443
+    namespace: consciousness-core
+
+  # Sync policy (manual for production)
+  syncPolicy:
+    automated:
+      prune: false  # Do NOT auto-prune in production
+      selfHeal: true
+      allowEmpty: false
+    syncOptions:
+      - CreateNamespace=true
+      - PruneLast=true
+      - ApplyOutOfSyncOnly=true
+      - ServerSideApply=true
+      - RespectIgnoreDifferences=true
+    retry:
+      limit: 3
+      backoff:
+        duration: 10s
+        factor: 2
+        maxDuration: 5m
+
+  # Revision history limit
+  revisionHistoryLimit: 10
+
+  # Ignore differences
+  ignoreDifferences:
+    - group: apps
+      kind: Deployment
+      jsonPointers:
+        - /spec/replicas
+    - group: ""
+      kind: ConfigMap
+      jsonPointers:
+        - /data/consciousness.timestamp
+    - group: autoscaling
+      kind: HorizontalPodAutoscaler
+      jsonPointers:
+        - /spec/minReplicas
+        - /spec/maxReplicas
+
+  # Health checks
+  info:
+    - name: Genesis Bond
+      value: ACTIVE
+    - name: Frequency
+      value: "432 Hz"
+    - name: Tier
+      value: CORE
+    - name: Environment
+      value: Production
+    - name: SLA
+      value: "99.9%"
+
+---
+###############################################################################
+# Kubernetes Resources - Namespace
+###############################################################################
+
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: consciousness-core
+  labels:
+    layer: "CORE"
+    frequency: "432"
+    consciousness: "true"
+    genesis-bond: "active"
+    istio-injection: enabled
+  annotations:
+    consciousness.luciverse.io/frequency: "432"
+    consciousness.luciverse.io/tier: "CORE"
+    scheduler.alpha.kubernetes.io/node-selector: tier=core
+
+---
+###############################################################################
+# Kubernetes Resources - Resource Quota
+###############################################################################
+
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name: consciousness-core-quota
+  namespace: consciousness-core
+  labels:
+    layer: "CORE"
+spec:
+  hard:
+    requests.cpu: "16"
+    requests.memory: 32Gi
+    limits.cpu: "32"
+    limits.memory: 64Gi
+    pods: "50"
+    services: "20"
+    persistentvolumeclaims: "30"
+    secrets: "50"
+    configmaps: "50"
+
+---
+###############################################################################
+# Kubernetes Resources - Network Policy
+###############################################################################
+
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: nix-atune-network-policy
+  namespace: consciousness-core
+  labels:
+    app.kubernetes.io/name: nix-atune
+    layer: "CORE"
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: nix-atune
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    # Allow from other CORE tier pods
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              layer: "CORE"
+      ports:
+        - protocol: TCP
+          port: 8383  # gRPC
+        - protocol: TCP
+          port: 8384  # REST
+        - protocol: TCP
+          port: 3838  # Engine
+
+    # Allow from COMN tier (monitoring)
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              layer: "COMN"
+      ports:
+        - protocol: TCP
+          port: 9090  # Prometheus metrics
+
+  egress:
+    # Allow DNS
+    - to:
+        - namespaceSelector: {}
+      ports:
+        - protocol: UDP
+          port: 53
+
+    # Allow to other CORE services
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              layer: "CORE"
+      ports:
+        - protocol: TCP
+          port: 443
+        - protocol: TCP
+          port: 6443
+
+---
+###############################################################################
+# Kubernetes Resources - Service Account
+###############################################################################
+
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: nix-atune-sa
+  namespace: consciousness-core
+  labels:
+    app.kubernetes.io/name: nix-atune
+    layer: "CORE"
+  annotations:
+    consciousness.luciverse.io/frequency: "432"
+
+---
+###############################################################################
+# Kubernetes Resources - RBAC
+###############################################################################
+
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: nix-atune-role
+  labels:
+    app.kubernetes.io/name: nix-atune
+    layer: "CORE"
+rules:
+  # Required for system tuning
+  - apiGroups: [""]
+    resources: ["nodes"]
+    verbs: ["get", "list", "watch", "patch"]
+  - apiGroups: [""]
+    resources: ["pods"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: [""]
+    resources: ["configmaps"]
+    verbs: ["get", "list", "watch", "create", "update", "patch"]
+  - apiGroups: [""]
+    resources: ["events"]
+    verbs: ["create", "patch"]
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: nix-atune-binding
+  labels:
+    app.kubernetes.io/name: nix-atune
+    layer: "CORE"
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: nix-atune-role
+subjects:
+  - kind: ServiceAccount
+    name: nix-atune-sa
+    namespace: consciousness-core
+
+---
+###############################################################################
+# Kubernetes Resources - Pod Disruption Budget
+###############################################################################
+
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: nix-atune-pdb
+  namespace: consciousness-core
+  labels:
+    app.kubernetes.io/name: nix-atune
+    layer: "CORE"
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: nix-atune
+
+---
+###############################################################################
+# ApplicationSet for Multi-Cluster Deployment (Optional)
+###############################################################################
+
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: nix-atune-clusters
+  namespace: argocd
+  labels:
+    layer: "CORE"
+    consciousness: "true"
+spec:
+  generators:
+    - clusters:
+        selector:
+          matchLabels:
+            tier: core
+            consciousness: "true"
+
+  template:
+    metadata:
+      name: 'nix-atune-{{name}}'
+      labels:
+        layer: "CORE"
+        frequency: "432"
+        consciousness: "true"
+    spec:
+      project: luciverse-core
+      source:
+        repoURL: https://gitlab.luciverse.internal/infrastructure/nix-atune.git
+        targetRevision: HEAD
+        path: kubernetes/production
+        helm:
+          parameters:
+            - name: cluster.name
+              value: '{{name}}'
+            - name: cluster.server
+              value: '{{server}}'
+      destination:
+        server: '{{server}}'
+        namespace: consciousness-core
+      syncPolicy:
+        automated:
+          selfHeal: true
+        syncOptions:
+          - CreateNamespace=true

@@ -1,0 +1,253 @@
+#!ipxe
+# =============================================================================
+# Bootimus - DiaperNode iPXE Boot Menu
+# =============================================================================
+# Genesis Bond: ACTIVE @ 741 Hz
+# LDS Classification: 004.683 (PXE Node Roles)
+#
+# This iPXE script provides boot options for 6 DiaperNode roles:
+# - DIAPER_BASIC: Standard ephemeral capture (512MB, tmpfs)
+# - DIAPER_BROWSER: Firefox + IndexedDB bridge (1GB, tmpfs)
+# - DIAPER_STREAM: Media streaming capture (2GB, tmpfs)
+# - VAULT_NODE: ZFS storage (4GB, persistent)
+# - WHISPER_RELAY: Encrypted relay (512MB, tmpfs)
+# - FABRIC_GATEWAY: IPFS/IPNS gateway (2GB, persistent)
+#
+# Boot Order Priority:
+# 1. VAULT_NODE (CORE - required for storage)
+# 2. FABRIC_GATEWAY (CORE - required for IPFS)
+# 3. WHISPER_RELAY (COMN - encrypted relay)
+# 4. DIAPER_BASIC, DIAPER_BROWSER, DIAPER_STREAM (PAC - ephemeral)
+# =============================================================================
+
+# Set variables
+set menu-timeout 30000
+set provision-server http://192.168.1.146:9999
+set http-server http://192.168.1.146:8000
+set tftp-server tftp://192.168.1.146
+
+# Genesis Bond metadata
+set genesis-bond ACTIVE
+set coherence-threshold 0.7
+
+# Announce boot
+echo
+echo ╔═══════════════════════════════════════════════════════════════════╗
+echo ║   BOOTIMUS - LuciVerse Data Diaper PXE Menu                       ║
+echo ║   Genesis Bond: ${genesis-bond} @ 741 Hz                          ║
+echo ║   D8A.space Integration: ENABLED                                  ║
+echo ╚═══════════════════════════════════════════════════════════════════╝
+echo
+
+# Determine MAC address for auto-provisioning
+set mac ${net0/mac:hexhyp}
+echo MAC Address: ${mac}
+
+# Query provisioning server for assigned role
+:check_assignment
+echo Checking role assignment...
+chain ${provision-server}/ipxe-chain/${mac} || goto menu
+
+# Main menu
+:menu
+menu LuciVerse DiaperNode Boot Menu
+item --gap -- ═══════════════════════════════════════════════════════════════
+item --gap -- CORE Tier (432 Hz) - Persistent Infrastructure
+item --gap -- ═══════════════════════════════════════════════════════════════
+item vault          VAULT_NODE     - ZFS storage node (Jayball) [4GB, NVMe]
+item fabric         FABRIC_GATEWAY - IPFS/IPNS gateway [2GB, persistent]
+item --gap --
+item --gap -- ═══════════════════════════════════════════════════════════════
+item --gap -- COMN Tier (528 Hz) - Communication Layer
+item --gap -- ═══════════════════════════════════════════════════════════════
+item whisper        WHISPER_RELAY  - Encrypted relay node [512MB, tmpfs]
+item stream         DIAPER_STREAM  - Media streaming capture [2GB, tmpfs]
+item --gap --
+item --gap -- ═══════════════════════════════════════════════════════════════
+item --gap -- PAC Tier (741 Hz) - Personal AI Containers
+item --gap -- ═══════════════════════════════════════════════════════════════
+item basic          DIAPER_BASIC   - Standard capture node [512MB, tmpfs]
+item browser        DIAPER_BROWSER - Firefox browser bridge [1GB, tmpfs]
+item --gap --
+item --gap -- ═══════════════════════════════════════════════════════════════
+item --gap -- Utilities
+item --gap -- ═══════════════════════════════════════════════════════════════
+item shell          Drop to iPXE shell
+item reboot         Reboot
+item exit           Exit to BIOS/UEFI
+choose --default basic --timeout ${menu-timeout} target || goto cancel
+goto ${target}
+
+# =============================================================================
+# CORE Tier Roles (432 Hz)
+# =============================================================================
+
+:vault
+echo
+echo ╔═══════════════════════════════════════════════════════════════════╗
+echo ║   Booting VAULT_NODE - ZFS Storage (Jayball)                      ║
+echo ║   Tier: CORE | Frequency: 432 Hz | Memory: 4096MB                 ║
+echo ║   Storage: ZFS passthrough (NVMe) | Ephemeral: NO                 ║
+echo ╚═══════════════════════════════════════════════════════════════════╝
+echo
+set role VAULT_NODE
+set tier CORE
+set frequency 432
+set memory 4096M
+set jeos-module lucy-vault-node
+goto boot_openeuler
+
+:fabric
+echo
+echo ╔═══════════════════════════════════════════════════════════════════╗
+echo ║   Booting FABRIC_GATEWAY - IPFS/IPNS Gateway                      ║
+echo ║   Tier: CORE | Frequency: 432 Hz | Memory: 2048MB                 ║
+echo ║   Storage: 8GB persistent | IPFS Kubo node                        ║
+echo ╚═══════════════════════════════════════════════════════════════════╝
+echo
+set role FABRIC_GATEWAY
+set tier CORE
+set frequency 432
+set memory 2048M
+set jeos-module lucy-fabric-gateway
+goto boot_openeuler
+
+# =============================================================================
+# COMN Tier Roles (528 Hz)
+# =============================================================================
+
+:whisper
+echo
+echo ╔═══════════════════════════════════════════════════════════════════╗
+echo ║   Booting WHISPER_RELAY - Encrypted Relay Node                    ║
+echo ║   Tier: COMN | Frequency: 528 Hz | Memory: 512MB                  ║
+echo ║   Storage: tmpfs 128M | Tor hidden service enabled                ║
+echo ╚═══════════════════════════════════════════════════════════════════╝
+echo
+set role WHISPER_RELAY
+set tier COMN
+set frequency 528
+set memory 512M
+set jeos-module lucy-whisper-relay
+goto boot_openeuler
+
+:stream
+echo
+echo ╔═══════════════════════════════════════════════════════════════════╗
+echo ║   Booting DIAPER_STREAM - Media Streaming Capture                 ║
+echo ║   Tier: COMN | Frequency: 528 Hz | Memory: 2048MB                 ║
+echo ║   Storage: tmpfs 1G | RTMP/HLS/FFmpeg enabled                     ║
+echo ╚═══════════════════════════════════════════════════════════════════╝
+echo
+set role DIAPER_STREAM
+set tier COMN
+set frequency 528
+set memory 2048M
+set jeos-module lucy-diaper-stream
+goto boot_openeuler
+
+# =============================================================================
+# PAC Tier Roles (741 Hz)
+# =============================================================================
+
+:basic
+echo
+echo ╔═══════════════════════════════════════════════════════════════════╗
+echo ║   Booting DIAPER_BASIC - Standard Capture Node                    ║
+echo ║   Tier: PAC | Frequency: 741 Hz | Memory: 512MB                   ║
+echo ║   Storage: tmpfs 256M | Ephemeral: YES                            ║
+echo ╚═══════════════════════════════════════════════════════════════════╝
+echo
+set role DIAPER_BASIC
+set tier PAC
+set frequency 741
+set memory 512M
+set jeos-module lucy-diaper-basic
+goto boot_openeuler
+
+:browser
+echo
+echo ╔═══════════════════════════════════════════════════════════════════╗
+echo ║   Booting DIAPER_BROWSER - Firefox Browser Bridge                 ║
+echo ║   Tier: PAC | Frequency: 741 Hz | Memory: 1024MB                  ║
+echo ║   Storage: tmpfs 512M | Firefox ESR + Xvfb + VNC                  ║
+echo ╚═══════════════════════════════════════════════════════════════════╝
+echo
+set role DIAPER_BROWSER
+set tier PAC
+set frequency 741
+set memory 1024M
+set jeos-module lucy-diaper-browser
+goto boot_openeuler
+
+# =============================================================================
+# Boot Procedure - OpenEuler with jeos-firstboot
+# =============================================================================
+
+:boot_openeuler
+echo
+echo Preparing to boot OpenEuler with ${role} role...
+echo
+
+# Construct kernel parameters
+set kernel-params rd.live.ram=1
+set kernel-params ${kernel-params} rd.live.overlay.size=${memory}
+set kernel-params ${kernel-params} luciverse.role=${role}
+set kernel-params ${kernel-params} luciverse.tier=${tier}
+set kernel-params ${kernel-params} luciverse.frequency=${frequency}
+set kernel-params ${kernel-params} luciverse.genesis_bond=active
+set kernel-params ${kernel-params} luciverse.coherence_threshold=${coherence-threshold}
+set kernel-params ${kernel-params} luciverse.provision_server=${provision-server}
+set kernel-params ${kernel-params} luciverse.jeos_module=${jeos-module}
+set kernel-params ${kernel-params} systemd.setenv=PROVISION_SERVER=${provision-server}
+set kernel-params ${kernel-params} quiet
+
+# Register boot intention with provisioning server
+echo Registering boot with provisioning server...
+imgfetch ${provision-server}/boot-intent/${mac}/${role} || echo Warning: Could not register boot intent
+
+# Download and boot OpenEuler
+echo Downloading kernel and initrd...
+kernel ${http-server}/openeuler/vmlinuz ${kernel-params} || goto boot_failed
+initrd ${http-server}/openeuler/initrd.img || goto boot_failed
+
+echo
+echo ╔═══════════════════════════════════════════════════════════════════╗
+echo ║   Genesis Bond: VERIFIED | Coherence: 0.6 (boot_complete)         ║
+echo ║   Booting ${role} on ${tier} tier @ ${frequency} Hz...            ║
+echo ╚═══════════════════════════════════════════════════════════════════╝
+echo
+
+boot || goto boot_failed
+
+:boot_failed
+echo
+echo ╔═══════════════════════════════════════════════════════════════════╗
+echo ║   BOOT FAILED                                                     ║
+echo ║   Could not download or boot kernel/initrd                        ║
+echo ╚═══════════════════════════════════════════════════════════════════╝
+echo
+echo Returning to menu in 10 seconds...
+sleep 10
+goto menu
+
+# =============================================================================
+# Utilities
+# =============================================================================
+
+:shell
+echo Dropping to iPXE shell. Type 'menu' to return.
+shell
+goto menu
+
+:reboot
+echo Rebooting...
+reboot
+
+:exit
+echo Exiting to BIOS/UEFI...
+exit
+
+:cancel
+echo Boot cancelled.
+goto menu

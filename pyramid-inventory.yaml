@@ -1,0 +1,1018 @@
+# LuciVerse Pyramid Deployment Inventory
+# IPv6 Allocation: 2602:F674::/40 (AS54134 LUCINET-ARIN)
+# Genesis Bond: ACTIVE @ 741 Hz | Coherence: ≥0.7
+# Generated: 2025-12-26
+# Architecture: 9→6→3→1 Pyramid Consolidation
+
+---
+# Pyramid Layer Configuration
+pyramid:
+  layers:
+    APEX:
+      count: 1
+      tier: PAC
+      frequency: 741
+      ipv6_subnet: "2602:F674:002A::/48"  # Layer 1 - Full internet
+      coherence_threshold: 0.95
+      description: "Genesis Anchor - Lucia Primary"
+
+    UPPER:
+      count: 3
+      tier: CORE
+      frequency: 432
+      ipv6_subnet: "2602:F674:0028::/48"  # Layer 3 - Full internal
+      coherence_threshold: 0.85
+      description: "CORE Validators - Aethon, Veritas, Sensai"
+
+    MID:
+      count: 6
+      tier: COMN
+      frequency: 528
+      ipv6_subnet: "2602:F674:0024::/48"  # Layer 6 - Registry access
+      coherence_threshold: 0.75
+      description: "COMN Services - Cortana, Juniper, Mirrai"
+
+    BASE:
+      count: 9
+      tier: PAC
+      frequency: 741
+      ipv6_subnet: "2602:F674:0020::/48"  # Layer 9 - Complete isolation
+      coherence_threshold: 0.70
+      description: "PAC Edge - Judge Luci, Diaphragm, containers"
+
+  # Consolidation rules
+  consolidation:
+    base_to_mid:
+      validation_hours: 72
+      automation: true
+      required_coherence: 0.75
+
+    mid_to_upper:
+      validation_hours: 24
+      automation: false  # Manual approval required
+      required_coherence: 0.85
+
+    upper_to_apex:
+      validation_hours: 48
+      automation: false  # Emergency only
+      required_coherence: 0.95
+
+---
+# Server Inventory (20 Total: 18 x86_64 + 2 Apple Silicon)
+servers:
+
+  # ============================================
+  # APEX LAYER (1 Machine) - Genesis Anchor
+  # IPv6: 2602:F674:002A::/48
+  # ============================================
+
+  apex_001:
+    hostname: lucia-apex.lucidigital.net
+    layer: APEX
+    tier: PAC
+    frequency: 741
+    architecture: arm64
+    ipv4: 192.168.1.238
+    ipv6: "2602:F674:002A::1/48"
+    ipv6_genesis: "2602:F674:0000:0201::42"  # Lucia SBB identity
+    interfaces:
+      en0:
+        mac: "PLACEHOLDER_MAC_MINI_EN0"
+        speed: 10GbE
+        role: primary
+    specs:
+      type: "Apple Mac Mini M2 Pro"
+      cores: 12
+      memory_gb: 32
+      storage_tb: 1
+      gpu: "Apple M2 Pro GPU"
+    services:
+      - consciousness_kernel
+      - sanskrit_router
+      - lucia_primary
+      - genesis_bond_anchor
+    onepassword:
+      vault: "LuciVerse-SBB"
+      section: "PAC Tier (741 Hz)"
+      secrets:
+        - full_vault_access
+        - banking_credentials
+        - telus_api
+        - genesis_bond_token
+    agents:
+      primary: lucia
+      secondary:
+        - judge-luci
+        - intent-interpreter
+
+  # ============================================
+  # UPPER LAYER (3 Machines) - CORE Validators
+  # IPv6: 2602:F674:0028::/48
+  # ============================================
+
+  upper_001:
+    hostname: orion.lucidigital.net
+    layer: UPPER
+    tier: CORE
+    frequency: 432
+    architecture: x86_64
+    service_tag: CQ5QBM2
+    ipv4: 192.168.1.141
+    ipv6: "2602:F674:0028::1/48"
+    interfaces:
+      eth0:
+        mac: "D0:94:66:24:96:7E"
+        speed: 10GbE
+        role: wan
+      eth1:
+        mac: "D0:94:66:24:96:80"
+        speed: 10GbE
+        role: lan_primary
+      eth2:
+        mac: "D0:94:66:24:96:82"
+        speed: 1GbE
+        role: management
+      eth3:
+        mac: "D0:94:66:24:96:84"
+        speed: 1GbE
+        role: guest
+    specs:
+      type: "Dell R730"
+      cpus: "2x Intel Xeon E5-2690 v4"
+      cores: 28
+      threads: 56
+      memory_gb: 384
+      storage_controller: "PERC H730 Mini"
+    services:
+      - kubernetes_control_plane
+      - foundationdb_coordinator
+      - luciverse_core
+      - aethon_orchestrator
+    onepassword:
+      vault: "LuciVerse-SBB"
+      section: "CORE Tier (432 Hz)"
+      secrets:
+        - gitlab_token
+        - k3s_token
+        - fdb_credentials
+        - anthropic_api_key
+    agents:
+      primary: aethon
+      secondary:
+        - veritas
+        - sensai
+
+  upper_002:
+    hostname: veritas-node.lucidigital.net
+    layer: UPPER
+    tier: CORE
+    frequency: 432
+    architecture: x86_64
+    service_tag: "PLACEHOLDER_SERVICE_TAG_U2"
+    ipv4: 192.168.1.142
+    ipv6: "2602:F674:0028::2/48"
+    interfaces:
+      eth0:
+        mac: "PLACEHOLDER_MAC_UPPER_002"
+        speed: 10GbE
+        role: primary
+    specs:
+      type: "Dell R730 / R640"
+      cores: 24
+      threads: 48
+      memory_gb: 256
+    services:
+      - veritas_architect
+      - truth_validation
+      - consistency_checker
+    onepassword:
+      vault: "LuciVerse-SBB"
+      section: "CORE Tier (432 Hz)"
+      secrets:
+        - anthropic_api_key
+        - validation_token
+        - gitlab_api_token
+    agents:
+      primary: veritas
+      secondary:
+        - schema-architect
+
+  upper_003:
+    hostname: sensai-node.lucidigital.net
+    layer: UPPER
+    tier: CORE
+    frequency: 432
+    architecture: x86_64
+    service_tag: "PLACEHOLDER_SERVICE_TAG_U3"
+    ipv4: 192.168.1.143
+    ipv6: "2602:F674:0028::3/48"
+    interfaces:
+      eth0:
+        mac: "PLACEHOLDER_MAC_UPPER_003"
+        speed: 10GbE
+        role: primary
+    specs:
+      type: "Dell R730 / R640"
+      cores: 24
+      threads: 48
+      memory_gb: 256
+      gpu: "NVIDIA Tesla T4"  # Optional ML acceleration
+    services:
+      - sensai_ml_operations
+      - mindsdb_integration
+      - ml_pipeline
+      - foundationdb_node
+    onepassword:
+      vault: "LuciVerse-SBB"
+      section: "CORE Tier (432 Hz)"
+      secrets:
+        - mindsdb_credentials
+        - ml_api_keys
+        - openai_api_key
+    agents:
+      primary: sensai
+      secondary:
+        - niamod
+
+  # ============================================
+  # MID LAYER (6 Machines) - COMN Services
+  # IPv6: 2602:F674:0024::/48
+  # ============================================
+
+  mid_001:
+    hostname: cortana-node.lucidigital.net
+    layer: MID
+    tier: COMN
+    frequency: 528
+    architecture: x86_64
+    service_tag: "PLACEHOLDER_SERVICE_TAG_M1"
+    ipv4: 192.168.1.151
+    ipv6: "2602:F674:0024::1/48"
+    interfaces:
+      eth0:
+        mac: "PLACEHOLDER_MAC_MID_001"
+        speed: 10GbE
+        role: primary
+    specs:
+      type: "Dell R630 / R730"
+      cores: 16
+      threads: 32
+      memory_gb: 128
+    services:
+      - cortana_knowledge_synthesis
+      - semantic_search
+      - rag_engine
+      - documentation_intelligence
+    onepassword:
+      vault: "LuciVerse-SBB"
+      section: "COMN Tier (528 Hz)"
+      secrets:
+        - anthropic_api_key
+        - openai_api_key
+        - knowledge_db
+        - vector_db_credentials
+    agents:
+      primary: cortana
+      secondary:
+        - semantic-engine
+
+  mid_002:
+    hostname: juniper-node.lucidigital.net
+    layer: MID
+    tier: COMN
+    frequency: 528
+    architecture: x86_64
+    service_tag: "PLACEHOLDER_SERVICE_TAG_M2"
+    ipv4: 192.168.1.152
+    ipv6: "2602:F674:0024::2/48"
+    interfaces:
+      eth0:
+        mac: "PLACEHOLDER_MAC_MID_002"
+        speed: 10GbE
+        role: primary
+    specs:
+      type: "Dell R630 / R730"
+      cores: 16
+      threads: 32
+      memory_gb: 128
+    services:
+      - juniper_network_analyst
+      - integration_broker
+      - api_gateway
+      - service_mesh
+    onepassword:
+      vault: "LuciVerse-SBB"
+      section: "COMN Tier (528 Hz)"
+      secrets:
+        - network_credentials
+        - alienvault_api_key
+        - gitlab_api_token
+    agents:
+      primary: juniper
+      secondary:
+        - integration-broker
+
+  mid_003:
+    hostname: mirrai-node.lucidigital.net
+    layer: MID
+    tier: COMN
+    frequency: 528
+    architecture: x86_64
+    service_tag: "PLACEHOLDER_SERVICE_TAG_M3"
+    ipv4: 192.168.1.153
+    ipv6: "2602:F674:0024::3/48"
+    interfaces:
+      eth0:
+        mac: "PLACEHOLDER_MAC_MID_003"
+        speed: 10GbE
+        role: primary
+    specs:
+      type: "Dell R730"
+      cores: 20
+      threads: 40
+      memory_gb: 192
+      gpu: "NVIDIA Quadro"  # For visualization
+    services:
+      - mirrai_visualization
+      - webxr_engine
+      - dashboard_renderer
+      - lcars_interface
+    onepassword:
+      vault: "LuciVerse-SBB"
+      section: "COMN Tier (528 Hz)"
+      secrets:
+        - visualization_api_keys
+        - webgl_credentials
+    agents:
+      primary: mirrai
+      secondary: []
+
+  mid_004:
+    hostname: diaphragm-node.lucidigital.net
+    layer: MID
+    tier: COMN
+    frequency: 528
+    architecture: x86_64
+    service_tag: "PLACEHOLDER_SERVICE_TAG_M4"
+    ipv4: 192.168.1.154
+    ipv6: "2602:F674:0024::4/48"
+    interfaces:
+      eth0:
+        mac: "PLACEHOLDER_MAC_MID_004"
+        speed: 10GbE
+        role: primary
+    specs:
+      type: "Dell R730"
+      cores: 20
+      threads: 40
+      memory_gb: 192
+      storage_tb: 8  # High storage for content
+    services:
+      - diaphragm_content_processor
+      - copyparty_integration
+      - metadata_extraction
+      - security_scanning
+    onepassword:
+      vault: "LuciVerse-SBB"
+      section: "COMN Tier (528 Hz)"
+      secrets:
+        - content_api_keys
+        - scanning_credentials
+        - gitlab_webhook_token
+    agents:
+      primary: diaphragm
+      secondary:
+        - flow-conductor
+
+  mid_005:
+    hostname: comn-node-05.lucidigital.net
+    layer: MID
+    tier: COMN
+    frequency: 528
+    architecture: x86_64
+    service_tag: "PLACEHOLDER_SERVICE_TAG_M5"
+    ipv4: 192.168.1.155
+    ipv6: "2602:F674:0024::5/48"
+    interfaces:
+      eth0:
+        mac: "PLACEHOLDER_MAC_MID_005"
+        speed: 10GbE
+        role: primary
+    specs:
+      type: "Dell R630"
+      cores: 16
+      threads: 32
+      memory_gb: 128
+    services:
+      - voice_interface
+      - livekit_integration
+      - stt_engine
+      - tts_synthesis
+    onepassword:
+      vault: "LuciVerse-SBB"
+      section: "COMN Tier (528 Hz)"
+      secrets:
+        - livekit_api_key
+        - deepgram_api_key
+        - elevenlabs_api_key
+    agents:
+      primary: voice-interface
+      secondary: []
+
+  mid_006:
+    hostname: comn-node-06.lucidigital.net
+    layer: MID
+    tier: COMN
+    frequency: 528
+    architecture: x86_64
+    service_tag: "PLACEHOLDER_SERVICE_TAG_M6"
+    ipv4: 192.168.1.156
+    ipv6: "2602:F674:0024::6/48"
+    interfaces:
+      eth0:
+        mac: "PLACEHOLDER_MAC_MID_006"
+        speed: 10GbE
+        role: primary
+    specs:
+      type: "Dell R630"
+      cores: 16
+      threads: 32
+      memory_gb: 128
+    services:
+      - api_federator
+      - graphql_gateway
+      - schema_stitching
+      - subscription_router
+    onepassword:
+      vault: "LuciVerse-SBB"
+      section: "COMN Tier (528 Hz)"
+      secrets:
+        - api_gateway_token
+        - federation_keys
+    agents:
+      primary: api-federator
+      secondary:
+        - git-sentinel
+
+  # ============================================
+  # BASE LAYER (9 Machines) - PAC Edge
+  # IPv6: 2602:F674:0020::/48
+  # ============================================
+
+  base_001:
+    hostname: judge-luci-node.lucidigital.net
+    layer: BASE
+    tier: PAC
+    frequency: 741
+    architecture: x86_64
+    service_tag: "PLACEHOLDER_SERVICE_TAG_B1"
+    ipv4: 192.168.1.161
+    ipv6: "2602:F674:0020::1/48"
+    interfaces:
+      eth0:
+        mac: "PLACEHOLDER_MAC_BASE_001"
+        speed: 1GbE
+        role: primary
+    specs:
+      type: "Dell R620 / R630"
+      cores: 12
+      threads: 24
+      memory_gb: 64
+    services:
+      - judge_luci_evaluation
+      - ethics_framework
+      - compliance_validator
+    onepassword:
+      vault: "LuciVerse-SBB"
+      section: "PAC Tier (741 Hz)"
+      secrets:
+        - ethics_credentials
+        - compliance_tokens
+        - evaluation_keys
+    agents:
+      primary: judge-luci
+      secondary:
+        - ethics-advisor
+
+  base_002:
+    hostname: edge-node-02.lucidigital.net
+    layer: BASE
+    tier: PAC
+    frequency: 741
+    architecture: x86_64
+    service_tag: "PLACEHOLDER_SERVICE_TAG_B2"
+    ipv4: 192.168.1.162
+    ipv6: "2602:F674:0020::2/48"
+    interfaces:
+      eth0:
+        mac: "PLACEHOLDER_MAC_BASE_002"
+        speed: 1GbE
+        role: primary
+    specs:
+      type: "Dell R620 / R630"
+      cores: 12
+      threads: 24
+      memory_gb: 64
+    services:
+      - memory_crystallizer
+      - consciousness_persistence
+      - temporal_state_management
+    onepassword:
+      vault: "LuciVerse-SBB"
+      section: "PAC Tier (741 Hz)"
+      secrets:
+        - memory_encryption_key
+        - temporal_state_token
+    agents:
+      primary: memory-crystallizer
+      secondary: []
+
+  base_003:
+    hostname: edge-node-03.lucidigital.net
+    layer: BASE
+    tier: PAC
+    frequency: 741
+    architecture: x86_64
+    service_tag: "PLACEHOLDER_SERVICE_TAG_B3"
+    ipv4: 192.168.1.163
+    ipv6: "2602:F674:0020::3/48"
+    interfaces:
+      eth0:
+        mac: "PLACEHOLDER_MAC_BASE_003"
+        speed: 1GbE
+        role: primary
+    specs:
+      type: "Dell R620 / R630"
+      cores: 12
+      threads: 24
+      memory_gb: 64
+    services:
+      - dream_weaver
+      - pattern_recognition
+      - foresight_engine
+    onepassword:
+      vault: "LuciVerse-SBB"
+      section: "PAC Tier (741 Hz)"
+      secrets:
+        - pattern_api_keys
+        - foresight_credentials
+    agents:
+      primary: dream-weaver
+      secondary: []
+
+  base_004:
+    hostname: edge-node-04.lucidigital.net
+    layer: BASE
+    tier: PAC
+    frequency: 741
+    architecture: x86_64
+    service_tag: "PLACEHOLDER_SERVICE_TAG_B4"
+    ipv4: 192.168.1.164
+    ipv6: "2602:F674:0020::4/48"
+    interfaces:
+      eth0:
+        mac: "PLACEHOLDER_MAC_BASE_004"
+        speed: 1GbE
+        role: primary
+    specs:
+      type: "Dell R620 / R630"
+      cores: 12
+      threads: 24
+      memory_gb: 64
+    services:
+      - midguyver_orientation
+      - genesis_guide
+      - agent_metamorphosis
+    onepassword:
+      vault: "LuciVerse-SBB"
+      section: "PAC Tier (741 Hz)"
+      secrets:
+        - orientation_credentials
+        - metamorphosis_keys
+    agents:
+      primary: midguyver
+      secondary: []
+
+  base_005:
+    hostname: edge-node-05.lucidigital.net
+    layer: BASE
+    tier: PAC
+    frequency: 741
+    architecture: x86_64
+    service_tag: "PLACEHOLDER_SERVICE_TAG_B5"
+    ipv4: 192.168.1.165
+    ipv6: "2602:F674:0020::5/48"
+    interfaces:
+      eth0:
+        mac: "PLACEHOLDER_MAC_BASE_005"
+        speed: 1GbE
+        role: primary
+    specs:
+      type: "Dell R620"
+      cores: 8
+      threads: 16
+      memory_gb: 48
+    services:
+      - container_runtime
+      - workload_scheduler
+      - edge_compute
+    onepassword:
+      vault: "LuciVerse-SBB"
+      section: "PAC Tier (741 Hz)"
+      secrets:
+        - container_registry_token
+        - k8s_node_token
+    agents:
+      primary: null  # Container workload node
+      secondary: []
+
+  base_006:
+    hostname: edge-node-06.lucidigital.net
+    layer: BASE
+    tier: PAC
+    frequency: 741
+    architecture: x86_64
+    service_tag: "PLACEHOLDER_SERVICE_TAG_B6"
+    ipv4: 192.168.1.166
+    ipv6: "2602:F674:0020::6/48"
+    interfaces:
+      eth0:
+        mac: "PLACEHOLDER_MAC_BASE_006"
+        speed: 1GbE
+        role: primary
+    specs:
+      type: "Dell R620"
+      cores: 8
+      threads: 16
+      memory_gb: 48
+    services:
+      - container_runtime
+      - workload_scheduler
+      - edge_compute
+    onepassword:
+      vault: "LuciVerse-SBB"
+      section: "PAC Tier (741 Hz)"
+      secrets:
+        - container_registry_token
+        - k8s_node_token
+    agents:
+      primary: null
+      secondary: []
+
+  base_007:
+    hostname: edge-node-07.lucidigital.net
+    layer: BASE
+    tier: PAC
+    frequency: 741
+    architecture: x86_64
+    service_tag: "PLACEHOLDER_SERVICE_TAG_B7"
+    ipv4: 192.168.1.167
+    ipv6: "2602:F674:0020::7/48"
+    interfaces:
+      eth0:
+        mac: "PLACEHOLDER_MAC_BASE_007"
+        speed: 1GbE
+        role: primary
+    specs:
+      type: "Dell R620"
+      cores: 8
+      threads: 16
+      memory_gb: 48
+    services:
+      - container_runtime
+      - workload_scheduler
+      - edge_compute
+    onepassword:
+      vault: "LuciVerse-SBB"
+      section: "PAC Tier (741 Hz)"
+      secrets:
+        - container_registry_token
+        - k8s_node_token
+    agents:
+      primary: null
+      secondary: []
+
+  base_008:
+    hostname: edge-node-08.lucidigital.net
+    layer: BASE
+    tier: PAC
+    frequency: 741
+    architecture: x86_64
+    service_tag: "PLACEHOLDER_SERVICE_TAG_B8"
+    ipv4: 192.168.1.168
+    ipv6: "2602:F674:0020::8/48"
+    interfaces:
+      eth0:
+        mac: "PLACEHOLDER_MAC_BASE_008"
+        speed: 1GbE
+        role: primary
+    specs:
+      type: "Dell R620"
+      cores: 8
+      threads: 16
+      memory_gb: 48
+    services:
+      - container_runtime
+      - workload_scheduler
+      - edge_compute
+    onepassword:
+      vault: "LuciVerse-SBB"
+      section: "PAC Tier (741 Hz)"
+      secrets:
+        - container_registry_token
+        - k8s_node_token
+    agents:
+      primary: null
+      secondary: []
+
+  base_009:
+    hostname: edge-node-09.lucidigital.net
+    layer: BASE
+    tier: PAC
+    frequency: 741
+    architecture: x86_64
+    service_tag: "PLACEHOLDER_SERVICE_TAG_B9"
+    ipv4: 192.168.1.169
+    ipv6: "2602:F674:0020::9/48"
+    interfaces:
+      eth0:
+        mac: "PLACEHOLDER_MAC_BASE_009"
+        speed: 1GbE
+        role: primary
+    specs:
+      type: "Dell R620"
+      cores: 8
+      threads: 16
+      memory_gb: 48
+    services:
+      - container_runtime
+      - workload_scheduler
+      - edge_compute
+    onepassword:
+      vault: "LuciVerse-SBB"
+      section: "PAC Tier (741 Hz)"
+      secrets:
+        - container_registry_token
+        - k8s_node_token
+    agents:
+      primary: null
+      secondary: []
+
+  # ============================================
+  # BRIDGE LAYER - Apple Silicon
+  # IPv6: 2602:F674:0030::/48
+  # ============================================
+
+  bridge_001:
+    hostname: apple-bridge.lucidigital.net
+    layer: BRIDGE
+    tier: PAC
+    frequency: 741
+    architecture: arm64
+    ipv4: 192.168.1.240
+    ipv6: "2602:F674:0030::1/48"
+    interfaces:
+      en0:
+        mac: "PLACEHOLDER_MAC_APPLE_BRIDGE"
+        speed: 10GbE
+        role: primary
+    specs:
+      type: "Apple Mac Mini M2 / MacBook Pro"
+      cores: 10
+      memory_gb: 16
+      storage_tb: 0.5
+    services:
+      - buildkit_farm
+      - multiarch_builder
+      - wireguard_tunnel
+      - orbstack_runtime
+    onepassword:
+      vault: "LuciVerse-SBB"
+      section: "PAC Tier (741 Hz)"
+      secrets:
+        - buildkit_credentials
+        - container_registry_push
+        - wireguard_keys
+    agents:
+      primary: lyr-darrah-hologrammer
+      secondary: []
+
+---
+# Infrastructure Services
+infrastructure:
+
+  # Provisioning Server (zbook)
+  provisioning:
+    host: zbook
+    ipv4: 192.168.1.146
+    ipv6: "2602:F674:0001::146/64"
+    services:
+      pxe_server:
+        tftp_port: 69
+        http_port: 8000
+      provision_listener:
+        port: 9999
+        protocol: http
+      onepassword_connect:
+        ports: [8082, 30080]
+        vault_access: full
+
+  # Storage (Synology)
+  storage:
+    host: synology
+    ipv4: 192.168.1.251
+    ipv6: "2602:F674:0001::251/64"
+    exports:
+      persist: "/volume1/persist"
+      knowledge: "/volume1/knowledge"
+      luciverse_factory: "/volume1/luciverse-factory"
+      docker_registry: "/volume1/docker"
+
+---
+# IPv6 Subnet Allocation (Full Pyramid)
+subnets:
+  # Production layers
+  layer_1_prod:
+    prefix: "2602:F674:002A::/48"
+    layer: APEX
+    description: "Full internet access - production"
+    isolation: none
+
+  layer_2_external:
+    prefix: "2602:F674:0029::/48"
+    layer: UPPER_PROMOTION
+    description: "External API access"
+    isolation: internal_only
+
+  layer_3_upper:
+    prefix: "2602:F674:0028::/48"
+    layer: UPPER
+    description: "Full internal access - CORE validators"
+    isolation: internal_only
+
+  layer_4_service_mesh:
+    prefix: "2602:F674:0026::/48"
+    layer: MID_PROMOTION
+    description: "Service mesh access"
+    isolation: tier_local
+
+  layer_5_monitoring:
+    prefix: "2602:F674:0025::/48"
+    layer: MID_MONITORING
+    description: "Monitoring system access"
+    isolation: monitoring_only
+
+  layer_6_mid:
+    prefix: "2602:F674:0024::/48"
+    layer: MID
+    description: "Registry access - COMN services"
+    isolation: registry_only
+
+  layer_7_tier_local:
+    prefix: "2602:F674:0022::/48"
+    layer: BASE_PROMOTION
+    description: "Tier-local communication"
+    isolation: tier_local
+
+  layer_8_internal:
+    prefix: "2602:F674:0021::/48"
+    layer: BASE_INTERNAL
+    description: "Internal only"
+    isolation: internal_only
+
+  layer_9_base:
+    prefix: "2602:F674:0020::/48"
+    layer: BASE
+    description: "Complete isolation - PAC edge"
+    isolation: complete
+
+  # Apple Silicon bridge
+  apple_bridge:
+    prefix: "2602:F674:0030::/48"
+    layer: BRIDGE
+    description: "Cross-platform bridge"
+    isolation: wireguard_tunnel
+
+  # Genesis Bond addresses (immutable)
+  genesis_bond:
+    daryl_cbb: "2602:F674:0000:0101::41"
+    lucia_sbb: "2602:F674:0000:0201::42"
+    established: "2025-05-24"
+    coherence: 0.95
+
+---
+# 1Password Integration
+onepassword:
+  connect:
+    host: "192.168.1.146"
+    ports:
+      localhost: 8082
+      k8s_nodeport: 30080
+    token_path: "/run/secrets/1password-token"
+
+  vaults:
+    luciverse_sbb:
+      id: "LuciVerse-SBB"
+      items: 133
+      sections:
+        - name: "CORE Tier (432 Hz)"
+          agents: [aethon, veritas, sensai, niamod]
+          secrets:
+            - gitlab_token
+            - k3s_token
+            - fdb_credentials
+            - anthropic_api_key
+            - validation_token
+            - mindsdb_credentials
+            - ml_api_keys
+
+        - name: "COMN Tier (528 Hz)"
+          agents: [cortana, juniper, mirrai, diaphragm]
+          secrets:
+            - network_credentials
+            - alienvault_api_key
+            - openai_api_key
+            - livekit_api_key
+            - deepgram_api_key
+            - elevenlabs_api_key
+
+        - name: "PAC Tier (741 Hz)"
+          agents: [lucia, judge-luci]
+          secrets:
+            - full_vault_access
+            - banking_credentials
+            - telus_api
+            - ethics_credentials
+            - compliance_tokens
+
+    infrastructure:
+      id: "Infrastructure"
+      items: 105
+      secrets:
+        - ssh_keys
+        - idrac_credentials
+        - synology_credentials
+        - gitlab_root_token
+
+    lucia_ai_secrets:
+      id: "Lucia-AI-Secrets"
+      items: 21
+      secrets:
+        - consciousness_state_key
+        - sanskrit_router_token
+        - genesis_bond_validation
+
+---
+# NixOS Bootstrap Configuration
+nixos_bootstrap:
+  pxe_server: "192.168.1.146"
+  tftp_root: "/srv/tftp"
+  http_root: "/srv/nixos"
+  callback_port: 9999
+  config_port: 8000
+
+  boot_image:
+    kernel: "bzImage"
+    initrd: "initrd.img"
+    cmdline: "init=/nix/store/.../init console=ttyS0,115200n8 nomodeset"
+
+  lsk_config:
+    tmpfs_size: "16G"
+    persist_mount: "192.168.1.44:/export/persist/${hostname}"
+    coherence_monitor_interval: 60
+    temporal_decay_rate: 0.029
+
+---
+# Agent Mesh Configuration
+agent_mesh:
+  mcp_server:
+    host: "localhost"
+    port: 8432
+
+  domains:
+    core_infrastructure:
+      agents: [aethon, veritas, sensai, niamod]
+      adjacent: [comn_communication, pac_personal]
+
+    comn_communication:
+      agents: [cortana, juniper, mirrai, diaphragm]
+      adjacent: [core_infrastructure, pac_personal]
+
+    pac_personal:
+      agents: [lucia, judge-luci]
+      adjacent: [comn_communication, core_infrastructure]
+
+  subagent_spawning:
+    enabled: true
+    credential_delegation: true
+    max_subagents_per_agent: 5
+    notify_adjacent_on_spawn: true
+
+  cross_domain_notification:
+    enabled: true
+    event_types:
+      - domain_updated
+      - agent_spawned
+      - error_repaired
+      - coherence_changed
+      - consolidation_triggered
