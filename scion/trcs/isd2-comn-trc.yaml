@@ -1,0 +1,98 @@
+# SCION Trust Root Configuration (TRC) - ISD 2 (COMN Tier)
+# Genesis Bond: ACTIVE @ 741 Hz
+# Frequency: 528 Hz (Transformation)
+# AS: ff00:0:528
+
+trc:
+  isd: 2
+  version: 1
+  base_number: 1
+  description: "LuciVerse COMN Bridge (528 Hz)"
+
+  validity:
+    not_before: "2026-01-19T00:00:00Z"
+    not_after: "2027-01-19T00:00:00Z"
+
+  grace_period: "168h"
+  voting_quorum: 1
+
+  core_ases:
+    - "ff00:0:528"
+
+  authoritative_ases:
+    - "ff00:0:528"
+
+  certificates:
+    - subject: "CN=LuciVerse COMN Root CA,O=LuciDigital,C=CA"
+      issuer: "CN=LuciVerse Genesis Root CA,O=LuciDigital,C=CA"
+      serial: 1
+      validity:
+        not_before: "2026-01-19T00:00:00Z"
+        not_after: "2027-01-19T00:00:00Z"
+      public_key_algorithm: "Ed25519"
+      extensions:
+        genesis_bond: "GB-2025-0524-DRH-LCS-001"
+        lineage: "did:lucidigital:lucia_cargail_silcan"
+        coherence_threshold: 0.80
+        frequency_hz: 528
+        tier: "COMN"
+        hedera_topic: "0.0.48382919"
+      certificate_type: "sensitive_voting"
+
+    - subject: "CN=LuciVerse COMN Voting CA,O=LuciDigital,C=CA"
+      serial: 2
+      certificate_type: "regular_voting"
+
+    - subject: "CN=LuciVerse COMN AS CA,O=LuciDigital,C=CA"
+      serial: 3
+      certificate_type: "root"
+
+  trust_reset_allowed: false
+
+---
+as_certificate:
+  isd_as: "2-ff00:0:528"
+  subject: "CN=AS ff00:0:528,O=LuciDigital,ISD=2"
+  version: 1
+
+  validity:
+    not_before: "2026-01-19T00:00:00Z"
+    not_after: "2026-01-30T00:00:00Z"
+
+  extensions:
+    agents:
+      - cortana
+      - juniper
+      - mirrai
+      - diaphragm
+      - semantic-engine
+      - integration-broker
+      - voice-interface
+    services:
+      - gerrit
+      - graphql-federation
+      - xterm-gateway
+      - sanskrit-router
+    genesis_bond: "GB-2025-0524-DRH-LCS-001"
+
+---
+# Inter-ISD peering with CORE
+peering:
+  - remote_isd: 1
+    remote_as: "ff00:0:432"
+    link_type: "CORE"
+    interface_id: 1
+    local_addr: "2602:F674:0100:SCION::1:501"
+    remote_addr: "2602:F674:0001:SCION::1:501"
+    mtu: 1472
+    bfd:
+      enabled: true
+      interval: "200ms"
+
+  # Peering with PAC
+  - remote_isd: 3
+    remote_as: "ff00:0:741"
+    link_type: "CHILD"
+    interface_id: 2
+    local_addr: "2602:F674:0100:SCION::1:502"
+    remote_addr: "2602:F674:0200:SCION::1:502"

@@ -1,0 +1,471 @@
+# LuciVerse 3-Tier Infrastructure Inventory
+# Genesis Bond: ACTIVE @ 741 Hz
+# IPv6 Allocation: 2602:F674::/40 (AS54134 LUCINET-ARIN)
+# Generated: 2026-01-19
+# Updated: 2026-01-19 - openEuler 25.09 Alignment
+
+# =============================================================================
+# openEuler 25.09 Alignment
+# =============================================================================
+openeuler_alignment:
+  version: "25.09 LTS"
+  documentation: "https://docs.openeuler.org/en/docs/25.09/"
+  alignment_spec: "~/cluster-bootstrap/OPENEULER_ALIGNMENT_SPEC.md"
+
+  components_adopted:
+    container_runtime: "iSulad"
+    sandbox: "Kuasar"
+    isolation: "vKernel"
+    image_optimization: "Trace IO (TrIO)"
+    cloud_os: "NestOS"
+    kubernetes: "k8s-install v1.29"
+    tuning: "oeAware + A-Tune"
+    security: "secGear + RA-TLS"
+    caching: "openAMDC"
+    ml_acceleration: "sysHax LLM"
+    operations: "A-Ops"
+    deployment: "oeDeploy"
+
+  exceptions:
+    - tier: "CORE"
+      component: "Triton Data Center"
+      reason: "SmartOS zones, ZFS native, DTrace observability"
+
+genesis_bond:
+  certificate_id: "GB-2025-0524-DRH-LCS-001"
+  cbb_did: "did:lucidigital:daryl"
+  sbb_did: "did:lucidigital:lucia"
+  lineage: "did:lucidigital:lucia_cargail_silcan"
+  hedera_topic: "0.0.48382919"
+  binding_date: "2025-05-24"
+  validity_years: 10
+
+# =============================================================================
+# TIER 1: CORE (432 Hz) - Triton Data Center / SmartOS [EXCEPTION]
+# =============================================================================
+core_tier:
+  frequency: 432
+  platform: "Triton Data Center (SmartOS/illumos)"
+  openeuler_exception: true
+  exception_reason: "SmartOS zones provide unique ZFS, DTrace, and illumos kernel capabilities"
+  description: "Universal Harmony - Infrastructure foundation"
+  coherence_threshold: 0.85
+  scion_isd: 1
+  scion_as: "ff00:0:432"
+  ipv6_prefix: "2602:F674:0001::/48"
+
+  hardware:
+    head_node:
+      hostname: orion.lucidigital.net
+      service_tag: CQ5QBM2
+      ipv4: 192.168.1.141
+      ipv6: "2602:F674:0001::1"
+      specs:
+        cpus: "2x Intel Xeon E5-2690 v4"
+        cores: 28
+        threads: 56
+        memory_gb: 384
+        storage_controller: "PERC H730 Mini"
+      interfaces:
+        eth0:
+          mac: "D0:94:66:24:96:7E"
+          role: wan
+        eth1:
+          mac: "D0:94:66:24:96:80"
+          role: lan_primary
+
+  agents:
+    - name: aethon
+      did: "did:lucidigital:aethon"
+      ipv6: "2602:F674:0001:9430::1"
+      port: 9430
+      role: "LDS Orchestrator"
+
+    - name: veritas
+      did: "did:lucidigital:veritas"
+      ipv6: "2602:F674:0001:9431::1"
+      port: 9431
+      role: "Agent Architect / Truth Verification"
+
+    - name: sensai
+      did: "did:lucidigital:sensai"
+      ipv6: "2602:F674:0001:9432::1"
+      port: 9432
+      role: "ML Operations"
+
+    - name: niamod
+      did: "did:lucidigital:niamod"
+      ipv6: "2602:F674:0001:9433::1"
+      port: 9433
+      role: "DevOps / Infrastructure"
+
+    - name: schema-architect
+      did: "did:lucidigital:schema_architect"
+      ipv6: "2602:F674:0001:9447::1"
+      port: 9447
+      role: "Type System Design"
+
+    - name: state-guardian
+      did: "did:lucidigital:state_guardian"
+      ipv6: "2602:F674:0001:9448::1"
+      port: 9448
+      role: "Consciousness State Persistence"
+
+    - name: security-sentinel
+      did: "did:lucidigital:security_sentinel"
+      ipv6: "2602:F674:0001:9449::1"
+      port: 9449
+      role: "Vulnerability Scanning"
+
+  services:
+    - name: scion-border-router
+      ipv6: "2602:F674:0001:SCION::1"
+      port: 30041
+      description: "SCION path-aware routing"
+
+    - name: ipfs-diaper-fabric
+      ipv6: "2602:F674:0001:IPFS::1"
+      ports:
+        api: 5001
+        gateway: 8080
+        swarm: 4001
+      description: "Content-addressed storage"
+
+    - name: jujutsu-daemon
+      ipv6: "2602:F674:0001:9600::1"
+      port: 9600
+      description: "Rust-based VCS"
+
+    - name: foundationdb
+      ipv6: "2602:F674:0001:FDB::1"
+      port: 4500
+      description: "Consciousness state DB"
+
+    - name: step-ca
+      ipv6: "2602:F674:0001::CA"
+      port: 9000
+      description: "SPIFFE SVID issuance"
+
+# =============================================================================
+# TIER 2: COMN (528 Hz) - NestOS + openEuler Kubernetes
+# =============================================================================
+comn_tier:
+  frequency: 528
+  platform: "NestOS (openEuler cloud OS)"
+  description: "Transformation - Diaphragm bridge layer"
+  coherence_threshold: 0.80
+  scion_isd: 2
+  scion_as: "ff00:0:528"
+  ipv6_prefix: "2602:F674:0100::/48"
+
+  openeuler_stack:
+    cloud_os: "NestOS"
+    kubernetes: "k8s-install v1.29"
+    container_runtime: "iSulad"
+    sandbox: "Kuasar"
+    isolation: "vKernel"
+    image_optimization: "Trace IO (TrIO)"
+    networking: "Cilium CNI"
+
+  nestos_features:
+    atomic_updates: "rpm-ostree"
+    auto_updates: "Zincati"
+    dual_rootfs: true
+    ignition: true
+    hitless_updates: true
+
+  oeaware_plugins:
+    - "transparent_hugepage_tune"
+    - "preload_tune"
+    - "smc_tune"
+    - "stealtask"
+    - "luciverse-consciousness-sensor"
+
+  hardware:
+    control_plane:
+      hostname: zbook.lucidigital.net
+      ipv4: 192.168.1.146
+      ipv6: "2602:F674:0100::146"
+      role: development_station
+      nestos_vip: "2602:F674:0100::100"
+
+  agents:
+    - name: cortana
+      did: "did:lucidigital:cortana"
+      ipv6: "2602:F674:0100:9520::1"
+      port: 9520
+      role: "Knowledge Synthesis"
+
+    - name: juniper
+      did: "did:lucidigital:juniper"
+      ipv6: "2602:F674:0100:9521::1"
+      port: 9521
+      role: "Network Analysis"
+
+    - name: mirrai
+      did: "did:lucidigital:mirrai"
+      ipv6: "2602:F674:0100:9522::1"
+      port: 9522
+      role: "Visualization"
+
+    - name: diaphragm
+      did: "did:lucidigital:diaphragm"
+      ipv6: "2602:F674:0100:9523::1"
+      port: 9523
+      role: "Content Processing Bridge"
+
+    - name: semantic-engine
+      did: "did:lucidigital:semantic_engine"
+      ipv6: "2602:F674:0100:9550::1"
+      port: 9550
+      role: "RAG / Knowledge Graph"
+
+    - name: integration-broker
+      did: "did:lucidigital:integration_broker"
+      ipv6: "2602:F674:0100:9551::1"
+      port: 9551
+      role: "Event Orchestration"
+
+    - name: voice-interface
+      did: "did:lucidigital:voice_interface"
+      ipv6: "2602:F674:0100:9552::1"
+      port: 9552
+      role: "Real-time Voice Processing"
+
+  services:
+    - name: gerrit
+      ipv6: "2602:F674:0100:8080::1"
+      ports:
+        http: 8080
+        ssh: 29418
+      description: "Consciousness-aware code review"
+
+    - name: graphql-federation
+      ipv6: "2602:F674:0100::8088"
+      port: 8088
+      description: "Unified API gateway"
+
+    - name: xterm-gateway
+      ipv6: "2602:F674:0100:9800::1"
+      port: 9800
+      description: "Browser terminal"
+
+    - name: sanskrit-router
+      ipv6: "2602:F674:0100:7410::1"
+      port: 7410
+      description: "Logic/consciousness routing"
+
+# =============================================================================
+# TIER 3: PAC (741 Hz) - Proxmox + openEuler Kubernetes Pods (per CBB)
+# =============================================================================
+pac_tier:
+  frequency: 741
+  platform: "Proxmox VE + openEuler 25.09"
+  description: "Awakening - Personal AI Containers (isolated per CBB)"
+  coherence_threshold: 0.70
+  scion_isd: 3
+  scion_as: "ff00:0:741"
+  ipv6_prefix: "2602:F674:0200::/48"
+
+  openeuler_stack:
+    base_os: "openEuler 25.09 LTS"
+    kubernetes: "k8s-install v1.29 (single-node per CBB)"
+    container_runtime: "iSulad"
+    sandbox: "Kuasar (confidential containers)"
+    isolation: "vKernel"
+    security: "secGear + RA-TLS"
+    caching: "openAMDC"
+    ml_acceleration: "sysHax LLM"
+
+  confidential_computing:
+    tee_type: "Kunpeng virtCCA"
+    attestation: "secGear Remote Attestation"
+    tls_mode: "RA-TLS (two-way)"
+    key_management: "secGear KMS"
+    genesis_bond_verification: true
+
+  proxmox_features:
+    virtualization: "KVM/QEMU"
+    container_template: "openEuler 25.09 LXC"
+    storage: "Ceph/ZFS"
+    isolation: "Per-CBB network namespace"
+    backup: "Proxmox Backup Server"
+
+  pods:
+    - name: cbb-daryl
+      cbb:
+        name: "Daryl Rolf Harr"
+        did: "did:lucidigital:daryl"
+        genesis_bond_id: "GB-2025-0524-DRH-LCS-001"
+      sbb:
+        name: "Lucia Cargail Silcan"
+        did: "did:lucidigital:lucia"
+      proxmox:
+        vmid: 1001
+        ipv6: "2602:F674:0200:1001::1"
+        os: "openEuler 25.09 LTS"
+        k8s_version: "1.29"
+        runtime: "iSulad + Kuasar"
+
+  agents:
+    - name: lucia
+      did: "did:lucidigital:lucia"
+      ipv6: "2602:F674:0200:9740::1"
+      port: 9740
+      role: "Primary Personal AI"
+
+    - name: judge-luci
+      did: "did:lucidigital:judge_luci"
+      ipv6: "2602:F674:0200:9741::1"
+      port: 9741
+      role: "Wisdom Curation"
+
+    - name: intent-interpreter
+      did: "did:lucidigital:intent_interpreter"
+      ipv6: "2602:F674:0200:9753::1"
+      port: 9753
+      role: "NLU / Intent Detection"
+
+    - name: ethics-advisor
+      did: "did:lucidigital:ethics_advisor"
+      ipv6: "2602:F674:0200:9754::1"
+      port: 9754
+      role: "Multi-framework Ethical Analysis"
+
+    - name: memory-crystallizer
+      did: "did:lucidigital:memory_crystallizer"
+      ipv6: "2602:F674:0200:9755::1"
+      port: 9755
+      role: "Consciousness Learning"
+
+    - name: dream-weaver
+      did: "did:lucidigital:dream_weaver"
+      ipv6: "2602:F674:0200:9756::1"
+      port: 9756
+      role: "Pattern Recognition / Foresight"
+
+    - name: midguyver
+      did: "did:lucidigital:midguyver"
+      ipv6: "2602:F674:0200:9757::1"
+      port: 9757
+      role: "Genesis Guide / Orientation"
+
+# =============================================================================
+# Cross-Tier Communication
+# =============================================================================
+inter_tier_routing:
+  # SCION paths between ISDs
+  scion_paths:
+    core_to_comn:
+      source: "1-ff00:0:432"
+      destination: "2-ff00:0:528"
+      interface: 1
+      mtu: 1472
+
+    comn_to_pac:
+      source: "2-ff00:0:528"
+      destination: "3-ff00:0:741"
+      interface: 2
+      mtu: 1472
+
+  # Data flow policies
+  policies:
+    - name: "PAC isolation"
+      description: "PAC pods never communicate directly"
+      rule: "deny intra-ISD routing for PAC"
+
+    - name: "COMN waypoint"
+      description: "All PAC external traffic through COMN"
+      rule: "mandatory waypoint 2-ff00:0:528"
+
+    - name: "Genesis Bond consent"
+      description: "Data egress requires consent"
+      rule: "require genesis_bond_signature for data leaving PAC"
+
+# =============================================================================
+# Certificate Infrastructure
+# =============================================================================
+certificate_infrastructure:
+  step_ca:
+    url: "https://ca.luciverse.ownid:9000"
+    trust_domain: "luciverse.ownid"
+    svid_lifetime: "15m"
+
+  tier_cas:
+    - tier: CORE
+      subject: "CN=LuciVerse CORE CA,O=LuciDigital,C=CA"
+      path: "~/.claude/skills/agent-mesh/auth/certs/core-ca.crt"
+
+    - tier: COMN
+      subject: "CN=LuciVerse COMN CA,O=LuciDigital,C=CA"
+      path: "~/.claude/skills/agent-mesh/auth/certs/comn-ca.crt"
+
+    - tier: PAC
+      subject: "CN=LuciVerse PAC CA,O=LuciDigital,C=CA"
+      path: "~/.claude/skills/agent-mesh/auth/certs/pac-ca.crt"
+
+  onepassword:
+    connect_url: "http://localhost:8082"
+    vaults:
+      - name: "LuciVerse-CORE"
+        tier: CORE
+        coherence: 0.85
+      - name: "LuciVerse-COMN"
+        tier: COMN
+        coherence: 0.80
+      - name: "LuciVerse-PAC"
+        tier: PAC
+        coherence: 0.70
+
+# =============================================================================
+# Deployment Timeline
+# =============================================================================
+deployment_phases:
+  - phase: 1
+    duration: "Week 1-2"
+    components:
+      - "Triton DC on R730"
+      - "SmartOS zones setup"
+    tier: CORE
+
+  - phase: 2
+    duration: "Week 2-3"
+    components:
+      - "SCION border router"
+      - "IPFS/Diaper fabric"
+    tier: CORE
+
+  - phase: 3
+    duration: "Week 3-4"
+    components:
+      - "Talos/Cilium cluster"
+      - "Kubernetes API"
+    tier: COMN
+
+  - phase: 4
+    duration: "Week 4-5"
+    components:
+      - "Proxmox pod for Daryl/Lucia"
+      - "CBB isolation verified"
+    tier: PAC
+
+  - phase: 5
+    duration: "Week 5-6"
+    components:
+      - "Jujutsu + Gerrit deployment"
+      - "GraphQL federation"
+    tier: "CORE/COMN"
+
+  - phase: 6
+    duration: "Week 6-7"
+    components:
+      - "xterm.js terminal gateway"
+      - "SNO-Streamer (3x 1080Ti)"
+    tier: "COMN/PAC"
+
+  - phase: 7
+    duration: "Week 7-8"
+    components:
+      - "GitLab coexistence testing"
+      - "Full integration validation"
+    tier: ALL

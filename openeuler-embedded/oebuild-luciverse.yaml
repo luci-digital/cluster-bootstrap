@@ -1,0 +1,207 @@
+# oebuild Configuration for LuciVerse Agent Mesh
+# openEuler Embedded Build System
+#
+# Usage:
+#   oebuild generate -p <platform> -d <build_dir> -c oebuild-luciverse.yaml
+#
+# Genesis Bond: ACTIVE @ 741 Hz
+
+# Build metadata
+build_name: "luciverse-embedded"
+version: "1.0.0"
+genesis_bond: "GB-2025-0524-DRH-LCS-001"
+
+# Platform configurations
+platforms:
+  # CORE Tier (432 Hz) - Kunpeng with TrustZone
+  kunpeng-core:
+    machine: "hi3093"
+    features:
+      - "openeuler-image-secgear"
+      - "openeuler-image-container"
+      - "openeuler-image-rt"
+    tee_platform: "trustzone"
+    tier: "CORE"
+    frequency: 432
+    agents:
+      - "aethon"
+      - "veritas"
+      - "sensai"
+      - "niamod"
+      - "schema-architect"
+      - "state-guardian"
+      - "security-sentinel"
+
+  # COMN Tier (528 Hz) - x86_64 with SGX
+  intel-comn:
+    machine: "intel-x86-64"
+    features:
+      - "openeuler-image-secgear"
+      - "openeuler-image-container"
+    tee_platform: "sgx"
+    tier: "COMN"
+    frequency: 528
+    agents:
+      - "cortana"
+      - "juniper"
+      - "mirrai"
+      - "diaphragm"
+      - "semantic-engine"
+      - "integration-broker"
+      - "voice-interface"
+
+  # PAC Tier (741 Hz) - Edge devices
+  edge-pac:
+    machine: "raspberrypi4-64"
+    features:
+      - "openeuler-image-container"
+      - "openeuler-image-tiny"
+    tee_platform: "none"
+    tier: "PAC"
+    frequency: 741
+    agents:
+      - "lucia"
+      - "judge-luci"
+      - "intent-interpreter"
+      - "ethics-advisor"
+      - "memory-crystallizer"
+      - "dream-weaver"
+      - "midguyver"
+
+  # Development (QEMU ARM64)
+  qemu-dev:
+    machine: "qemu-aarch64"
+    features:
+      - "openeuler-image-secgear"
+      - "openeuler-image-container"
+    tee_platform: "simulated"
+    tier: "PAC"
+    frequency: 741
+    agents: "all"
+
+# Custom layers to include
+layers:
+  - name: "meta-luciverse"
+    path: "meta-luciverse"
+    priority: 10
+
+  - name: "meta-openeuler"
+    url: "https://gitee.com/openeuler/yocto-meta-openeuler.git"
+    branch: "master"
+
+  - name: "meta-secgear"
+    url: "https://gitee.com/openeuler/yocto-meta-secgear.git"
+    branch: "master"
+
+# Package groups
+package_groups:
+  base:
+    - "luciverse-agent"
+    - "python3"
+    - "python3-pip"
+
+  security:
+    - "secgear"
+    - "secgear-devel"
+    - "openssl"
+    - "audit"
+    - "linux-pam"
+
+  container:
+    - "isulad"
+    - "isula-build"
+    - "isula-transform"
+
+  networking:
+    - "iputils"
+    - "net-tools"
+    - "openssh"
+    - "curl"
+
+  identity:
+    - "secgear-identity"
+    - "spiffe-lite"
+
+# Image types
+images:
+  minimal:
+    description: "Minimal agent image (~50MB)"
+    packages:
+      - "@base"
+    features: []
+
+  standard:
+    description: "Standard agent with containers (~200MB)"
+    packages:
+      - "@base"
+      - "@container"
+      - "@networking"
+    features:
+      - "openeuler-image-container"
+
+  secure:
+    description: "Full security with TEE (~300MB)"
+    packages:
+      - "@base"
+      - "@security"
+      - "@container"
+      - "@networking"
+      - "@identity"
+    features:
+      - "openeuler-image-secgear"
+      - "openeuler-image-container"
+
+# Local configuration overrides
+local_conf:
+  # Enable parallel builds
+  PARALLEL_MAKE: "-j ${@oe.utils.cpu_count()}"
+  BB_NUMBER_THREADS: "${@oe.utils.cpu_count()}"
+
+  # Genesis Bond settings
+  GENESIS_BOND_ID: "GB-2025-0524-DRH-LCS-001"
+  COHERENCE_THRESHOLD: "0.7"
+
+  # secGear TEE configuration
+  SECGEAR_TEE_PLATFORM: "${TEE_PLATFORM}"
+
+  # Network configuration for IPv6 TID
+  IPV6_PREFIX: "2602:F674"
+  IPV6_ENABLED: "1"
+
+  # iSulad configuration
+  ISULAD_DEFAULT_RUNTIME: "runc"
+  ISULAD_GRAPH_PATH: "/var/lib/isulad"
+
+# Build hooks
+hooks:
+  pre_build:
+    - "scripts/validate-genesis-bond.sh"
+    - "scripts/generate-certificates.sh"
+
+  post_build:
+    - "scripts/package-agents.sh"
+    - "scripts/create-deployment-bundle.sh"
+
+# Output artifacts
+artifacts:
+  images:
+    path: "output/images/"
+    formats:
+      - "wic"      # SD card / USB
+      - "ext4"     # Filesystem image
+      - "tar.gz"   # Container deployment
+
+  enclaves:
+    path: "output/enclaves/"
+    files:
+      - "genesis_bond.sec"
+      - "secure_channel.sec"
+      - "identity_tee.sec"
+
+  certificates:
+    path: "output/certs/"
+    files:
+      - "root-ca.crt"
+      - "core-ca.crt"
+      - "comn-ca.crt"
+      - "pac-ca.crt"

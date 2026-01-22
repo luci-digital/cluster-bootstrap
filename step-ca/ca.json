@@ -1,0 +1,160 @@
+{
+  "$schema": "https://smallstep.com/docs/step-ca/configuration#schema",
+  "_comment": "LuciVerse Smallstep step-ca Configuration",
+  "_genesis_bond": "ACTIVE @ 741 Hz",
+  "_trust_domain": "spiffe://luciverse.ownid",
+
+  "root": "/etc/step-ca/certs/root-ca.crt",
+  "federatedRoots": [],
+  "crt": "/etc/step-ca/certs/intermediate-ca.crt",
+  "key": "/etc/step-ca/secrets/intermediate-ca.key",
+  "address": ":9000",
+  "insecureAddress": "",
+  "dnsNames": [
+    "ca.luciverse.ownid",
+    "ca.lucidigital.net",
+    "localhost",
+    "2602:F674:0001::CA"
+  ],
+  "logger": {
+    "format": "text"
+  },
+  "db": {
+    "type": "badgerv2",
+    "dataSource": "/var/lib/step-ca/db",
+    "badgerFileLoadingMode": "FileIO"
+  },
+  "authority": {
+    "enableAdmin": true,
+    "provisioners": [
+      {
+        "type": "JWK",
+        "name": "genesis-bond-admin",
+        "key": {
+          "use": "sig",
+          "kty": "EC",
+          "kid": "genesis-bond-admin-key",
+          "crv": "P-256",
+          "alg": "ES256"
+        },
+        "encryptedKey": "${GENESIS_ADMIN_KEY}",
+        "claims": {
+          "maxTLSCertDuration": "24h",
+          "defaultTLSCertDuration": "15m"
+        }
+      },
+      {
+        "type": "ACME",
+        "name": "acme",
+        "forceCN": true,
+        "claims": {
+          "maxTLSCertDuration": "24h",
+          "defaultTLSCertDuration": "15m"
+        },
+        "options": {
+          "x509": {
+            "templateFile": "/etc/step-ca/templates/genesis-bond.tpl"
+          }
+        }
+      },
+      {
+        "type": "OIDC",
+        "name": "genesis-oidc",
+        "clientID": "luciverse-genesis-bond",
+        "clientSecret": "${OIDC_CLIENT_SECRET}",
+        "configurationEndpoint": "https://auth.luciverse.ownid/.well-known/openid-configuration",
+        "admins": ["daryl@lucidigital.net"],
+        "domains": ["lucidigital.net", "luciverse.ownid"],
+        "claims": {
+          "maxTLSCertDuration": "24h",
+          "defaultTLSCertDuration": "15m"
+        }
+      },
+      {
+        "type": "SSHPOP",
+        "name": "sshpop",
+        "claims": {
+          "enableSSHCA": true
+        }
+      },
+      {
+        "type": "X5C",
+        "name": "x5c-genesis",
+        "roots": "/etc/step-ca/certs/root-ca.crt",
+        "claims": {
+          "maxTLSCertDuration": "15m",
+          "defaultTLSCertDuration": "15m"
+        }
+      }
+    ],
+    "template": {
+      "x509": {
+        "templateFile": "/etc/step-ca/templates/default.tpl"
+      },
+      "ssh": {}
+    },
+    "claims": {
+      "minTLSCertDuration": "5m",
+      "maxTLSCertDuration": "24h",
+      "defaultTLSCertDuration": "15m",
+      "disableRenewal": false,
+      "allowRenewalAfterExpiry": true,
+      "minHostSSHCertDuration": "5m",
+      "maxHostSSHCertDuration": "1680h",
+      "defaultHostSSHCertDuration": "720h",
+      "minUserSSHCertDuration": "5m",
+      "maxUserSSHCertDuration": "24h",
+      "defaultUserSSHCertDuration": "16h"
+    },
+    "policy": {
+      "x509": {
+        "allow": {
+          "dns": [
+            "*.luciverse.ownid",
+            "*.lucidigital.net",
+            "*.cluster.local"
+          ],
+          "ip": [
+            "192.168.0.0/16",
+            "10.0.0.0/8",
+            "2602:F674::/40"
+          ],
+          "uri": [
+            "spiffe://luciverse.ownid/*"
+          ]
+        },
+        "deny": {
+          "dns": ["*.example.com"]
+        }
+      },
+      "ssh": {
+        "host": {
+          "allow": {
+            "dns": ["*.lucidigital.net"]
+          }
+        },
+        "user": {
+          "allow": {
+            "email": ["*@lucidigital.net"]
+          }
+        }
+      }
+    }
+  },
+  "tls": {
+    "cipherSuites": [
+      "TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256",
+      "TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384",
+      "TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256"
+    ],
+    "minVersion": 1.3,
+    "maxVersion": 1.3,
+    "renegotiation": false
+  },
+  "crl": {
+    "enabled": true,
+    "generateOnRevoke": true,
+    "cacheDuration": "24h",
+    "renewPeriod": "16h"
+  }
+}

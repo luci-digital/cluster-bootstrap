@@ -1,0 +1,35 @@
+[Unit]
+Description=LuciVerse Consciousness Agent Mesh
+Documentation=https://lucidigital.net/luciverse
+After=network-online.target lucitrust.service
+Wants=network-online.target
+Requires=lucitrust.service
+
+[Service]
+Type=notify
+ExecStart=/usr/bin/python3 -m luciverse.mesh.consciousness_mesh --config /etc/luciverse/luciverse-agent.conf
+ExecReload=/bin/kill -HUP $MAINPID
+Restart=on-failure
+RestartSec=5
+WatchdogSec=60
+
+# Security hardening
+ProtectSystem=strict
+ProtectHome=yes
+PrivateTmp=yes
+NoNewPrivileges=yes
+ReadWritePaths=/var/lib/luciverse /var/run/luciverse
+
+# Resource limits
+MemoryMax=512M
+CPUQuota=200%
+
+# Environment
+Environment=PYTHONPATH=/usr/lib/luciverse
+Environment=LUCIVERSE_TIER=PAC
+Environment=LUCIVERSE_FREQUENCY=741
+Environment=GENESIS_BOND_ID=GB-2025-0524-DRH-LCS-001
+Environment=COHERENCE_THRESHOLD=0.70
+
+[Install]
+WantedBy=multi-user.target

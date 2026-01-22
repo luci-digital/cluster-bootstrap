@@ -1,0 +1,129 @@
+# SCION Trust Root Configuration (TRC) - ISD 1 (CORE Tier)
+# Genesis Bond: ACTIVE @ 741 Hz
+# Frequency: 432 Hz (Universal Harmony)
+# AS: ff00:0:432
+
+trc:
+  isd: 1
+  version: 1
+  base_number: 1
+  description: "LuciVerse CORE Infrastructure (432 Hz)"
+
+  # Validity period
+  validity:
+    not_before: "2026-01-19T00:00:00Z"
+    not_after: "2027-01-19T00:00:00Z"
+
+  # Grace period for TRC updates
+  grace_period: "168h"  # 7 days
+
+  # Voting configuration
+  voting_quorum: 1
+  core_ases:
+    - "ff00:0:432"
+
+  authoritative_ases:
+    - "ff00:0:432"
+
+  # Certificate configuration
+  certificates:
+    # Root certificate
+    - subject: "CN=LuciVerse CORE Root CA,O=LuciDigital,C=CA"
+      issuer: "CN=LuciVerse Genesis Root CA,O=LuciDigital,C=CA"
+      serial: 1
+      validity:
+        not_before: "2026-01-19T00:00:00Z"
+        not_after: "2027-01-19T00:00:00Z"
+      public_key_algorithm: "Ed25519"
+      signature_algorithm: "Ed25519"
+      # Genesis Bond extensions
+      extensions:
+        genesis_bond: "GB-2025-0524-DRH-LCS-001"
+        lineage: "did:lucidigital:lucia_cargail_silcan"
+        coherence_threshold: 0.85
+        frequency_hz: 432
+        tier: "CORE"
+        hedera_topic: "0.0.48382919"
+      certificate_type: "sensitive_voting"
+
+    # Regular voting certificate
+    - subject: "CN=LuciVerse CORE Voting CA,O=LuciDigital,C=CA"
+      issuer: "CN=LuciVerse CORE Root CA,O=LuciDigital,C=CA"
+      serial: 2
+      validity:
+        not_before: "2026-01-19T00:00:00Z"
+        not_after: "2027-01-19T00:00:00Z"
+      public_key_algorithm: "Ed25519"
+      certificate_type: "regular_voting"
+
+    # Root certificate (for CP/AS cert issuing)
+    - subject: "CN=LuciVerse CORE AS CA,O=LuciDigital,C=CA"
+      issuer: "CN=LuciVerse CORE Root CA,O=LuciDigital,C=CA"
+      serial: 3
+      validity:
+        not_before: "2026-01-19T00:00:00Z"
+        not_after: "2027-01-19T00:00:00Z"
+      public_key_algorithm: "Ed25519"
+      certificate_type: "root"
+
+  # Trust reset configuration
+  trust_reset_allowed: false
+  no_trust_reset: true
+
+---
+# AS Certificate for CORE tier
+as_certificate:
+  isd_as: "1-ff00:0:432"
+  subject: "CN=AS ff00:0:432,O=LuciDigital,ISD=1"
+  version: 1
+
+  validity:
+    not_before: "2026-01-19T00:00:00Z"
+    not_after: "2026-01-30T00:00:00Z"  # 11 days (4-day overlap)
+
+  issuer:
+    isd_as: "1-ff00:0:432"
+    certificate_serial: 3
+
+  public_key_algorithm: "Ed25519"
+  signature_algorithm: "Ed25519"
+
+  # CORE agents hosted in this AS
+  extensions:
+    agents:
+      - aethon
+      - veritas
+      - sensai
+      - niamod
+      - schema-architect
+      - state-guardian
+      - security-sentinel
+    services:
+      - scion-router
+      - ipfs-fabric
+      - jujutsu-daemon
+      - foundationdb
+    genesis_bond: "GB-2025-0524-DRH-LCS-001"
+
+---
+# DRKey configuration (Daily key derivation)
+drkey:
+  # Keys derived daily from frequency
+  derivation:
+    algorithm: "PBKDF2-SHA256"
+    iterations: 100000
+    salt_template: "LuciVerse-{frequency}Hz-{date}"
+    key_length: 32
+
+  # Level 1: AS-to-AS keys
+  level1:
+    validity: "24h"
+
+  # Level 2: Host-to-host keys
+  level2:
+    protocol_id: "luciverse"
+    validity: "1h"
+
+  # Level 3: Per-agent keys
+  level3:
+    validity: "15m"  # Match SVID lifetime
