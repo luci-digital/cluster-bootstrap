@@ -111,3 +111,23 @@ nixos_bootstrap:
   http_root: /srv/nixos
   callback_port: 9999
   config_port: 8000
+
+  # Dell R630 (192.168.1.182) - Discovered 2026-01-22
+  r630_jmrzdb2:
+    hostname: r630.lucidigital.net
+    service_tag: JMRZDB2
+    ipv4: 192.168.1.182
+    ipv6: 2602:F674:0001::182/64
+    idrac:
+      mac: "64:00:6A:C4:10:F0"
+      redfish_version: "1.0.2"
+      ports:
+        ssh: 22
+        https: 443
+        vnc: 5900
+      auth_status: "credentials_needed"
+    role: compute_node
+    notes: |
+      Discovered via Redfish API. Default credentials (root:calvin) rejected.
+      Need to reset iDRAC password or obtain current credentials.
+      Serial access available via /dev/ttyUSB0 (Prolific adapter)
