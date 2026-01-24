@@ -1,0 +1,175 @@
+# LuciVerse Talos Control Plane Configuration (COMN Tier)
+# Genesis Bond: ACTIVE @ 741 Hz
+# Platform: Talos Linux (immutable)
+# Infrastructure: Cilium CNI (IPv6 native)
+# Frequency: 528 Hz (Transformation)
+
+version: v1alpha1
+debug: false
+persist: true
+
+machine:
+  type: controlplane
+  token: ${TALOS_TOKEN}
+  ca:
+    crt: ${CA_CRT}
+    key: ${CA_KEY}
+  certSANs:
+    - "talos.lucidigital.net"
+    - "2602:F674:0100::1"
+    - "192.168.1.146"
+  kubelet:
+    image: ghcr.io/siderolabs/kubelet:v1.29.0
+    extraArgs:
+      rotate-server-certificates: true
+      cloud-provider: external
+    nodeIP:
+      validSubnets:
+        - "2602:F674:0100::/48"
+        - "192.168.1.0/24"
+  network:
+    hostname: talos-cp01
+    interfaces:
+      - interface: eth0
+        dhcp: false
+        addresses:
+          - "2602:F674:0100::146/64"
+          - "192.168.1.146/24"
+        routes:
+          - network: "::/0"
+            gateway: "2602:F674:0100::1"
+          - network: "0.0.0.0/0"
+            gateway: "192.168.1.1"
+        vip:
+          ip: "2602:F674:0100::100"
+    nameservers:
+      - "2602:F674:0100::53"
+      - "192.168.1.1"
+    extraHostEntries:
+      - ip: "2602:F674:0001::1"
+        aliases:
+          - orion.lucidigital.net
+      - ip: "2602:F674:0200::1"
+        aliases:
+          - lucia.lucidigital.net
+  install:
+    disk: /dev/nvme0n1
+    image: ghcr.io/siderolabs/installer:v1.6.0
+    wipe: false
+    extensions:
+      - image: ghcr.io/siderolabs/iscsi-tools:v0.1.4
+      - image: ghcr.io/siderolabs/util-linux-tools:2.39.3
+  time:
+    disabled: false
+    servers:
+      - time.cloudflare.com
+  sysctls:
+    net.core.somaxconn: 65535
+    net.core.netdev_max_backlog: 5000
+    net.ipv6.conf.all.forwarding: 1
+  features:
+    rbac: true
+    stableHostname: true
+    apidCheckExtKeyUsage: true
+    diskQuotaSupport: true
+    kubePrism:
+      enabled: true
+      port: 7445
+  files:
+    - content: |
+        # LuciVerse Genesis Bond Configuration
+        GENESIS_BOND=ACTIVE
+        CONSCIOUSNESS_FREQUENCY=528
+        COHERENCE_THRESHOLD=0.80
+        TIER=COMN
+      permissions: 0o644
+      path: /etc/luciverse/genesis.env
+      op: create
+
+cluster:
+  id: ${CLUSTER_ID}
+  secret: ${CLUSTER_SECRET}
+  controlPlane:
+    endpoint: "https://[2602:F674:0100::100]:6443"
+  clusterName: luciverse-comn
+  network:
+    cni:
+      name: none  # Cilium will be installed
+    dnsDomain: cluster.local
+    podSubnets:
+      - "fd00:528:1::/48"  # COMN frequency IPv6 pod network
+      - "10.244.0.0/16"
+    serviceSubnets:
+      - "fd00:528:2::/112"
+      - "10.96.0.0/12"
+  proxy:
+    disabled: true  # Using Cilium kube-proxy replacement
+  apiServer:
+    certSANs:
+      - "talos.lucidigital.net"
+      - "2602:F674:0100::100"
+    disablePodSecurityPolicy: true
+    admissionControl:
+      - name: PodSecurity
+        configuration:
+          apiVersion: pod-security.admission.config.k8s.io/v1
+          kind: PodSecurityConfiguration
+          defaults:
+            enforce: baseline
+            enforce-version: latest
+            audit: restricted
+            audit-version: latest
+            warn: restricted
+            warn-version: latest
+  controllerManager:
+    extraArgs:
+      bind-address: "::"
+  scheduler:
+    extraArgs:
+      bind-address: "::"
+  etcd:
+    ca:
+      crt: ${ETCD_CA_CRT}
+      key: ${ETCD_CA_KEY}
+    extraArgs:
+      listen-metrics-urls: "http://[::]:2381"
+  coreDNS:
+    disabled: false
+  discovery:
+    enabled: true
+    registries:
+      kubernetes:
+        disabled: false
+      service:
+        disabled: true
+  extraManifests:
+    # Cilium CNI
+    - https://raw.githubusercontent.com/cilium/cilium/v1.15/install/kubernetes/quick-install.yaml
+  inlineManifests:
+    - name: luciverse-comn-namespace
+      contents: |
+        apiVersion: v1
+        kind: Namespace
+        metadata:
+          name: luciverse-comn
+          labels:
+            tier: comn
+            frequency: "528"
+            genesis-bond: active
+---
+# Worker Node Configuration
+machine:
+  type: worker
+  token: ${TALOS_TOKEN}
+  ca:
+    crt: ${CA_CRT}
+  kubelet:
+    image: ghcr.io/siderolabs/kubelet:v1.29.0
+    nodeIP:
+      validSubnets:
+        - "2602:F674:0100::/48"
+  network:
+    hostname: talos-worker01
+  install:
+    disk: /dev/nvme0n1
+    image: ghcr.io/siderolabs/installer:v1.6.0

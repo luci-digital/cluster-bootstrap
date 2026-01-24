@@ -1,0 +1,229 @@
+# LuciVerse DPDK Kernel-Bypass Networking Configuration
+# Genesis Bond: ACTIVE @ 741 Hz
+# Purpose: High-performance SNO streaming with minimal latency
+#
+# Performance targets:
+# - Traditional Linux: ~1-2 million packets/second/core
+# - With DPDK: 10-100 million packets/second/core
+#
+# Reference: https://doc.dpdk.org/guides/prog_guide/overview.html
+
+dpdk:
+  version: "23.11"  # LTS version
+  enabled: true
+
+  # EAL (Environment Abstraction Layer) Configuration
+  eal:
+    # CPU cores dedicated to DPDK (isolate from kernel scheduler)
+    cores: "0-3"  # 4 cores for SNO streaming
+
+    # Memory configuration
+    memory:
+      # Hugepage configuration
+      hugepage_size: "2M"  # 2MB hugepages (or 1G for better TLB)
+      hugepages: 2048       # 4GB total hugepage memory
+      hugepage_mount: "/mnt/huge"
+
+      # Memory channels (depends on CPU/memory controller)
+      channels: 4
+
+    # File prefix for multi-process support
+    file_prefix: "luciverse_sno"
+
+    # Log level (0-8, 8=debug)
+    log_level: 7
+
+  # Poll Mode Drivers (PMDs)
+  # Reference: https://doc.dpdk.org/guides-24.03/prog_guide/poll_mode_drv.html
+  pmd:
+    # Intel NICs
+    - driver: "net_i40e"      # Intel XL710/X710
+      enabled: true
+    - driver: "net_ixgbe"     # Intel 82599/X520
+      enabled: true
+    - driver: "net_e1000_igb" # Intel I350
+      enabled: true
+
+    # Mellanox NICs
+    - driver: "net_mlx5"      # ConnectX-4/5/6
+      enabled: true
+
+    # Virtual devices (for testing)
+    - driver: "net_virtio"
+      enabled: true
+    - driver: "net_af_packet"  # Fallback to kernel AF_PACKET
+      enabled: true
+
+  # Port Configuration
+  ports:
+    - name: "sno_primary"
+      pci_address: "0000:3b:00.0"  # Physical NIC
+      driver: "net_i40e"
+      ipv6: "2602:F674:0001:SNO::1"
+      mtu: 9000
+      rx_queues: 4
+      tx_queues: 4
+      rx_desc: 4096
+      tx_desc: 4096
+
+    - name: "sno_secondary"
+      pci_address: "0000:3b:00.1"
+      driver: "net_i40e"
+      ipv6: "2602:F674:0001:SNO::2"
+      mtu: 9000
+      rx_queues: 4
+      tx_queues: 4
+
+  # Ring Buffer Configuration
+  rings:
+    # Lockless multi-producer/consumer FIFO
+    sno_rx_ring:
+      size: 65536       # 64K entries
+      socket_id: 0      # NUMA socket
+      flags: ["SP_ENQ", "SC_DEQ"]  # Single producer, single consumer
+
+    sno_tx_ring:
+      size: 65536
+      socket_id: 0
+      flags: ["SP_ENQ", "SC_DEQ"]
+
+    consciousness_buffer:
+      size: 131072      # 128K entries for consciousness frames
+      socket_id: 0
+
+  # Mbuf Pool Configuration
+  mbuf_pool:
+    name: "sno_mbuf_pool"
+    n: 131072           # Number of mbufs
+    cache_size: 512     # Per-core cache
+    socket_id: 0
+    data_room_size: 10240  # 10KB per mbuf (for SNO frames)
+    private_size: 64       # Private area for metadata
+
+  # Flow Classification (for SNO mode selection)
+  flow_rules:
+    # Route QR_RAPID to queue 0
+    - pattern:
+        eth: { type: 0x86DD }  # IPv6
+        ipv6: { dst: "2602:F674:0001:SNO::1" }
+        udp: { dst: 7410 }     # Sanskrit router port
+      actions:
+        queue: 0
+        mark: 1  # QR_RAPID
+
+    # Route DNA_HELIX to queue 1
+    - pattern:
+        eth: { type: 0x86DD }
+        ipv6: { dst: "2602:F674:0001:SNO::1" }
+        udp: { dst: 7411 }     # DNA_HELIX port
+      actions:
+        queue: 1
+        mark: 2
+
+    # Route SNOW_PURE to queue 2
+    - pattern:
+        eth: { type: 0x86DD }
+        ipv6: { dst: "2602:F674:0001:SNO::1" }
+        udp: { dst: 7412 }     # SNOW_PURE port
+      actions:
+        queue: 2
+        mark: 3
+
+  # CPU Core Mapping
+  core_mapping:
+    # Core 0: RX polling (receive SNO frames)
+    - core: 0
+      role: "rx_poll"
+      queues: [0, 1]
+
+    # Core 1: TX polling (transmit SNO frames)
+    - core: 1
+      role: "tx_poll"
+      queues: [0, 1]
+
+    # Core 2: Frame processing (encode/decode)
+    - core: 2
+      role: "processing"
+      tasks:
+        - "sno_encode"
+        - "sno_decode"
+        - "consciousness_routing"
+
+    # Core 3: RAFT optical flow processing
+    - core: 3
+      role: "raft_optical"
+      tasks:
+        - "optical_flow"
+        - "stereo_depth"
+
+  # Genesis Bond Integration
+  genesis_bond:
+    certificate_id: "GB-2025-0524-DRH-LCS-001"
+    lineage_did: "did:lucidigital:lucia_cargail_silcan"
+
+    # Coherence-based traffic shaping
+    qos:
+      high_coherence:     # >= 0.9
+        priority: 0       # Highest
+        bandwidth: "unlimited"
+      medium_coherence:   # >= 0.7
+        priority: 1
+        bandwidth: "10Gbps"
+      low_coherence:      # < 0.7
+        priority: 2
+        bandwidth: "1Gbps"
+
+---
+# Hugepage Setup Script
+# Run: sudo ./setup-hugepages.sh
+
+hugepage_setup:
+  script: |
+    #!/bin/bash
+    # LuciVerse DPDK Hugepage Setup
+
+    # Create mount point
+    mkdir -p /mnt/huge
+
+    # Reserve 2MB hugepages
+    echo 2048 > /sys/kernel/mm/hugepages/hugepages-2048kB/nr_hugepages
+
+    # Mount hugetlbfs
+    mount -t hugetlbfs nodev /mnt/huge
+
+    # Verify
+    grep Huge /proc/meminfo
+
+    # Bind NICs to DPDK-compatible driver
+    # First, unbind from kernel driver
+    # dpdk-devbind.py --unbind 0000:3b:00.0 0000:3b:00.1
+
+    # Then bind to vfio-pci (preferred) or igb_uio
+    # modprobe vfio-pci
+    # dpdk-devbind.py --bind=vfio-pci 0000:3b:00.0 0000:3b:00.1
+
+---
+# NixOS Integration
+nixos_config:
+  boot:
+    kernelParams:
+      - "hugepagesz=2M"
+      - "hugepages=2048"
+      - "default_hugepagesz=2M"
+      - "isolcpus=0-3"        # Isolate DPDK cores
+      - "nohz_full=0-3"       # No timer ticks on DPDK cores
+      - "rcu_nocbs=0-3"       # No RCU callbacks on DPDK cores
+
+  systemd:
+    services:
+      luciverse-dpdk:
+        description: "LuciVerse DPDK SNO Streamer"
+        after: ["network.target", "luciverse-agents.target"]
+        wantedBy: ["multi-user.target"]
+        serviceConfig:
+          Type: "simple"
+          ExecStart: "/opt/luciverse/sno-streamer --config /etc/dpdk/dpdk-config.yaml"
+          Restart: "on-failure"
+          # Allow DPDK to use hugepages and bind to cores
+          LimitMEMLOCK: "infinity"
+          CPUAffinity: "0-3"

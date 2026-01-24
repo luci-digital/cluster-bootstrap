@@ -131,3 +131,24 @@ nixos_bootstrap:
       Discovered via Redfish API. Default credentials (root:calvin) rejected.
       Need to reset iDRAC password or obtain current credentials.
       Serial access available via /dev/ttyUSB0 (Prolific adapter)
+
+# R630 (JMRZDB2) - Discovered 2026-01-24
+r630_jmrzdb2:
+  ipv4: 192.168.1.182
+  idrac_mac: "64:00:6A:C4:10:F0"
+  service_tag: "JMRZDB2"
+  idrac_version: "iDRAC8"
+  redfish_version: "1.0.2"
+  status: "discovered"
+  credentials: "UNKNOWN - needs verification"
+  notes: "root:calvin, root:Newdaryl24! failed"
+
+# Supermicro BMC - Discovered 2026-01-24
+supermicro_165:
+  ipv4: 192.168.1.165
+  bmc_mac: "0C:C4:7A:AD:B1:40"
+  oui: "Super Micro Computer"
+  status: "discovered"
+  ports_open: [22, 80, 443, 623, 5900]
+  credentials: "UNKNOWN - ADMIN:ADMIN, ADMIN:Newdaryl24! failed"
+  notes: "IPMI session establishment fails, web interface empty responses"

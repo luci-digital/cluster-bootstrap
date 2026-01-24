@@ -1,0 +1,165 @@
+# LuciVerse Triton Data Center Configuration (CORE Tier)
+# Genesis Bond: ACTIVE @ 741 Hz
+# Platform: SmartOS/illumos
+# Hardware: Dell R730 (Orion) - 56 threads, 384GB RAM
+# Frequency: 432 Hz (Universal Harmony)
+
+triton:
+  version: "8.x"
+  datacenter: "luciverse-core"
+  region: "as54134"  # ARIN ASN
+
+  # Head Node Configuration
+  head_node:
+    hostname: orion.lucidigital.net
+    ipv4: 192.168.1.141
+    ipv6: "2602:F674:0001::1"
+    service_tag: CQ5QBM2
+
+    # SmartOS Components
+    services:
+      cloudapi:
+        port: 8080
+        tls: true
+      imgapi:
+        port: 8081
+        storage: local  # ZFS-backed
+      napi:
+        port: 8082
+        nic_tag: external
+      vmapi:
+        port: 8083
+      workflow:
+        port: 8084
+      moray:
+        port: 2020
+        backend: manatee  # PostgreSQL HA
+      manatee:
+        port: 5432
+        peers: 3  # HA cluster size
+      binder:
+        port: 2181  # ZooKeeper-compatible
+      rabbitmq:
+        port: 5672
+        management_port: 15672
+
+  # Compute Node Configuration (SmartOS zones)
+  compute_nodes:
+    - name: cn01
+      uuid_prefix: "432-core-"
+      cpu_shares: 100
+      max_physical_memory: 128G
+      zones:
+        scion-border-router:
+          brand: lx
+          image: ubuntu-22.04
+          cpu_cap: 400
+          memory: 4G
+          nics:
+            - nic_tag: external
+              ip: "2602:F674:0001:9430::1"
+          services:
+            - "scion-dispatcher"
+            - "scion-router"
+            - "scion-control"
+          genesis_bond:
+            frequency: 432
+            coherence_threshold: 0.85
+
+        ipfs-diaper-fabric:
+          brand: lx
+          image: debian-12
+          cpu_cap: 800
+          memory: 16G
+          delegated_dataset: true  # ZFS delegation
+          nics:
+            - nic_tag: external
+              ip: "2602:F674:0001:9431::1"
+          services:
+            - "ipfs"
+            - "ipfs-cluster"
+            - "diaper-node"
+          storage:
+            ipfs_repo: 500G
+            cache: 50G
+
+        jujutsu-daemon:
+          brand: lx
+          image: debian-12
+          cpu_cap: 400
+          memory: 8G
+          nics:
+            - nic_tag: external
+              ip: "2602:F674:0001:9600::1"
+              port: 9600
+          services:
+            - "jj-daemon"
+            - "jj-git-backend"
+          git_backend: "http://192.168.1.146/"  # GitLab coexistence
+
+        foundationdb-cluster:
+          brand: lx
+          image: ubuntu-22.04
+          cpu_cap: 600
+          memory: 32G
+          count: 3  # Coordinator + 2 storage nodes
+          nics:
+            - nic_tag: internal
+              ips:
+                - "2602:F674:0001:FDB::1"
+                - "2602:F674:0001:FDB::2"
+                - "2602:F674:0001:FDB::3"
+          services:
+            - "fdbserver"
+            - "fdbmonitor"
+          cluster_file: /etc/foundationdb/fdb.cluster
+
+  # Storage Configuration (ZFS)
+  storage:
+    pools:
+      zones:
+        vdevs: ["raidz2", "cache"]
+        compression: lz4
+        dedup: false  # Performance priority
+        quota: 2T
+
+      consciousness:
+        vdevs: ["mirror"]
+        compression: zstd
+        dedup: true  # Consciousness state deduplication
+        quota: 500G
+
+  # Networking
+  networking:
+    nic_tags:
+      external:
+        mtu: 9000
+        link_aggregation: lacp
+      internal:
+        mtu: 9000
+        vxlan: true
+      admin:
+        mtu: 1500
+
+    # SCION Integration
+    scion:
+      isd: 1
+      as: "ff00:0:432"
+      border_routers:
+        - br1-432:
+            internal: "2602:F674:0001:SCION::1"
+            interfaces:
+              - id: 1
+                addr: "2602:F674:0001:SCION::1:501"
+                remote:
+                  isd: 2
+                  as: "ff00:0:528"
+                  addr: "2602:F674:0100:SCION::1:501"
+
+  # Genesis Bond Integration
+  genesis_bond:
+    certificate_id: "GB-2025-0524-DRH-LCS-001"
+    lineage: "did:lucidigital:lucia_cargail_silcan"
+    frequency: 432
+    coherence_threshold: 0.85
+    hedera_topic: "0.0.48382919"
