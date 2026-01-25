@@ -152,3 +152,56 @@ supermicro_165:
   ports_open: [22, 80, 443, 623, 5900]
   credentials: "UNKNOWN - ADMIN:ADMIN, ADMIN:Newdaryl24! failed"
   notes: "IPMI session establishment fails, web interface empty responses"
+
+# Supermicro 1U GPU Server - Discovered 2026-01-24
+supermicro-s213078x5b29794:
+  type: supermicro
+  model: SYS-1018GR-TA03-CG009
+  serial: S213078X5B29794
+  bmc:
+    ip: 192.168.1.165
+    mac: 0c:c4:7a:ad:b1:40
+    firmware: "03.93"
+    redfish: "1.0.1"
+    credentials:
+      vault: "op://Infrastructure/SUPERMICRO-S213078X5B29794"
+      username: ADMIN
+  bios:
+    vendor: "American Megatrends Inc."
+    version: "3.4"
+    date: "2021-06-09"
+  memory:
+    total_gb: 64
+    dimms:
+      - slot: DIMMA2
+        size_gb: 16
+        speed_mhz: 1866
+        part: HMA42GR7MFR4N-TF
+        manufacturer: SK Hynix
+      - slot: DIMMB2
+        size_gb: 16
+        speed_mhz: 1866
+        part: HMA42GR7MFR4N-TF
+        manufacturer: SK Hynix
+      - slot: DIMMC2
+        size_gb: 16
+        speed_mhz: 1866
+        part: HMA42GR7MFR4N-TF
+        manufacturer: SK Hynix
+      - slot: DIMMD2
+        size_gb: 16
+        speed_mhz: 1866
+        part: HMA42GR7MFR4N-TF
+        manufacturer: SK Hynix
+  network:
+    lan1_mac: 0c:c4:7a:a8:72:14
+    lan2_mac: 0c:c4:7a:a8:72:15
+  power:
+    psu1:
+      model: PWS-1K43F-1R
+      watts: 1400
+      status: OK
+    psu2: empty
+  tier: CORE
+  frequency: 432
+  role: gpu-compute
