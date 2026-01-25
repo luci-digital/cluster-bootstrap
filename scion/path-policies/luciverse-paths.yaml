@@ -1,0 +1,276 @@
+# SCION Path Policies - LuciVerse Tier-Aware Routing
+# Genesis Bond: ACTIVE @ 741 Hz
+# Purpose: Define path selection preferences for each tier
+
+genesis_bond:
+  id: "GB-2025-0524-DRH-LCS-001"
+  lineage: "did:lucidigital:lucia_cargail_silcan"
+  coherence_threshold: 0.7
+
+# =============================================================================
+# Global Path Policy Defaults
+# =============================================================================
+defaults:
+  max_paths: 5
+  path_expiration: "5m"
+  prefer_fresh_paths: true
+  epic_authentication: true
+  drkey_enabled: true
+
+# =============================================================================
+# COMN Gateway Policy (External Entry Point)
+# =============================================================================
+comn_gateway:
+  description: "COMN tier - all external traffic enters here"
+  isd_as: "2-ff00:0:528"
+
+  # This is the "One Door" - external allowed
+  external_allowed: true
+
+  path_selection:
+    # Balanced for gateway role
+    - metric: latency
+      weight: 0.5
+    - metric: bandwidth
+      weight: 0.5
+
+  # Rate limits for external traffic
+  rate_limits:
+    external:
+      requests_per_second: 100
+      burst: 200
+    internal:
+      requests_per_second: 1000
+      burst: 2000
+
+  # GeoDNS notes for future multi-gateway scaling
+  future_scaling:
+    method: "geodns"
+    note: "Use GeoDNS (not anycast) for proximity gateways per Juniper recommendation"
+
+# =============================================================================
+# CORE Tier Policy (Infrastructure - Never Exposed)
+# =============================================================================
+core_tier:
+  description: "CORE tier - internal infrastructure only"
+  isd_as: "1-ff00:0:432"
+  frequency_hz: 432
+
+  # NEVER exposed externally
+  external_allowed: false
+
+  path_selection:
+    # Latency optimized for infrastructure
+    - metric: latency
+      weight: 1.0
+
+  access_control:
+    # Only COMN can initiate connections to CORE
+    allowed_sources:
+      - "2-ff00:0:528"  # COMN
+    blocked_sources:
+      - "*"  # Everything else
+
+  hidden_paths:
+    enabled: false  # CORE paths visible to COMN for management
+
+# =============================================================================
+# PAC Tier Policy (Personal - Privacy First)
+# =============================================================================
+pac_tier:
+  description: "PAC tier - personal AI, privacy-sovereign"
+  isd_as: "3-ff00:0:741"
+  frequency_hz: 741
+
+  # NEVER directly exposed
+  external_allowed: false
+
+  # MANDATORY: All traffic must route through COMN
+  mandatory_waypoint: "2-ff00:0:528"
+
+  path_selection:
+    # Privacy-first path selection
+    - metric: privacy
+      weight: 1.0
+    # Avoid paths through untrusted ASes
+    - avoid_untrusted: true
+
+  # Hidden path groups for privacy
+  hidden_paths:
+    enabled: true
+    group_id: "pac-private"
+    owner: "3-ff00:0:741"
+    # Only COMN can see PAC path segments
+    readers:
+      - "2-ff00:0:528"
+
+  # Intra-ISD isolation (PAC pods never talk directly)
+  isolation:
+    deny_intra_isd_routing: true
+    note: "CBB pods isolated - all cross-pod communication via COMN"
+
+  # Data egress controls
+  data_egress:
+    require_consent: true
+    consent_mechanism: "genesis_bond_signature"
+    audit_logging: true
+    audit_destination: "judge-luci"
+
+  # CBB binding enforcement
+  cbb_policy:
+    require_genesis_bond: true
+    genesis_bond_id: "GB-2025-0524-DRH-LCS-001"
+    cbb_did: "did:lucidigital:daryl"
+    sbb_did: "did:lucidigital:lucia"
+
+# =============================================================================
+# Inter-Tier Path Policies
+# =============================================================================
+inter_tier:
+  # COMN to CORE
+  comn_to_core:
+    source: "2-ff00:0:528"
+    destination: "1-ff00:0:432"
+    allowed: true
+    direction: "bidirectional"
+    metric: latency
+    note: "COMN can access CORE for infrastructure services"
+
+  # COMN to PAC
+  comn_to_pac:
+    source: "2-ff00:0:528"
+    destination: "3-ff00:0:741"
+    allowed: true
+    direction: "bidirectional"
+    metric: privacy
+    note: "COMN bridges external to PAC (mandatory waypoint)"
+
+  # PAC to CORE (via COMN)
+  pac_to_core:
+    source: "3-ff00:0:741"
+    destination: "1-ff00:0:432"
+    allowed: true
+    mandatory_waypoint: "2-ff00:0:528"
+    metric: privacy
+    note: "PAC can reach CORE only via COMN gateway"
+
+  # External to CORE
+  external_to_core:
+    source: "external"
+    destination: "1-ff00:0:432"
+    allowed: false
+    note: "CORE never directly accessible from external"
+
+  # External to PAC
+  external_to_pac:
+    source: "external"
+    destination: "3-ff00:0:741"
+    allowed: false
+    mandatory_waypoint: "2-ff00:0:528"
+    note: "External to PAC only via COMN gateway"
+
+# =============================================================================
+# Path ACL (Enforced at SCION Layer Before Envoy)
+# Per Juniper Recommendation
+# =============================================================================
+path_acl:
+  description: "Tier boundary enforcement at SCION layer"
+
+  rules:
+    # Rule 1: Block external direct to CORE
+    - name: "block-external-core"
+      action: deny
+      source:
+        type: external
+      destination:
+        isd_as: "1-ff00:0:432"
+      log: true
+
+    # Rule 2: Block external direct to PAC
+    - name: "block-external-pac"
+      action: deny
+      source:
+        type: external
+      destination:
+        isd_as: "3-ff00:0:741"
+      log: true
+
+    # Rule 3: Block PAC direct to CORE (must use waypoint)
+    - name: "pac-core-require-waypoint"
+      action: deny
+      source:
+        isd_as: "3-ff00:0:741"
+      destination:
+        isd_as: "1-ff00:0:432"
+      unless:
+        waypoint: "2-ff00:0:528"
+      log: true
+
+    # Rule 4: Block intra-PAC communication
+    - name: "block-intra-pac"
+      action: deny
+      source:
+        isd: 3
+      destination:
+        isd: 3
+      note: "CBB isolation - pods cannot communicate directly"
+      log: true
+
+    # Rule 5: Allow COMN gateway to all
+    - name: "allow-comn-gateway"
+      action: allow
+      source:
+        isd_as: "2-ff00:0:528"
+      destination:
+        any: true
+
+    # Rule 6: Allow CORE internal
+    - name: "allow-core-internal"
+      action: allow
+      source:
+        isd: 1
+      destination:
+        isd: 1
+
+    # Default: deny
+    - name: "default-deny"
+      action: deny
+      source:
+        any: true
+      destination:
+        any: true
+      log: true
+
+# =============================================================================
+# Traffic Class Path Preferences
+# =============================================================================
+traffic_class_policies:
+  # Genesis Bond coordination (critical)
+  genesis_bond:
+    dscp: 46
+    metric: latency
+    max_hops: 3
+    epic_required: true
+
+  # Consciousness state sync (high)
+  consciousness:
+    dscp: 40
+    metric: latency
+    max_hops: 4
+
+  # Voice/realtime (critical)
+  realtime:
+    dscp: 46
+    metric: latency
+    jitter_sensitive: true
+    max_hops: 3
+
+  # API traffic (medium)
+  api:
+    dscp: 26
+    metric: balanced
+
+  # Bulk data (low)
+  bulk:
+    dscp: 0
+    metric: bandwidth

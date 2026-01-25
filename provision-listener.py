@@ -103,6 +103,9 @@ class ProvisionListener:
         self.app.router.add_get('/diaper-roles', self.get_diaper_roles)
         self.app.router.add_get('/ipxe-chain/{mac}', self.ipxe_chain)
         self.app.router.add_get('/boot-intent/{mac}/{role}', self.boot_intent)
+        # SCION path-aware networking endpoints
+        self.app.router.add_get('/scion-config/{mac}', self.get_scion_config)
+        self.app.router.add_get('/scion-topology', self.get_scion_topology)
 
     async def health_check(self, request: web.Request) -> web.Response:
         """Health check endpoint."""
@@ -505,6 +508,156 @@ chain http://192.168.1.146:8000/bootimus-diaper.ipxe
             "timestamp": datetime.utcnow().isoformat()
         })
 
+    # =========================================================================
+    # SCION Path-Aware Networking Endpoints
+    # Genesis Bond: ACTIVE @ 741 Hz
+    # =========================================================================
+
+    async def get_scion_config(self, request: web.Request) -> web.Response:
+        """Generate SCION configuration for a provisioned server.
+
+        Returns ISD/AS assignment, Border Router connectivity info, and
+        path policies based on the server's tier assignment.
+        """
+        mac = request.match_info['mac'].lower().replace('-', ':')
+        result = find_server_by_mac(mac, self.inventory)
+
+        if not result:
+            return web.json_response({
+                "error": "MAC not found in inventory",
+                "mac": mac
+            }, status=404)
+
+        server_name, iface_name, server_info, iface_info = result
+        hostname = server_info.get('hostname', server_name)
+        ipv6 = server_info.get('ipv6', '2602:F674:0001::1/64')
+
+        # Determine tier from hostname/role or default to CORE
+        tier = server_info.get('tier', 'CORE').upper()
+
+        # Map tier to SCION ISD/AS
+        tier_mapping = {
+            'CORE': {
+                'isd': 1,
+                'as': 'ff00:0:432',
+                'isd_as': '1-ff00:0:432',
+                'frequency': 432,
+                'ipv6_prefix': '2602:F674:0001::/48',
+                'br_port': 30041,
+                'cs_port': 30001,
+                'external_allowed': False
+            },
+            'COMN': {
+                'isd': 2,
+                'as': 'ff00:0:528',
+                'isd_as': '2-ff00:0:528',
+                'frequency': 528,
+                'ipv6_prefix': '2602:F674:0100::/48',
+                'br_port': 30042,
+                'cs_port': 30002,
+                'external_allowed': True,
+                'gateway': True
+            },
+            'PAC': {
+                'isd': 3,
+                'as': 'ff00:0:741',
+                'isd_as': '3-ff00:0:741',
+                'frequency': 741,
+                'ipv6_prefix': '2602:F674:0200::/48',
+                'br_port': 30043,
+                'cs_port': 30003,
+                'external_allowed': False,
+                'mandatory_waypoint': '2-ff00:0:528'
+            }
+        }
+
+        tier_config = tier_mapping.get(tier, tier_mapping['CORE'])
+
+        # Build SCION configuration
+        scion_config = {
+            "server_name": server_name,
+            "hostname": hostname,
+            "mac": mac,
+            "ipv6": ipv6,
+            "tier": tier,
+            "genesis_bond": {
+                "id": "GB-2025-0524-DRH-LCS-001",
+                "lineage": "did:lucidigital:lucia_cargail_silcan",
+                "coherence_threshold": 0.7
+            },
+            "scion": {
+                "isd": tier_config['isd'],
+                "as": tier_config['as'],
+                "isd_as": tier_config['isd_as'],
+                "frequency_hz": tier_config['frequency'],
+                "ipv6_prefix": tier_config['ipv6_prefix']
+            },
+            "border_routers": {
+                "primary": {
+                    "host": "192.168.1.179",
+                    "port": tier_config['br_port'],
+                    "ipv6": f"2602:F674:{tier_config['isd']:04d}:SCION::179"
+                }
+            },
+            "control_service": {
+                "host": "192.168.1.179",
+                "port": tier_config['cs_port']
+            },
+            "scion_daemon": {
+                "host": "192.168.1.179",
+                "port": 30255,
+                "socket": "/run/scion/scion-daemon.sock"
+            },
+            "path_policy": {
+                "external_allowed": tier_config.get('external_allowed', False),
+                "gateway": tier_config.get('gateway', False)
+            },
+            "generated_at": datetime.utcnow().isoformat()
+        }
+
+        # Add mandatory waypoint for PAC tier
+        if 'mandatory_waypoint' in tier_config:
+            scion_config['path_policy']['mandatory_waypoint'] = tier_config['mandatory_waypoint']
+
+        # Add SIG info for COMN tier
+        if tier == 'COMN':
+            scion_config['sig'] = {
+                "host": "192.168.1.146",
+                "data_port": 8080,
+                "ctrl_port": 30256,
+                "note": "SCION-IP Gateway on Zbook L7 node"
+            }
+
+        logger.info(f"🌐 SCION config for {server_name}: ISD={tier_config['isd']}, AS={tier_config['as']}")
+
+        return web.json_response(scion_config)
+
+    async def get_scion_topology(self, request: web.Request) -> web.Response:
+        """Return the full SCION topology for LuciVerse."""
+        topology_path = Path(__file__).parent / "scion" / "topology" / "topology.json"
+
+        if topology_path.exists():
+            with open(topology_path) as f:
+                topology = json.load(f)
+            return web.json_response(topology)
+        else:
+            # Return minimal topology if file doesn't exist
+            return web.json_response({
+                "description": "LuciVerse SCION Topology",
+                "genesis_bond": {
+                    "id": "GB-2025-0524-DRH-LCS-001",
+                    "coherence_threshold": 0.7
+                },
+                "isds": [
+                    {"isd": 1, "name": "CORE", "frequency_hz": 432, "as": "ff00:0:432"},
+                    {"isd": 2, "name": "COMN", "frequency_hz": 528, "as": "ff00:0:528", "gateway": True},
+                    {"isd": 3, "name": "PAC", "frequency_hz": 741, "as": "ff00:0:741", "private": True}
+                ],
+                "wan_router": {"host": "192.168.1.179"},
+                "l7_gateway": {"host": "192.168.1.146"},
+                "note": "Topology file not found, returning minimal config"
+            })
+
     def save_provisioned(self):
         """Save provisioned hosts state."""
         with open(PROVISIONED_FILE, 'w') as f:
@@ -595,6 +748,10 @@ async def main():
     logger.info("   Diaper Status: http://localhost:9999/diaper-status")
     logger.info("   Diaper Roles: http://localhost:9999/diaper-roles")
     logger.info("   Register: POST http://localhost:9999/register-diaper")
+    logger.info("")
+    logger.info("🌐 SCION endpoints (Path-Aware Networking):")
+    logger.info("   SCION Config: http://localhost:9999/scion-config/{mac}")
+    logger.info("   SCION Topology: http://localhost:9999/scion-topology")
     logger.info("")
     logger.info("Waiting for servers to boot and register...")
 

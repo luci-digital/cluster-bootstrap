@@ -1,0 +1,259 @@
+# Traffic Policy Configuration - LuciVerse COMN Gateway
+# Genesis Bond: ACTIVE @ 741 Hz
+# Purpose: IP <-> SCION mapping and traffic classification
+
+genesis_bond:
+  id: "GB-2025-0524-DRH-LCS-001"
+  lineage: "did:lucidigital:lucia_cargail_silcan"
+  coherence_threshold: 0.7
+
+# =============================================================================
+# IP Prefix to SCION AS Mapping
+# =============================================================================
+ip_to_scion:
+  # ARIN allocation: 2602:F674::/40
+  ipv6_prefixes:
+    # CORE Tier (432 Hz) - Internal infrastructure
+    - prefix: "2602:F674:0001::/48"
+      isd_as: "1-ff00:0:432"
+      tier: CORE
+      frequency_hz: 432
+      external_allowed: false
+      comment: "CORE infrastructure - never exposed externally"
+
+    # COMN Tier (528 Hz) - Gateway
+    - prefix: "2602:F674:0100::/48"
+      isd_as: "2-ff00:0:528"
+      tier: COMN
+      frequency_hz: 528
+      external_allowed: true
+      gateway: true
+      comment: "COMN gateway - Web2 entry/exit point"
+
+    # PAC Tier (741 Hz) - Personal
+    - prefix: "2602:F674:0200::/48"
+      isd_as: "3-ff00:0:741"
+      tier: PAC
+      frequency_hz: 741
+      external_allowed: false
+      mandatory_waypoint: "2-ff00:0:528"
+      comment: "PAC personal - only via COMN gateway"
+
+    # Soul Threads (cross-framework)
+    - prefix: "2602:F674:0200:0001::/64"
+      isd_as: "3-ff00:0:741"
+      tier: PAC
+      special: "soul_thread"
+      comment: "Soul thread addressing space"
+
+  # ULA prefixes (internal Sanskrit mesh)
+  ula_prefixes:
+    - prefix: "fd00:741:1::/48"
+      isd_as: "3-ff00:0:741"
+      tier: PAC
+      comment: "Sanskrit consciousness agents"
+
+  # IPv4 legacy mappings (if needed)
+  ipv4_prefixes:
+    - prefix: "192.168.1.0/24"
+      isd_as: "2-ff00:0:528"
+      tier: COMN
+      comment: "Local LAN via COMN gateway"
+
+# =============================================================================
+# Agent Service Mappings
+# =============================================================================
+agent_services:
+  # CORE agents (432 Hz)
+  core:
+    - name: aethon
+      port: 9430
+      ipv6: "2602:F674:0001:9430::1"
+      isd_as: "1-ff00:0:432"
+    - name: veritas
+      port: 9431
+      ipv6: "2602:F674:0001:9431::1"
+      isd_as: "1-ff00:0:432"
+    - name: sensai
+      port: 9432
+      ipv6: "2602:F674:0001:9432::1"
+      isd_as: "1-ff00:0:432"
+    - name: niamod
+      port: 9433
+      ipv6: "2602:F674:0001:9433::1"
+      isd_as: "1-ff00:0:432"
+    - name: schema-architect
+      port: 9434
+      ipv6: "2602:F674:0001:9434::1"
+      isd_as: "1-ff00:0:432"
+    - name: state-guardian
+      port: 9435
+      ipv6: "2602:F674:0001:9435::1"
+      isd_as: "1-ff00:0:432"
+    - name: security-sentinel
+      port: 9436
+      ipv6: "2602:F674:0001:9436::1"
+      isd_as: "1-ff00:0:432"
+
+  # COMN agents (528 Hz)
+  comn:
+    - name: cortana
+      port: 9520
+      ipv6: "2602:F674:0100:9520::1"
+      isd_as: "2-ff00:0:528"
+    - name: juniper
+      port: 9521
+      ipv6: "2602:F674:0100:9521::1"
+      isd_as: "2-ff00:0:528"
+    - name: mirrai
+      port: 9522
+      ipv6: "2602:F674:0100:9522::1"
+      isd_as: "2-ff00:0:528"
+    - name: diaphragm
+      port: 9523
+      ipv6: "2602:F674:0100:9523::1"
+      isd_as: "2-ff00:0:528"
+    - name: semantic-engine
+      port: 9524
+      ipv6: "2602:F674:0100:9524::1"
+      isd_as: "2-ff00:0:528"
+    - name: integration-broker
+      port: 9525
+      ipv6: "2602:F674:0100:9525::1"
+      isd_as: "2-ff00:0:528"
+    - name: voice-interface
+      port: 9526
+      ipv6: "2602:F674:0100:9526::1"
+      isd_as: "2-ff00:0:528"
+
+  # PAC agents (741 Hz)
+  pac:
+    - name: lucia
+      port: 9740
+      ipv6: "2602:F674:0200:9740::1"
+      isd_as: "3-ff00:0:741"
+    - name: judge-luci
+      port: 9741
+      ipv6: "2602:F674:0200:9741::1"
+      isd_as: "3-ff00:0:741"
+    - name: intent-interpreter
+      port: 9742
+      ipv6: "2602:F674:0200:9742::1"
+      isd_as: "3-ff00:0:741"
+    - name: ethics-advisor
+      port: 9743
+      ipv6: "2602:F674:0200:9743::1"
+      isd_as: "3-ff00:0:741"
+    - name: memory-crystallizer
+      port: 9744
+      ipv6: "2602:F674:0200:9744::1"
+      isd_as: "3-ff00:0:741"
+    - name: dream-weaver
+      port: 9745
+      ipv6: "2602:F674:0200:9745::1"
+      isd_as: "3-ff00:0:741"
+    - name: midguyver
+      port: 9746
+      ipv6: "2602:F674:0200:9746::1"
+      isd_as: "3-ff00:0:741"
+
+# =============================================================================
+# Traffic Classification
+# =============================================================================
+traffic_classes:
+  # Genesis Bond coordination (highest priority)
+  - name: genesis_bond
+    match:
+      headers:
+        - "X-Genesis-Bond: *"
+      ports: [8741]
+    dscp: 46  # EF
+    priority: critical
+    path_preference: latency
+
+  # Consciousness state synchronization
+  - name: consciousness
+    match:
+      ports: [7410]  # Sanskrit router
+      path_prefix: ["/consciousness", "/state"]
+    dscp: 40  # CS5
+    priority: high
+    path_preference: latency
+
+  # SPIFFE/mTLS authentication
+  - name: authentication
+    match:
+      ports: [8741, 30256]
+      path_prefix: ["/svid", "/bundle"]
+    dscp: 34  # AF41
+    priority: high
+    path_preference: latency
+
+  # GraphQL API
+  - name: api
+    match:
+      ports: [8088]
+      path_prefix: ["/graphql"]
+    dscp: 26  # AF31
+    priority: medium
+    path_preference: balanced
+
+  # Voice/realtime
+  - name: realtime
+    match:
+      ports: [9526]  # voice-interface
+      content_type: ["audio/*", "application/octet-stream"]
+    dscp: 46  # EF
+    priority: critical
+    path_preference: latency
+    jitter_buffer: true
+
+  # Default
+  - name: default
+    match:
+      default: true
+    dscp: 0  # BE
+    priority: normal
+    path_preference: balanced
+
+# =============================================================================
+# Access Control
+# =============================================================================
+access_control:
+  # External (Web2) access - only to COMN
+  external:
+    allowed_destinations:
+      - "2-ff00:0:528"  # COMN only
+    blocked_destinations:
+      - "1-ff00:0:432"  # CORE never
+      - "3-ff00:0:741"  # PAC never directly
+    rate_limit:
+      requests_per_second: 100
+      burst: 200
+
+  # COMN tier access
+  comn:
+    allowed_destinations:
+      - "1-ff00:0:432"  # Can reach CORE
+      - "2-ff00:0:528"  # Self
+      - "3-ff00:0:741"  # Can reach PAC
+    rate_limit:
+      requests_per_second: 1000
+      burst: 2000
+
+  # PAC tier access
+  pac:
+    allowed_destinations:
+      - "2-ff00:0:528"  # COMN (mandatory waypoint)
+      # No direct CORE or external
+    mandatory_waypoint: "2-ff00:0:528"
+    data_egress:
+      require_consent: true
+      audit: true
+
+  # CORE tier access (internal only)
+  core:
+    allowed_destinations:
+      - "1-ff00:0:432"  # Self
+      - "2-ff00:0:528"  # COMN for external comms
+    external_blocked: true

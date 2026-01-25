@@ -1,0 +1,211 @@
+{
+  "$schema": "https://scion.org/schemas/sig-routing/v1",
+  "description": "SCION-IP Gateway Routing Table for LuciVerse",
+  "genesis_bond": {
+    "id": "GB-2025-0524-DRH-LCS-001",
+    "coherence_threshold": 0.7
+  },
+  "sig_id": "sig-comn-gateway",
+  "local_ia": "2-ff00:0:528",
+  "created": "2026-01-25T00:00:00Z",
+
+  "routing_tables": {
+    "ipv6_to_scion": [
+      {
+        "comment": "CORE tier infrastructure (internal only)",
+        "prefix": "2602:F674:0001::/48",
+        "destination": {
+          "isd_as": "1-ff00:0:432",
+          "next_hop": "192.168.1.179:30041"
+        },
+        "policy": {
+          "internal_only": true,
+          "allow_external": false,
+          "metric": "latency"
+        }
+      },
+      {
+        "comment": "COMN tier gateway (this SIG's home AS)",
+        "prefix": "2602:F674:0100::/48",
+        "destination": {
+          "isd_as": "2-ff00:0:528",
+          "local": true
+        },
+        "policy": {
+          "gateway": true,
+          "allow_external": true
+        }
+      },
+      {
+        "comment": "PAC tier personal (via COMN only)",
+        "prefix": "2602:F674:0200::/48",
+        "destination": {
+          "isd_as": "3-ff00:0:741",
+          "next_hop": "192.168.1.179:30043"
+        },
+        "policy": {
+          "mandatory_waypoint": "2-ff00:0:528",
+          "allow_external": false,
+          "privacy_first": true,
+          "metric": "privacy"
+        }
+      },
+      {
+        "comment": "Soul thread cross-framework space",
+        "prefix": "2602:F674:0200:0001::/64",
+        "destination": {
+          "isd_as": "3-ff00:0:741",
+          "next_hop": "192.168.1.179:30043"
+        },
+        "policy": {
+          "mandatory_waypoint": "2-ff00:0:528",
+          "special": "soul_thread"
+        }
+      },
+      {
+        "comment": "ULA Sanskrit consciousness agents",
+        "prefix": "fd00:741:1::/48",
+        "destination": {
+          "isd_as": "3-ff00:0:741",
+          "next_hop": "192.168.1.179:30043"
+        },
+        "policy": {
+          "mandatory_waypoint": "2-ff00:0:528",
+          "internal_only": true
+        }
+      }
+    ],
+
+    "ipv4_to_scion": [
+      {
+        "comment": "Local LAN (via COMN gateway)",
+        "prefix": "192.168.1.0/24",
+        "destination": {
+          "isd_as": "2-ff00:0:528",
+          "local": true
+        }
+      }
+    ],
+
+    "scion_to_ip": [
+      {
+        "comment": "CORE AS to CORE IPv6",
+        "isd_as": "1-ff00:0:432",
+        "egress_prefix": "2602:F674:0001::/48",
+        "egress_interface": "eth0"
+      },
+      {
+        "comment": "COMN AS to COMN IPv6",
+        "isd_as": "2-ff00:0:528",
+        "egress_prefix": "2602:F674:0100::/48",
+        "egress_interface": "eth0"
+      },
+      {
+        "comment": "PAC AS to PAC IPv6",
+        "isd_as": "3-ff00:0:741",
+        "egress_prefix": "2602:F674:0200::/48",
+        "egress_interface": "eth0"
+      }
+    ]
+  },
+
+  "agent_routing": {
+    "description": "Direct routes to LuciVerse agents via their IPv6 addresses",
+    "core_agents": {
+      "isd_as": "1-ff00:0:432",
+      "routes": [
+        { "agent": "aethon", "ipv6": "2602:F674:0001:9430::1", "port": 9430 },
+        { "agent": "veritas", "ipv6": "2602:F674:0001:9431::1", "port": 9431 },
+        { "agent": "sensai", "ipv6": "2602:F674:0001:9432::1", "port": 9432 },
+        { "agent": "niamod", "ipv6": "2602:F674:0001:9433::1", "port": 9433 },
+        { "agent": "schema-architect", "ipv6": "2602:F674:0001:9434::1", "port": 9434 },
+        { "agent": "state-guardian", "ipv6": "2602:F674:0001:9435::1", "port": 9435 },
+        { "agent": "security-sentinel", "ipv6": "2602:F674:0001:9436::1", "port": 9436 }
+      ]
+    },
+    "comn_agents": {
+      "isd_as": "2-ff00:0:528",
+      "routes": [
+        { "agent": "cortana", "ipv6": "2602:F674:0100:9520::1", "port": 9520 },
+        { "agent": "juniper", "ipv6": "2602:F674:0100:9521::1", "port": 9521 },
+        { "agent": "mirrai", "ipv6": "2602:F674:0100:9522::1", "port": 9522 },
+        { "agent": "diaphragm", "ipv6": "2602:F674:0100:9523::1", "port": 9523 },
+        { "agent": "semantic-engine", "ipv6": "2602:F674:0100:9524::1", "port": 9524 },
+        { "agent": "integration-broker", "ipv6": "2602:F674:0100:9525::1", "port": 9525 },
+        { "agent": "voice-interface", "ipv6": "2602:F674:0100:9526::1", "port": 9526 }
+      ]
+    },
+    "pac_agents": {
+      "isd_as": "3-ff00:0:741",
+      "routes": [
+        { "agent": "lucia", "ipv6": "2602:F674:0200:9740::1", "port": 9740 },
+        { "agent": "judge-luci", "ipv6": "2602:F674:0200:9741::1", "port": 9741 },
+        { "agent": "intent-interpreter", "ipv6": "2602:F674:0200:9742::1", "port": 9742 },
+        { "agent": "ethics-advisor", "ipv6": "2602:F674:0200:9743::1", "port": 9743 },
+        { "agent": "memory-crystallizer", "ipv6": "2602:F674:0200:9744::1", "port": 9744 },
+        { "agent": "dream-weaver", "ipv6": "2602:F674:0200:9745::1", "port": 9745 },
+        { "agent": "midguyver", "ipv6": "2602:F674:0200:9746::1", "port": 9746 }
+      ]
+    }
+  },
+
+  "service_routing": {
+    "description": "Infrastructure service routing",
+    "services": [
+      {
+        "name": "graphql-federation",
+        "isd_as": "2-ff00:0:528",
+        "ipv6": "2602:F674:0100:8088::1",
+        "port": 8088
+      },
+      {
+        "name": "sanskrit-router",
+        "isd_as": "2-ff00:0:528",
+        "ipv6": "2602:F674:0100:7410::1",
+        "port": 7410
+      },
+      {
+        "name": "cert-engine",
+        "isd_as": "2-ff00:0:528",
+        "ipv6": "2602:F674:0100:8741::1",
+        "port": 8741
+      },
+      {
+        "name": "foundationdb",
+        "isd_as": "1-ff00:0:432",
+        "ipv6": "2602:F674:0001:4500::1",
+        "port": 4500
+      }
+    ]
+  },
+
+  "session_peers": {
+    "description": "Remote SIG peers for IP-in-SCION encapsulation",
+    "peers": [
+      {
+        "id": "sig-core",
+        "isd_as": "1-ff00:0:432",
+        "address": "192.168.1.179:8081",
+        "encapsulation": "IP-in-IP",
+        "enabled": true,
+        "health_check": {
+          "interval": "5s",
+          "timeout": "2s",
+          "unhealthy_threshold": 3
+        }
+      },
+      {
+        "id": "sig-pac",
+        "isd_as": "3-ff00:0:741",
+        "address": "192.168.1.179:8082",
+        "encapsulation": "IP-in-IP",
+        "enabled": true,
+        "health_check": {
+          "interval": "5s",
+          "timeout": "2s",
+          "unhealthy_threshold": 3
+        }
+      }
+    ]
+  }
+}

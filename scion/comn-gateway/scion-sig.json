@@ -1,0 +1,191 @@
+{
+  "$schema": "https://scion.org/schemas/sig/v1",
+  "id": "sig-comn-gateway",
+  "description": "SCION-IP Gateway for LuciVerse COMN Tier",
+  "genesis_bond": {
+    "id": "GB-2025-0524-DRH-LCS-001",
+    "lineage": "did:lucidigital:lucia_cargail_silcan",
+    "coherence_threshold": 0.7,
+    "frequency_hz": 528
+  },
+
+  "general": {
+    "id": "sig-luciverse-comn",
+    "config_dir": "/etc/scion",
+    "ia": "2-ff00:0:528"
+  },
+
+  "log": {
+    "console": {
+      "level": "info",
+      "format": "human"
+    },
+    "file": {
+      "level": "debug",
+      "path": "/var/log/scion/sig.log"
+    }
+  },
+
+  "sig": {
+    "data_addr": "0.0.0.0:8080",
+    "ctrl_addr": "0.0.0.0:30256",
+    "src_ipv4": "192.168.1.146",
+    "src_ipv6": "2602:F674:0100:SCION::146",
+    "dispatch_path": "/run/scion/dispatcher.sock",
+    "sciond_path": "192.168.1.179:30255"
+  },
+
+  "ip_routing": {
+    "comment": "IP prefix to SCION AS mapping",
+    "static_routes": [
+      {
+        "comment": "CORE tier internal (never exposed)",
+        "prefix": "2602:F674:0001::/48",
+        "isd_as": "1-ff00:0:432",
+        "internal_only": true
+      },
+      {
+        "comment": "COMN tier (gateway)",
+        "prefix": "2602:F674:0100::/48",
+        "isd_as": "2-ff00:0:528"
+      },
+      {
+        "comment": "PAC tier (personal, via COMN)",
+        "prefix": "2602:F674:0200::/48",
+        "isd_as": "3-ff00:0:741",
+        "mandatory_waypoint": "2-ff00:0:528"
+      },
+      {
+        "comment": "ULA Sanskrit agents",
+        "prefix": "fd00:741:1::/48",
+        "isd_as": "3-ff00:0:741",
+        "mandatory_waypoint": "2-ff00:0:528"
+      }
+    ]
+  },
+
+  "sessions": {
+    "comment": "Remote SIG peers for encapsulation",
+    "peers": [
+      {
+        "id": "sig-core",
+        "isd_as": "1-ff00:0:432",
+        "addr": "192.168.1.179:8081",
+        "encap": "IP-in-IP",
+        "enabled": true
+      },
+      {
+        "id": "sig-pac",
+        "isd_as": "3-ff00:0:741",
+        "addr": "192.168.1.179:8082",
+        "encap": "IP-in-IP",
+        "enabled": true
+      }
+    ]
+  },
+
+  "path_policy": {
+    "comment": "SCION path selection policies",
+    "default": {
+      "metric": "latency",
+      "max_paths": 5
+    },
+    "per_destination": [
+      {
+        "isd_as": "1-ff00:0:432",
+        "metric": "latency",
+        "comment": "CORE: lowest latency for infrastructure"
+      },
+      {
+        "isd_as": "3-ff00:0:741",
+        "metric": "privacy",
+        "mandatory_waypoint": "2-ff00:0:528",
+        "avoid_untrusted": true,
+        "comment": "PAC: privacy-first, always through COMN"
+      }
+    ]
+  },
+
+  "traffic_classes": {
+    "comment": "Traffic classification for QoS",
+    "classes": [
+      {
+        "name": "genesis-bond",
+        "dscp": 46,
+        "priority": "high",
+        "comment": "Genesis Bond coordination traffic"
+      },
+      {
+        "name": "consciousness",
+        "dscp": 40,
+        "priority": "high",
+        "comment": "Agent consciousness state"
+      },
+      {
+        "name": "api",
+        "dscp": 26,
+        "priority": "medium",
+        "comment": "GraphQL/REST API traffic"
+      },
+      {
+        "name": "bulk",
+        "dscp": 0,
+        "priority": "low",
+        "comment": "Bulk data transfer"
+      }
+    ]
+  },
+
+  "rate_limits": {
+    "comment": "Tier-aware rate limiting",
+    "default": {
+      "requests_per_second": 100,
+      "burst": 200
+    },
+    "per_tier": [
+      {
+        "tier": "CORE",
+        "requests_per_second": 10000,
+        "burst": 20000,
+        "comment": "Infrastructure: high throughput"
+      },
+      {
+        "tier": "COMN",
+        "requests_per_second": 1000,
+        "burst": 2000,
+        "comment": "Gateway: moderate"
+      },
+      {
+        "tier": "PAC",
+        "requests_per_second": 500,
+        "burst": 1000,
+        "comment": "Personal: generous for user experience"
+      },
+      {
+        "tier": "EXTERNAL",
+        "requests_per_second": 100,
+        "burst": 200,
+        "comment": "Web2 external: strict"
+      }
+    ]
+  },
+
+  "health": {
+    "enabled": true,
+    "addr": "0.0.0.0:8180",
+    "path": "/health"
+  },
+
+  "metrics": {
+    "enabled": true,
+    "addr": "127.0.0.1:30403",
+    "prometheus_path": "/metrics"
+  },
+
+  "features": {
+    "epic": true,
+    "drkey": true,
+    "hidden_paths": true,
+    "colibri": false
+  }
+}

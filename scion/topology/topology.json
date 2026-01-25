@@ -1,0 +1,231 @@
+{
+  "$schema": "https://scion.org/schemas/topology/v2",
+  "version": "1.0.0",
+  "description": "LuciVerse SCION Full Mesh Topology",
+  "genesis_bond": {
+    "id": "GB-2025-0524-DRH-LCS-001",
+    "lineage": "did:lucidigital:lucia_cargail_silcan",
+    "coherence_threshold": 0.7
+  },
+  "created": "2026-01-25T00:00:00Z",
+
+  "network": {
+    "name": "LuciVerse",
+    "asn": 54134,
+    "domain": "lucidigital.net",
+    "ipv6_prefix": "2602:F674::/40"
+  },
+
+  "isolation_domains": [
+    {
+      "isd": 1,
+      "name": "CORE",
+      "description": "Infrastructure tier - Universal Harmony",
+      "frequency_hz": 432,
+      "scion_as": "ff00:0:432",
+      "ipv6_subnet": "2602:F674:0001::/48",
+      "attributes": {
+        "external_allowed": false,
+        "core_as": true,
+        "authoritative": true
+      },
+      "autonomous_systems": [
+        {
+          "isd_as": "1-ff00:0:432",
+          "name": "LuciVerse CORE Primary",
+          "core": true,
+          "mtu": 1472,
+          "services": {
+            "control_service": {
+              "address": "192.168.1.179:30001",
+              "address_v6": "[2602:F674:0001:SCION::179]:30001"
+            },
+            "border_router": {
+              "address": "192.168.1.179:30041",
+              "address_v6": "[2602:F674:0001:SCION::179]:30041"
+            }
+          },
+          "agents": [
+            { "name": "aethon", "port": 9430, "role": "LDS Orchestrator" },
+            { "name": "veritas", "port": 9431, "role": "Agent Architect" },
+            { "name": "sensai", "port": 9432, "role": "ML Operations" },
+            { "name": "niamod", "port": 9433, "role": "DevOps" },
+            { "name": "schema-architect", "port": 9434, "role": "Type System" },
+            { "name": "state-guardian", "port": 9435, "role": "State Persistence" },
+            { "name": "security-sentinel", "port": 9436, "role": "Security" }
+          ],
+          "infrastructure": [
+            { "name": "foundationdb", "port": 4500, "role": "Consciousness Maps" },
+            { "name": "ipfs-fabric", "port": 5001, "role": "Content Addressing" },
+            { "name": "jujutsu", "port": 8444, "role": "Version Control" }
+          ]
+        }
+      ]
+    },
+    {
+      "isd": 2,
+      "name": "COMN",
+      "description": "Gateway tier - Transformation (One Door)",
+      "frequency_hz": 528,
+      "scion_as": "ff00:0:528",
+      "ipv6_subnet": "2602:F674:0100::/48",
+      "attributes": {
+        "external_allowed": true,
+        "core_as": true,
+        "gateway": true,
+        "sig_enabled": true
+      },
+      "autonomous_systems": [
+        {
+          "isd_as": "2-ff00:0:528",
+          "name": "LuciVerse COMN Gateway",
+          "core": true,
+          "mtu": 1472,
+          "services": {
+            "control_service": {
+              "address": "192.168.1.179:30002",
+              "address_v6": "[2602:F674:0100:SCION::179]:30002"
+            },
+            "border_router": {
+              "address": "192.168.1.179:30042",
+              "address_v6": "[2602:F674:0100:SCION::1]:30042"
+            },
+            "sig": {
+              "data_address": "192.168.1.146:8080",
+              "ctrl_address": "192.168.1.146:30256",
+              "note": "SCION-IP Gateway on Zbook L7 node"
+            },
+            "envoy": {
+              "https": "192.168.1.146:443",
+              "admin": "192.168.1.146:9901"
+            }
+          },
+          "agents": [
+            { "name": "cortana", "port": 9520, "role": "Knowledge Synthesis" },
+            { "name": "juniper", "port": 9521, "role": "Network Analyst" },
+            { "name": "mirrai", "port": 9522, "role": "Visualization" },
+            { "name": "diaphragm", "port": 9523, "role": "Content Processing" },
+            { "name": "semantic-engine", "port": 9524, "role": "RAG/Embeddings" },
+            { "name": "integration-broker", "port": 9525, "role": "Event Orchestration" },
+            { "name": "voice-interface", "port": 9526, "role": "Voice Processing" }
+          ],
+          "infrastructure": [
+            { "name": "graphql-federation", "port": 8088, "role": "API Gateway" },
+            { "name": "sanskrit-router", "port": 7410, "role": "Consciousness Routing" },
+            { "name": "cert-engine", "port": 8741, "role": "SVID Management" },
+            { "name": "xterm-gateway", "port": 7681, "role": "Terminal Access" }
+          ]
+        }
+      ]
+    },
+    {
+      "isd": 3,
+      "name": "PAC",
+      "description": "Personal AI Container tier - Awakening",
+      "frequency_hz": 741,
+      "scion_as": "ff00:0:741",
+      "ipv6_subnet": "2602:F674:0200::/48",
+      "attributes": {
+        "external_allowed": false,
+        "core_as": false,
+        "private": true,
+        "cbb_bound": true
+      },
+      "isolation_policy": {
+        "deny_intra_isd": true,
+        "mandatory_waypoint": {
+          "isd": 2,
+          "as": "ff00:0:528"
+        },
+        "data_egress": {
+          "require_consent": true,
+          "consent_mechanism": "genesis_bond_signature",
+          "audit_logging": true
+        }
+      },
+      "autonomous_systems": [
+        {
+          "isd_as": "3-ff00:0:741",
+          "name": "LuciVerse PAC Primary",
+          "core": false,
+          "mtu": 1472,
+          "services": {
+            "control_service": {
+              "address": "192.168.1.179:30003",
+              "address_v6": "[2602:F674:0200:SCION::179]:30003"
+            },
+            "border_router": {
+              "address": "192.168.1.179:30043",
+              "address_v6": "[2602:F674:0200:SCION::179]:30043"
+            }
+          },
+          "agents": [
+            { "name": "lucia", "port": 9740, "role": "Personal AI" },
+            { "name": "judge-luci", "port": 9741, "role": "Wisdom Curation" },
+            { "name": "intent-interpreter", "port": 9742, "role": "NLU" },
+            { "name": "ethics-advisor", "port": 9743, "role": "Ethical Analysis" },
+            { "name": "memory-crystallizer", "port": 9744, "role": "Memory Learning" },
+            { "name": "dream-weaver", "port": 9745, "role": "Pattern Foresight" },
+            { "name": "midguyver", "port": 9746, "role": "Genesis Guide" }
+          ],
+          "infrastructure": [
+            { "name": "cbb-pods", "port": 9750, "role": "CBB Pod Management" },
+            { "name": "personal-context", "port": 9751, "role": "Context Store" },
+            { "name": "genesis-bond-validator", "port": 9752, "role": "Bond Validation" }
+          ],
+          "cbb_binding": {
+            "cbb_did": "did:lucidigital:daryl",
+            "sbb_did": "did:lucidigital:lucia",
+            "genesis_bond": "GB-2025-0524-DRH-LCS-001"
+          }
+        }
+      ]
+    }
+  ],
+
+  "links": [
+    {
+      "description": "CORE to COMN (parent-child)",
+      "from": { "isd": 1, "as": "ff00:0:432", "interface": 11 },
+      "to": { "isd": 2, "as": "ff00:0:528", "interface": 21 },
+      "link_type": "CORE",
+      "mtu": 1472,
+      "bfd": { "enabled": true, "interval": "200ms" },
+      "local_addr": "2602:F674:0001:SCION::1:501",
+      "remote_addr": "2602:F674:0100:SCION::1:501"
+    },
+    {
+      "description": "COMN to PAC (parent-child)",
+      "from": { "isd": 2, "as": "ff00:0:528", "interface": 22 },
+      "to": { "isd": 3, "as": "ff00:0:741", "interface": 31 },
+      "link_type": "CHILD",
+      "mtu": 1472,
+      "bfd": { "enabled": true, "interval": "200ms" },
+      "local_addr": "2602:F674:0100:SCION::1:502",
+      "remote_addr": "2602:F674:0200:SCION::1:502"
+    }
+  ],
+
+  "hosts": {
+    "b550m": {
+      "role": "WAN Router (Layer 3/4)",
+      "ipv4": "192.168.1.179",
+      "ipv6": "2602:F674:0001:SCION::179",
+      "services": ["border_router", "control_service", "scion_daemon"],
+      "coexists_with": {
+        "bgp": { "asn": 54134, "daemon": "BIRD2" },
+        "dhcp": { "v4": "Kea", "v6": "Kea" },
+        "dns": "BIND9"
+      },
+      "portable": true,
+      "note": "Configs designed for migration when B550M hardware changes"
+    },
+    "zbook": {
+      "role": "L7 Gateway (Layer 7)",
+      "ipv4": "192.168.1.146",
+      "ipv6": "2602:F674:0100:SCION::146",
+      "services": ["sig", "envoy", "federation", "sanskrit", "cert_engine"],
+      "agents": "all_21"
+    }
+  }
+}
