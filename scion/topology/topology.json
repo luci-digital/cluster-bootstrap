@@ -38,11 +38,11 @@
           "services": {
             "control_service": {
               "address": "192.168.1.179:30001",
-              "address_v6": "[2602:F674:0001:SCION::179]:30001"
+              "address_v6": "[2602:F674:0001:0000::179]:30001"
             },
             "border_router": {
               "address": "192.168.1.179:30041",
-              "address_v6": "[2602:F674:0001:SCION::179]:30041"
+              "address_v6": "[2602:F674:0001:0000::179]:30041"
             }
           },
           "agents": [
@@ -84,11 +84,11 @@
           "services": {
             "control_service": {
               "address": "192.168.1.179:30002",
-              "address_v6": "[2602:F674:0100:SCION::179]:30002"
+              "address_v6": "[2602:F674:0100:0000::179]:30002"
             },
             "border_router": {
               "address": "192.168.1.179:30042",
-              "address_v6": "[2602:F674:0100:SCION::1]:30042"
+              "address_v6": "[2602:F674:0100:0000::1]:30042"
             },
             "sig": {
               "data_address": "192.168.1.146:8080",
@@ -152,11 +152,11 @@
           "services": {
             "control_service": {
               "address": "192.168.1.179:30003",
-              "address_v6": "[2602:F674:0200:SCION::179]:30003"
+              "address_v6": "[2602:F674:0200:0000::179]:30003"
             },
             "border_router": {
               "address": "192.168.1.179:30043",
-              "address_v6": "[2602:F674:0200:SCION::179]:30043"
+              "address_v6": "[2602:F674:0200:0000::179]:30043"
             }
           },
           "agents": [
@@ -191,8 +191,8 @@
       "link_type": "CORE",
       "mtu": 1472,
       "bfd": { "enabled": true, "interval": "200ms" },
-      "local_addr": "2602:F674:0001:SCION::1:501",
-      "remote_addr": "2602:F674:0100:SCION::1:501"
+      "local_addr": "2602:F674:0001:0000::1:501",
+      "remote_addr": "2602:F674:0100:0000::1:501"
     },
     {
       "description": "COMN to PAC (parent-child)",
@@ -201,8 +201,8 @@
       "link_type": "CHILD",
       "mtu": 1472,
       "bfd": { "enabled": true, "interval": "200ms" },
-      "local_addr": "2602:F674:0100:SCION::1:502",
-      "remote_addr": "2602:F674:0200:SCION::1:502"
+      "local_addr": "2602:F674:0100:0000::1:502",
+      "remote_addr": "2602:F674:0200:0000::1:502"
     }
   ],
 
@@ -210,7 +210,7 @@
     "b550m": {
       "role": "WAN Router (Layer 3/4)",
       "ipv4": "192.168.1.179",
-      "ipv6": "2602:F674:0001:SCION::179",
+      "ipv6": "2602:F674:0001:0000::179",
       "services": ["border_router", "control_service", "scion_daemon"],
       "coexists_with": {
         "bgp": { "asn": 54134, "daemon": "BIRD2" },
@@ -223,7 +223,7 @@
     "zbook": {
       "role": "L7 Gateway (Layer 7)",
       "ipv4": "192.168.1.146",
-      "ipv6": "2602:F674:0100:SCION::146",
+      "ipv6": "2602:F674:0100:0000::146",
       "services": ["sig", "envoy", "federation", "sanskrit", "cert_engine"],
       "agents": "all_21"
     }
