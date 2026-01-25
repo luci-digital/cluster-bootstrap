@@ -1,0 +1,42 @@
+{
+  "isd_as": "2-ff00:0:528",
+  "mtu": 1472,
+  "attributes": ["core"],
+  "dispatched_ports": "1024-65535",
+  "border_routers": {
+    "br-comn": {
+      "internal_addr": "192.168.1.146:30042",
+      "ctrl_addr": "192.168.1.146:30252",
+      "interfaces": {
+        "21": {
+          "underlay": {
+            "local": "192.168.1.146:50021",
+            "remote": "192.168.1.179:50011"
+          },
+          "isd_as": "1-ff00:0:432",
+          "link_to": "CORE",
+          "mtu": 1472
+        },
+        "22": {
+          "underlay": {
+            "local": "192.168.1.146:50022",
+            "remote": "192.168.1.146:50031"
+          },
+          "isd_as": "3-ff00:0:741",
+          "link_to": "CHILD",
+          "mtu": 1472
+        }
+      }
+    }
+  },
+  "control_service": {
+    "cs-comn": {
+      "addr": "192.168.1.146:30252"
+    }
+  },
+  "discovery_service": {
+    "ds-comn": {
+      "addr": "192.168.1.146:30252"
+    }
+  }
+}

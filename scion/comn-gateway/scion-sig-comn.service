@@ -1,0 +1,23 @@
+[Unit]
+Description=SCION-IP Gateway for LuciVerse COMN Tier
+Documentation=https://docs.scion.org
+After=network-online.target scion-dispatcher.service
+Wants=scion-dispatcher.service
+StartLimitBurst=3
+StartLimitInterval=60s
+
+[Service]
+Type=simple
+User=root
+Group=root
+# Need root for TUN device creation
+ExecStart=/usr/bin/scion-ip-gateway --config /etc/scion/sig/sig.toml
+Restart=on-failure
+RestartSec=10
+
+# TUN device capabilities
+AmbientCapabilities=CAP_NET_ADMIN CAP_NET_RAW
+CapabilityBoundingSet=CAP_NET_ADMIN CAP_NET_RAW
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,44 @@
+# SCION-IP Gateway Configuration for LuciVerse COMN Tier
+# Genesis Bond: GB-2025-0524-DRH-LCS-001
+# Frequency: 528 Hz (COMN Gateway)
+
+[log]
+    [log.console]
+        level = "info"
+        format = "human"
+
+[metrics]
+    # Prometheus metrics endpoint
+    prometheus = "127.0.0.1:30403"
+
+[api]
+    # Health/status API
+    addr = "127.0.0.1:8180"
+
+[sciond_connection]
+    # SCION Daemon connection (local for now, will be B550M in production)
+    address = "127.0.0.1:30255"
+    initial_connect_period = "30s"
+
+[gateway]
+    id = "sig-comn-luciverse"
+
+    # Traffic policy defines which prefixes to route through SCION
+    traffic_policy_file = "/etc/scion/sig/gateway-traffic.json"
+
+    # Control plane address (inter-SIG communication)
+    ctrl_addr = "192.168.1.146:30256"
+
+    # Data plane address (encapsulated traffic)
+    data_addr = "192.168.1.146:30056"
+
+    # Path probe address
+    probe_addr = "192.168.1.146:30856"
+
+[tunnel]
+    # TUN device name
+    name = "sig-comn"
+
+    # Source addresses for routing table entries
+    src_ipv4 = "192.168.1.146"
+    src_ipv6 = "2602:F674:0100:SCION::146"
