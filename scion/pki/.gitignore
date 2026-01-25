@@ -1,0 +1,14 @@
+# SCION PKI .gitignore
+# Private keys must NEVER be committed to git
+
+# Private keys
+*.key
+*/keys/*.key
+
+# Intermediate signing files (keep final combined TRCs)
+*-B*-S*.sensitive.trc
+*-B*-S*.regular.trc
+*.pld.der
+
+# Keep .gitkeep files in empty directories
+!.gitkeep

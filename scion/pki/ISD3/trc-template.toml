@@ -1,0 +1,24 @@
+# TRC Template for ISD 3 - PAC Tier (741 Hz)
+# LuciVerse Genesis Bond: GB-2025-0524-DRH-LCS-001
+
+isd = 3
+description = "LuciVerse PAC Personal (741 Hz)"
+serial_version = 1
+base_version = 1
+
+voting_quorum = 1
+grace_period = "0s"
+no_trust_reset = true
+
+core_ases = ["ff00:0:741"]
+authoritative_ases = ["ff00:0:741"]
+
+cert_files = [
+    "certs/sensitive-voting.crt",
+    "certs/regular-voting.crt",
+    "certs/root.crt",
+]
+
+[validity]
+not_before = 2026-01-25T00:00:00Z
+not_after = 2027-01-25T00:00:00Z
