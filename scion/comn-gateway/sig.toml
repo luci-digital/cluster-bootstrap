@@ -27,18 +27,18 @@
     traffic_policy_file = "/etc/scion/sig/gateway-traffic.json"
 
     # Control plane address (inter-SIG communication)
-    ctrl_addr = "192.168.1.146:30256"
+    ctrl_addr = "192.168.1.145:30256"
 
     # Data plane address (encapsulated traffic)
-    data_addr = "192.168.1.146:30056"
+    data_addr = "192.168.1.145:30056"
 
     # Path probe address
-    probe_addr = "192.168.1.146:30856"
+    probe_addr = "192.168.1.145:30856"
 
 [tunnel]
     # TUN device name
     name = "sig-comn"
 
     # Source addresses for routing table entries
-    src_ipv4 = "192.168.1.146"
-    src_ipv6 = "2602:F674:0100:SCION::146"
+    src_ipv4 = "192.168.1.145"
+    src_ipv6 = "2602:F674:0100:0000::146"

@@ -91,13 +91,13 @@
               "address_v6": "[2602:F674:0100:0000::1]:30042"
             },
             "sig": {
-              "data_address": "192.168.1.146:8080",
-              "ctrl_address": "192.168.1.146:30256",
+              "data_address": "192.168.1.145:8080",
+              "ctrl_address": "192.168.1.145:30256",
               "note": "SCION-IP Gateway on Zbook L7 node"
             },
             "envoy": {
-              "https": "192.168.1.146:443",
-              "admin": "192.168.1.146:9901"
+              "https": "192.168.1.145:443",
+              "admin": "192.168.1.145:9901"
             }
           },
           "agents": [
@@ -222,7 +222,7 @@
     },
     "zbook": {
       "role": "L7 Gateway (Layer 7)",
-      "ipv4": "192.168.1.146",
+      "ipv4": "192.168.1.145",
       "ipv6": "2602:F674:0100:0000::146",
       "services": ["sig", "envoy", "federation", "sanskrit", "cert_engine"],
       "agents": "all_21"
