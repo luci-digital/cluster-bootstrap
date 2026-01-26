@@ -1,0 +1,13 @@
+[Unit]
+Description=Cloudflare Tunnel for lucidigital.io
+After=network.target
+
+[Service]
+Type=simple
+User=daryl
+ExecStart=/usr/bin/cloudflared tunnel run --token eyJhIjoiOTgxZmE3NTQyMGE2NDEyYzAzOWVjODcwY2E5NzQ5ZTUiLCJ0IjoiNGEwNWMzYzYtODlmZS00YzM5LThkMWEtYTc2OGE1ZGM5ZDlmIiwicyI6Ill6UmlNVE5sWTJVdFpEUTFaQzAwWVRZekxXRTJPREl0Wm1Zd1l6TmlZV00wT0RaaCJ9
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
