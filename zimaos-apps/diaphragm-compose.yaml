@@ -1,0 +1,38 @@
+# LuciVerse Diaphragm Stack for ZimaOS
+# Deploy: docker compose -f diaphragm-compose.yaml up -d
+
+version: '3.8'
+
+services:
+  dropzone:
+    image: copyparty/copyparty:latest
+    container_name: luciverse-dropzone
+    ports:
+      - "3923:3923"
+    volumes:
+      - /DATA/luciverse/dropzone:/w/dropzone
+      - /DATA/luciverse/processed:/w/processed
+    environment:
+      - COPYPARTY_NO_AUTH=1
+    command: -v /w/dropzone:dropzone:rw:a -v /w/processed:processed:r
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    container_name: luciverse-redis
+    volumes:
+      - /DATA/luciverse/redis:/data
+    restart: unless-stopped
+
+  explorer:
+    image: nginx:alpine
+    container_name: luciverse-explorer
+    ports:
+      - "8528:80"
+    volumes:
+      - /DATA/luciverse/obsidian-vault:/usr/share/nginx/html:ro
+    restart: unless-stopped
+
+networks:
+  default:
+    name: luciverse-net
