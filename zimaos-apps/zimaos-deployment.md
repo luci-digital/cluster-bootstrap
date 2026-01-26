@@ -19,7 +19,7 @@ ssh -o BatchMode=yes daryl@192.168.1.152 "hostname"
 ```bash
 ssh daryl@192.168.1.152 "ls -la /DATA/.docker/config.json"
 ```
-If permission denied, fix via web terminal (http://192.168.1.152:2222/):
+If permission denied, fix via web terminal (http://192.168.1.152:7681/):
 ```bash
 sudo chmod 755 /DATA/.docker
 sudo chmod 666 /DATA/.docker/config.json
@@ -69,7 +69,7 @@ ssh daryl@192.168.1.152 'docker ps --filter "name=<app-name>"'
 ## Error Recovery
 
 ### SSH Permission Denied
-1. Open web terminal: http://192.168.1.152:2222/
+1. Open web terminal: http://192.168.1.152:7681/
 2. Fix SSH keys:
 ```bash
 sudo mkdir -p /DATA/.ssh

@@ -49,7 +49,7 @@ ssh daryl@<zimaos-ip>
 ```
 
 ### Method 2: Web Terminal (ttydBridge)
-- URL: `http://192.168.1.152:2222/`
+- URL: `http://192.168.1.152:7681/` (port may vary: 2222 or 7681)
 - Default credentials: `admin` / `password`
 
 ### Method 3: Direct Console
