@@ -12,12 +12,16 @@
 | gateway.lucidigital.io | 127.0.0.1:8741 | cert-engine |
 | install.lucidigital.io | 127.0.0.1:8741 | cert-engine |
 | drop.lucidigital.io | 192.168.1.152:3923 | FileBrowser (ZimaOS) |
+| explorer.lucidigital.io | 192.168.1.152:8528 | LDS Explorer (ZimaOS) |
 | atune.lucidigital.io | 127.0.0.1:3001 | A-Tune UI (Grafana) |
 
 ## Backend Details
 - **drop.lucidigital.io**: FileBrowser on ZimaOS for Diaphragm intake pipeline
   - Credentials: 1Password "ZimaOS FileBrowser Dropzone" (Lucia-AI-Secrets vault)
   - Storage: `/DATA/luciverse/dropzone/`
+- **explorer.lucidigital.io**: LDS Knowledge Explorer on ZimaOS
+  - Storage: `/DATA/luciverse/obsidian-vault/`
+  - Container: `luciverse-explorer` (nginx:alpine)
 - **atune.lucidigital.io**: Grafana A-Tune dashboard on Zbook
 
 ## Files
@@ -39,6 +43,7 @@ sudo sysctl -p /etc/sysctl.d/99-cloudflared-quic.conf
 ## DNS Records
 CNAME records pointing to `4a05c3c6-89fe-4c39-8d1a-a768a5dc9d9f.cfargotunnel.com`:
 - drop.lucidigital.io
+- explorer.lucidigital.io
 - atune.lucidigital.io
 - api.lucidigital.io (pre-existing)
 - gateway.lucidigital.io (pre-existing)
