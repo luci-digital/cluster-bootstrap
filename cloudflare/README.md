@@ -11,8 +11,14 @@
 | api.lucidigital.io | 127.0.0.1:8741 | cert-engine |
 | gateway.lucidigital.io | 127.0.0.1:8741 | cert-engine |
 | install.lucidigital.io | 127.0.0.1:8741 | cert-engine |
-| drop.lucidigital.io | 127.0.0.1:3923 | copyparty |
-| atune.lucidigital.io | 127.0.0.1:3923 | copyparty |
+| drop.lucidigital.io | 192.168.1.152:3923 | FileBrowser (ZimaOS) |
+| atune.lucidigital.io | 127.0.0.1:3001 | A-Tune UI (Grafana) |
+
+## Backend Details
+- **drop.lucidigital.io**: FileBrowser on ZimaOS for Diaphragm intake pipeline
+  - Credentials: 1Password "ZimaOS FileBrowser Dropzone" (Lucia-AI-Secrets vault)
+  - Storage: `/DATA/luciverse/dropzone/`
+- **atune.lucidigital.io**: Grafana A-Tune dashboard on Zbook
 
 ## Files
 - `cloudflared-lucidigital.service` - Systemd service unit
