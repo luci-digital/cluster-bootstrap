@@ -1,0 +1,623 @@
+{
+  "name": "luciverse-scion",
+  "type": "clab",
+  "clab": {
+    "config": {
+      "prefix": "clab",
+      "mgmt": {
+        "network": "luciverse-scion-net",
+        "bridge": "br-19f90d119794",
+        "ipv4-subnet": "172.100.100.0/24",
+        "ipv4-gw": "172.100.100.1",
+        "ipv6-subnet": "2001:db8:100::/64",
+        "ipv6-gw": "2001:db8:100::1",
+        "external-access": true
+      }
+    }
+  },
+  "ssh-pub-keys": ["ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIMFXwJ3PuR0lWe25HwdhG+dykqJMiLhafJZvWhTcThy1","ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAILp/LsmQSNS8wapaw7hvA35la0Y7L0PjigidXaQEKOzc"],
+  "nodes": {
+    "b550m-br": {
+      "index": "0",
+      "shortname": "b550m-br",
+      "longname": "clab-luciverse-scion-b550m-br",
+      "fqdn": "b550m-br.luciverse-scion.io",
+      "group": "",
+      "labdir": "/home/daryl/cluster-bootstrap/scion/lab/clab-luciverse-scion/b550m-br",
+      "kind": "linux",
+      "image": "scionlab/scion:latest",
+      "mgmt-net": "",
+      "mgmt-intf": "",
+      "mgmt-ipv4-address": "172.100.100.7",
+      "mgmt-ipv4-prefix-length": 24,
+      "mgmt-ipv6-address": "2001:db8:100::7",
+      "mgmt-ipv6-prefix-length": 64,
+      "mac-address": "",
+      "labels": {
+        "clab-mgmt-net-bridge": "br-19f90d119794",
+        "clab-node-group": "",
+        "clab-node-kind": "linux",
+        "clab-node-lab-dir": "/home/daryl/cluster-bootstrap/scion/lab/clab-luciverse-scion/b550m-br",
+        "clab-node-longname": "clab-luciverse-scion-b550m-br",
+        "clab-node-name": "b550m-br",
+        "clab-node-type": "",
+        "clab-owner": "daryl",
+        "clab-topo-file": "/home/daryl/cluster-bootstrap/scion/lab/luciverse-scion.clab.yml",
+        "containerlab": "luciverse-scion",
+        "genesis-bond": "GB-2025-0524-DRH-LCS-001",
+        "role": "border-router",
+        "tier": "all"
+      },
+      "port-bindings": [
+      ]
+    },
+    "client-comn": {
+      "index": "1",
+      "shortname": "client-comn",
+      "longname": "clab-luciverse-scion-client-comn",
+      "fqdn": "client-comn.luciverse-scion.io",
+      "group": "",
+      "labdir": "/home/daryl/cluster-bootstrap/scion/lab/clab-luciverse-scion/client-comn",
+      "kind": "linux",
+      "image": "scionlab/scion:latest",
+      "mgmt-net": "",
+      "mgmt-intf": "",
+      "mgmt-ipv4-address": "172.100.100.12",
+      "mgmt-ipv4-prefix-length": 24,
+      "mgmt-ipv6-address": "2001:db8:100::c",
+      "mgmt-ipv6-prefix-length": 64,
+      "mac-address": "",
+      "labels": {
+        "clab-mgmt-net-bridge": "br-19f90d119794",
+        "clab-node-group": "",
+        "clab-node-kind": "linux",
+        "clab-node-lab-dir": "/home/daryl/cluster-bootstrap/scion/lab/clab-luciverse-scion/client-comn",
+        "clab-node-longname": "clab-luciverse-scion-client-comn",
+        "clab-node-name": "client-comn",
+        "clab-node-type": "",
+        "clab-owner": "daryl",
+        "clab-topo-file": "/home/daryl/cluster-bootstrap/scion/lab/luciverse-scion.clab.yml",
+        "containerlab": "luciverse-scion",
+        "frequency": "528",
+        "role": "client",
+        "tier": "COMN"
+      },
+      "port-bindings": [
+      ]
+    },
+    "client-core": {
+      "index": "2",
+      "shortname": "client-core",
+      "longname": "clab-luciverse-scion-client-core",
+      "fqdn": "client-core.luciverse-scion.io",
+      "group": "",
+      "labdir": "/home/daryl/cluster-bootstrap/scion/lab/clab-luciverse-scion/client-core",
+      "kind": "linux",
+      "image": "scionlab/scion:latest",
+      "mgmt-net": "",
+      "mgmt-intf": "",
+      "mgmt-ipv4-address": "172.100.100.8",
+      "mgmt-ipv4-prefix-length": 24,
+      "mgmt-ipv6-address": "2001:db8:100::8",
+      "mgmt-ipv6-prefix-length": 64,
+      "mac-address": "",
+      "labels": {
+        "clab-mgmt-net-bridge": "br-19f90d119794",
+        "clab-node-group": "",
+        "clab-node-kind": "linux",
+        "clab-node-lab-dir": "/home/daryl/cluster-bootstrap/scion/lab/clab-luciverse-scion/client-core",
+        "clab-node-longname": "clab-luciverse-scion-client-core",
+        "clab-node-name": "client-core",
+        "clab-node-type": "",
+        "clab-owner": "daryl",
+        "clab-topo-file": "/home/daryl/cluster-bootstrap/scion/lab/luciverse-scion.clab.yml",
+        "containerlab": "luciverse-scion",
+        "frequency": "432",
+        "role": "client",
+        "tier": "CORE"
+      },
+      "port-bindings": [
+      ]
+    },
+    "client-pac": {
+      "index": "3",
+      "shortname": "client-pac",
+      "longname": "clab-luciverse-scion-client-pac",
+      "fqdn": "client-pac.luciverse-scion.io",
+      "group": "",
+      "labdir": "/home/daryl/cluster-bootstrap/scion/lab/clab-luciverse-scion/client-pac",
+      "kind": "linux",
+      "image": "scionlab/scion:latest",
+      "mgmt-net": "",
+      "mgmt-intf": "",
+      "mgmt-ipv4-address": "172.100.100.10",
+      "mgmt-ipv4-prefix-length": 24,
+      "mgmt-ipv6-address": "2001:db8:100::a",
+      "mgmt-ipv6-prefix-length": 64,
+      "mac-address": "",
+      "labels": {
+        "clab-mgmt-net-bridge": "br-19f90d119794",
+        "clab-node-group": "",
+        "clab-node-kind": "linux",
+        "clab-node-lab-dir": "/home/daryl/cluster-bootstrap/scion/lab/clab-luciverse-scion/client-pac",
+        "clab-node-longname": "clab-luciverse-scion-client-pac",
+        "clab-node-name": "client-pac",
+        "clab-node-type": "",
+        "clab-owner": "daryl",
+        "clab-topo-file": "/home/daryl/cluster-bootstrap/scion/lab/luciverse-scion.clab.yml",
+        "containerlab": "luciverse-scion",
+        "frequency": "741",
+        "role": "client",
+        "tier": "PAC"
+      },
+      "port-bindings": [
+      ]
+    },
+    "cs-comn": {
+      "index": "4",
+      "shortname": "cs-comn",
+      "longname": "clab-luciverse-scion-cs-comn",
+      "fqdn": "cs-comn.luciverse-scion.io",
+      "group": "",
+      "labdir": "/home/daryl/cluster-bootstrap/scion/lab/clab-luciverse-scion/cs-comn",
+      "kind": "linux",
+      "image": "scionlab/scion:latest",
+      "mgmt-net": "",
+      "mgmt-intf": "",
+      "mgmt-ipv4-address": "172.100.100.2",
+      "mgmt-ipv4-prefix-length": 24,
+      "mgmt-ipv6-address": "2001:db8:100::2",
+      "mgmt-ipv6-prefix-length": 64,
+      "mac-address": "",
+      "labels": {
+        "clab-mgmt-net-bridge": "br-19f90d119794",
+        "clab-node-group": "",
+        "clab-node-kind": "linux",
+        "clab-node-lab-dir": "/home/daryl/cluster-bootstrap/scion/lab/clab-luciverse-scion/cs-comn",
+        "clab-node-longname": "clab-luciverse-scion-cs-comn",
+        "clab-node-name": "cs-comn",
+        "clab-node-type": "",
+        "clab-owner": "daryl",
+        "clab-topo-file": "/home/daryl/cluster-bootstrap/scion/lab/luciverse-scion.clab.yml",
+        "containerlab": "luciverse-scion",
+        "frequency": "528",
+        "isd-as": "2-ff00:0:528",
+        "role": "control-service",
+        "tier": "COMN"
+      },
+      "port-bindings": [
+      ]
+    },
+    "cs-core": {
+      "index": "5",
+      "shortname": "cs-core",
+      "longname": "clab-luciverse-scion-cs-core",
+      "fqdn": "cs-core.luciverse-scion.io",
+      "group": "",
+      "labdir": "/home/daryl/cluster-bootstrap/scion/lab/clab-luciverse-scion/cs-core",
+      "kind": "linux",
+      "image": "scionlab/scion:latest",
+      "mgmt-net": "",
+      "mgmt-intf": "",
+      "mgmt-ipv4-address": "172.100.100.4",
+      "mgmt-ipv4-prefix-length": 24,
+      "mgmt-ipv6-address": "2001:db8:100::4",
+      "mgmt-ipv6-prefix-length": 64,
+      "mac-address": "",
+      "labels": {
+        "clab-mgmt-net-bridge": "br-19f90d119794",
+        "clab-node-group": "",
+        "clab-node-kind": "linux",
+        "clab-node-lab-dir": "/home/daryl/cluster-bootstrap/scion/lab/clab-luciverse-scion/cs-core",
+        "clab-node-longname": "clab-luciverse-scion-cs-core",
+        "clab-node-name": "cs-core",
+        "clab-node-type": "",
+        "clab-owner": "daryl",
+        "clab-topo-file": "/home/daryl/cluster-bootstrap/scion/lab/luciverse-scion.clab.yml",
+        "containerlab": "luciverse-scion",
+        "frequency": "432",
+        "isd-as": "1-ff00:0:432",
+        "role": "control-service",
+        "tier": "CORE"
+      },
+      "port-bindings": [
+      ]
+    },
+    "cs-pac": {
+      "index": "6",
+      "shortname": "cs-pac",
+      "longname": "clab-luciverse-scion-cs-pac",
+      "fqdn": "cs-pac.luciverse-scion.io",
+      "group": "",
+      "labdir": "/home/daryl/cluster-bootstrap/scion/lab/clab-luciverse-scion/cs-pac",
+      "kind": "linux",
+      "image": "scionlab/scion:latest",
+      "mgmt-net": "",
+      "mgmt-intf": "",
+      "mgmt-ipv4-address": "172.100.100.11",
+      "mgmt-ipv4-prefix-length": 24,
+      "mgmt-ipv6-address": "2001:db8:100::b",
+      "mgmt-ipv6-prefix-length": 64,
+      "mac-address": "",
+      "labels": {
+        "clab-mgmt-net-bridge": "br-19f90d119794",
+        "clab-node-group": "",
+        "clab-node-kind": "linux",
+        "clab-node-lab-dir": "/home/daryl/cluster-bootstrap/scion/lab/clab-luciverse-scion/cs-pac",
+        "clab-node-longname": "clab-luciverse-scion-cs-pac",
+        "clab-node-name": "cs-pac",
+        "clab-node-type": "",
+        "clab-owner": "daryl",
+        "clab-topo-file": "/home/daryl/cluster-bootstrap/scion/lab/luciverse-scion.clab.yml",
+        "containerlab": "luciverse-scion",
+        "frequency": "741",
+        "isd-as": "3-ff00:0:741",
+        "role": "control-service",
+        "tier": "PAC"
+      },
+      "port-bindings": [
+      ]
+    },
+    "dispatcher": {
+      "index": "7",
+      "shortname": "dispatcher",
+      "longname": "clab-luciverse-scion-dispatcher",
+      "fqdn": "dispatcher.luciverse-scion.io",
+      "group": "",
+      "labdir": "/home/daryl/cluster-bootstrap/scion/lab/clab-luciverse-scion/dispatcher",
+      "kind": "linux",
+      "image": "scionlab/scion:latest",
+      "mgmt-net": "",
+      "mgmt-intf": "",
+      "mgmt-ipv4-address": "172.100.100.6",
+      "mgmt-ipv4-prefix-length": 24,
+      "mgmt-ipv6-address": "2001:db8:100::6",
+      "mgmt-ipv6-prefix-length": 64,
+      "mac-address": "",
+      "labels": {
+        "clab-mgmt-net-bridge": "br-19f90d119794",
+        "clab-node-group": "",
+        "clab-node-kind": "linux",
+        "clab-node-lab-dir": "/home/daryl/cluster-bootstrap/scion/lab/clab-luciverse-scion/dispatcher",
+        "clab-node-longname": "clab-luciverse-scion-dispatcher",
+        "clab-node-name": "dispatcher",
+        "clab-node-type": "",
+        "clab-owner": "daryl",
+        "clab-topo-file": "/home/daryl/cluster-bootstrap/scion/lab/luciverse-scion.clab.yml",
+        "containerlab": "luciverse-scion",
+        "role": "dispatcher"
+      },
+      "port-bindings": [
+      ]
+    },
+    "sd-comn": {
+      "index": "8",
+      "shortname": "sd-comn",
+      "longname": "clab-luciverse-scion-sd-comn",
+      "fqdn": "sd-comn.luciverse-scion.io",
+      "group": "",
+      "labdir": "/home/daryl/cluster-bootstrap/scion/lab/clab-luciverse-scion/sd-comn",
+      "kind": "linux",
+      "image": "scionlab/scion:latest",
+      "mgmt-net": "",
+      "mgmt-intf": "",
+      "mgmt-ipv4-address": "172.100.100.5",
+      "mgmt-ipv4-prefix-length": 24,
+      "mgmt-ipv6-address": "2001:db8:100::5",
+      "mgmt-ipv6-prefix-length": 64,
+      "mac-address": "",
+      "labels": {
+        "clab-mgmt-net-bridge": "br-19f90d119794",
+        "clab-node-group": "",
+        "clab-node-kind": "linux",
+        "clab-node-lab-dir": "/home/daryl/cluster-bootstrap/scion/lab/clab-luciverse-scion/sd-comn",
+        "clab-node-longname": "clab-luciverse-scion-sd-comn",
+        "clab-node-name": "sd-comn",
+        "clab-node-type": "",
+        "clab-owner": "daryl",
+        "clab-topo-file": "/home/daryl/cluster-bootstrap/scion/lab/luciverse-scion.clab.yml",
+        "containerlab": "luciverse-scion",
+        "role": "daemon",
+        "tier": "COMN"
+      },
+      "port-bindings": [
+      ]
+    },
+    "zbook-envoy": {
+      "index": "9",
+      "shortname": "zbook-envoy",
+      "longname": "clab-luciverse-scion-zbook-envoy",
+      "fqdn": "zbook-envoy.luciverse-scion.io",
+      "group": "",
+      "labdir": "/home/daryl/cluster-bootstrap/scion/lab/clab-luciverse-scion/zbook-envoy",
+      "kind": "linux",
+      "image": "envoyproxy/envoy:v1.37.0",
+      "mgmt-net": "",
+      "mgmt-intf": "",
+      "mgmt-ipv4-address": "172.100.100.9",
+      "mgmt-ipv4-prefix-length": 24,
+      "mgmt-ipv6-address": "2001:db8:100::9",
+      "mgmt-ipv6-prefix-length": 64,
+      "mac-address": "",
+      "labels": {
+        "clab-mgmt-net-bridge": "br-19f90d119794",
+        "clab-node-group": "",
+        "clab-node-kind": "linux",
+        "clab-node-lab-dir": "/home/daryl/cluster-bootstrap/scion/lab/clab-luciverse-scion/zbook-envoy",
+        "clab-node-longname": "clab-luciverse-scion-zbook-envoy",
+        "clab-node-name": "zbook-envoy",
+        "clab-node-type": "",
+        "clab-owner": "daryl",
+        "clab-topo-file": "/home/daryl/cluster-bootstrap/scion/lab/luciverse-scion.clab.yml",
+        "containerlab": "luciverse-scion",
+        "genesis-bond": "GB-2025-0524-DRH-LCS-001",
+        "role": "l7-gateway",
+        "tier": "COMN"
+      },
+      "port-bindings": [
+        {
+          "host-ip": "0.0.0.0",
+          "host-port": 18528,
+          "port": 8528,
+          "protocol": "tcp"
+        },
+        {
+          "host-ip": "0.0.0.0",
+          "host-port": 19901,
+          "port": 9901,
+          "protocol": "tcp"
+        },
+        {
+          "host-ip": "",
+          "host-port": 0,
+          "port": 10000,
+          "protocol": "tcp"
+        }
+      ]
+    },
+    "zbook-sig": {
+      "index": "10",
+      "shortname": "zbook-sig",
+      "longname": "clab-luciverse-scion-zbook-sig",
+      "fqdn": "zbook-sig.luciverse-scion.io",
+      "group": "",
+      "labdir": "/home/daryl/cluster-bootstrap/scion/lab/clab-luciverse-scion/zbook-sig",
+      "kind": "linux",
+      "image": "scionlab/scion:latest",
+      "mgmt-net": "",
+      "mgmt-intf": "",
+      "mgmt-ipv4-address": "172.100.100.3",
+      "mgmt-ipv4-prefix-length": 24,
+      "mgmt-ipv6-address": "2001:db8:100::3",
+      "mgmt-ipv6-prefix-length": 64,
+      "mac-address": "",
+      "labels": {
+        "clab-mgmt-net-bridge": "br-19f90d119794",
+        "clab-node-group": "",
+        "clab-node-kind": "linux",
+        "clab-node-lab-dir": "/home/daryl/cluster-bootstrap/scion/lab/clab-luciverse-scion/zbook-sig",
+        "clab-node-longname": "clab-luciverse-scion-zbook-sig",
+        "clab-node-name": "zbook-sig",
+        "clab-node-type": "",
+        "clab-owner": "daryl",
+        "clab-topo-file": "/home/daryl/cluster-bootstrap/scion/lab/luciverse-scion.clab.yml",
+        "containerlab": "luciverse-scion",
+        "frequency": "528",
+        "role": "sig",
+        "tier": "COMN"
+      },
+      "port-bindings": [
+      ]
+    }
+  },
+  "links": [
+    {
+      "endpoints": {
+        "a": {
+          "node": "b550m-br",
+          "interface": "eth1",
+          "mac": "aa:c1:ab:94:f2:64",
+          "peer": "z"
+        },
+        "z": {
+          "node": "cs-core",
+          "interface": "eth1",
+          "mac": "aa:c1:ab:4b:f8:44",
+          "peer": "a"
+        }
+      }
+    },
+    {
+      "endpoints": {
+        "a": {
+          "node": "b550m-br",
+          "interface": "eth2",
+          "mac": "aa:c1:ab:b0:26:ef",
+          "peer": "z"
+        },
+        "z": {
+          "node": "cs-comn",
+          "interface": "eth1",
+          "mac": "aa:c1:ab:d9:e0:ff",
+          "peer": "a"
+        }
+      }
+    },
+    {
+      "endpoints": {
+        "a": {
+          "node": "b550m-br",
+          "interface": "eth3",
+          "mac": "aa:c1:ab:31:c2:2a",
+          "peer": "z"
+        },
+        "z": {
+          "node": "cs-pac",
+          "interface": "eth1",
+          "mac": "aa:c1:ab:e2:d6:af",
+          "peer": "a"
+        }
+      }
+    },
+    {
+      "endpoints": {
+        "a": {
+          "node": "b550m-br",
+          "interface": "eth4",
+          "mac": "aa:c1:ab:41:89:a6",
+          "peer": "z"
+        },
+        "z": {
+          "node": "zbook-sig",
+          "interface": "eth1",
+          "mac": "aa:c1:ab:44:92:04",
+          "peer": "a"
+        }
+      }
+    },
+    {
+      "endpoints": {
+        "a": {
+          "node": "zbook-sig",
+          "interface": "eth2",
+          "mac": "aa:c1:ab:14:4d:2d",
+          "peer": "z"
+        },
+        "z": {
+          "node": "zbook-envoy",
+          "interface": "eth1",
+          "mac": "aa:c1:ab:ed:e9:58",
+          "peer": "a"
+        }
+      }
+    },
+    {
+      "endpoints": {
+        "a": {
+          "node": "sd-comn",
+          "interface": "eth1",
+          "mac": "aa:c1:ab:ba:2f:af",
+          "peer": "z"
+        },
+        "z": {
+          "node": "zbook-sig",
+          "interface": "eth3",
+          "mac": "aa:c1:ab:ad:df:11",
+          "peer": "a"
+        }
+      }
+    },
+    {
+      "endpoints": {
+        "a": {
+          "node": "sd-comn",
+          "interface": "eth2",
+          "mac": "aa:c1:ab:61:42:76",
+          "peer": "z"
+        },
+        "z": {
+          "node": "dispatcher",
+          "interface": "eth1",
+          "mac": "aa:c1:ab:fe:43:0a",
+          "peer": "a"
+        }
+      }
+    },
+    {
+      "endpoints": {
+        "a": {
+          "node": "cs-core",
+          "interface": "eth2",
+          "mac": "aa:c1:ab:c2:40:c2",
+          "peer": "z"
+        },
+        "z": {
+          "node": "dispatcher",
+          "interface": "eth2",
+          "mac": "aa:c1:ab:73:c5:6f",
+          "peer": "a"
+        }
+      }
+    },
+    {
+      "endpoints": {
+        "a": {
+          "node": "cs-comn",
+          "interface": "eth2",
+          "mac": "aa:c1:ab:60:d9:d7",
+          "peer": "z"
+        },
+        "z": {
+          "node": "dispatcher",
+          "interface": "eth3",
+          "mac": "aa:c1:ab:2c:33:63",
+          "peer": "a"
+        }
+      }
+    },
+    {
+      "endpoints": {
+        "a": {
+          "node": "cs-pac",
+          "interface": "eth2",
+          "mac": "aa:c1:ab:bb:65:96",
+          "peer": "z"
+        },
+        "z": {
+          "node": "dispatcher",
+          "interface": "eth4",
+          "mac": "aa:c1:ab:17:1f:7d",
+          "peer": "a"
+        }
+      }
+    },
+    {
+      "endpoints": {
+        "a": {
+          "node": "client-core",
+          "interface": "eth1",
+          "mac": "aa:c1:ab:dd:56:1e",
+          "peer": "z"
+        },
+        "z": {
+          "node": "b550m-br",
+          "interface": "eth5",
+          "mac": "aa:c1:ab:4f:1f:ca",
+          "peer": "a"
+        }
+      }
+    },
+    {
+      "endpoints": {
+        "a": {
+          "node": "client-comn",
+          "interface": "eth1",
+          "mac": "aa:c1:ab:2f:9b:dd",
+          "peer": "z"
+        },
+        "z": {
+          "node": "zbook-envoy",
+          "interface": "eth2",
+          "mac": "aa:c1:ab:ac:07:e5",
+          "peer": "a"
+        }
+      }
+    },
+    {
+      "endpoints": {
+        "a": {
+          "node": "client-pac",
+          "interface": "eth1",
+          "mac": "aa:c1:ab:41:4a:ab",
+          "peer": "z"
+        },
+        "z": {
+          "node": "b550m-br",
+          "interface": "eth6",
+          "mac": "aa:c1:ab:a5:59:2e",
+          "peer": "a"
+        }
+      }
+    }
+  ]
+}

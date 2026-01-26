@@ -1,0 +1,5 @@
+[dispatcher]
+id = "dispatcher"
+
+[log.console]
+level = "info"

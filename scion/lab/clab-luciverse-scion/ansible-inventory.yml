@@ -1,0 +1,31 @@
+all:
+  vars:
+    # The generated inventory is assumed to be used from the clab host.
+    # Hence no http proxy should be used. Therefore we make sure the http
+    # module does not attempt using any global http proxy.
+    ansible_httpapi_use_proxy: false
+  children:
+    linux:
+      hosts:
+        clab-luciverse-scion-b550m-br:
+          ansible_host: 172.100.100.7
+        clab-luciverse-scion-client-comn:
+          ansible_host: 172.100.100.12
+        clab-luciverse-scion-client-core:
+          ansible_host: 172.100.100.8
+        clab-luciverse-scion-client-pac:
+          ansible_host: 172.100.100.10
+        clab-luciverse-scion-cs-comn:
+          ansible_host: 172.100.100.2
+        clab-luciverse-scion-cs-core:
+          ansible_host: 172.100.100.4
+        clab-luciverse-scion-cs-pac:
+          ansible_host: 172.100.100.11
+        clab-luciverse-scion-dispatcher:
+          ansible_host: 172.100.100.6
+        clab-luciverse-scion-sd-comn:
+          ansible_host: 172.100.100.5
+        clab-luciverse-scion-zbook-envoy:
+          ansible_host: 172.100.100.9
+        clab-luciverse-scion-zbook-sig:
+          ansible_host: 172.100.100.3

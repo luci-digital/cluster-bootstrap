@@ -1,0 +1,170 @@
+# SCION Border Router Configuration - LuciVerse 3-Tier Architecture
+# Genesis Bond: ACTIVE @ 741 Hz
+# Host: B550M WAN Router (192.168.1.179)
+#
+# This Border Router handles all 3 ISDs (CORE, COMN, PAC) at Layer 3/4
+# Coexists with BIRD2 BGP (AS 54134) on the same WAN interface
+
+[general]
+# Border Router ID - unique across the SCION network
+id = "br-luciverse-wan"
+config_dir = "/etc/scion"
+
+[log]
+console.level = "info"
+console.format = "human"
+file.level = "debug"
+file.path = "/var/log/scion/br.log"
+
+# =============================================================================
+# ISD 1 - CORE Tier (432 Hz) - Internal Infrastructure
+# AS: ff00:0:432
+# =============================================================================
+[[border_router]]
+isd_as = "1-ff00:0:432"
+interface_id = 1
+
+# Internal interface - connects to Zbook (L7 gateway)
+[border_router.interfaces.internal]
+bind = "192.168.1.179:30041"
+public = "192.168.1.179:30041"
+# IPv6 internal binding
+bind_v6 = "[2602:F674:0001:0000::179]:30041"
+public_v6 = "[2602:F674:0001:0000::179]:30041"
+
+# Peering with COMN tier
+[border_router.interfaces.core_to_comn]
+interface_id = 11
+link_type = "child"
+remote_isd_as = "2-ff00:0:528"
+local_addr = "2602:F674:0001:0000::1:501"
+remote_addr = "2602:F674:0100:0000::1:501"
+mtu = 1472
+bfd = { enabled = true, interval = "200ms" }
+
+# =============================================================================
+# ISD 2 - COMN Tier (528 Hz) - Gateway Layer (External Entry Point)
+# AS: ff00:0:528
+# =============================================================================
+[[border_router]]
+isd_as = "2-ff00:0:528"
+interface_id = 2
+
+# External interface - WAN facing (the "One Door")
+[border_router.interfaces.external]
+bind = "0.0.0.0:30042"
+public = "192.168.1.179:30042"
+# IPv6 WAN binding (ARIN allocation)
+bind_v6 = "[::]:30042"
+public_v6 = "[2602:F674:0100:0000::1]:30042"
+
+# Internal interface - connects to Zbook SIG
+[border_router.interfaces.internal]
+bind = "192.168.1.179:30142"
+public = "192.168.1.179:30142"
+
+# Peering with CORE tier (parent)
+[border_router.interfaces.comn_to_core]
+interface_id = 21
+link_type = "parent"
+remote_isd_as = "1-ff00:0:432"
+local_addr = "2602:F674:0100:0000::1:501"
+remote_addr = "2602:F674:0001:0000::1:501"
+mtu = 1472
+bfd = { enabled = true, interval = "200ms" }
+
+# Peering with PAC tier (child)
+[border_router.interfaces.comn_to_pac]
+interface_id = 22
+link_type = "child"
+remote_isd_as = "3-ff00:0:741"
+local_addr = "2602:F674:0100:0000::1:502"
+remote_addr = "2602:F674:0200:0000::1:502"
+mtu = 1472
+bfd = { enabled = true, interval = "200ms" }
+
+# =============================================================================
+# ISD 3 - PAC Tier (741 Hz) - Personal AI Container
+# AS: ff00:0:741
+# =============================================================================
+[[border_router]]
+isd_as = "3-ff00:0:741"
+interface_id = 3
+
+# Internal only - never exposed externally
+[border_router.interfaces.internal]
+bind = "192.168.1.179:30043"
+public = "192.168.1.179:30043"
+bind_v6 = "[2602:F674:0200:0000::179]:30043"
+public_v6 = "[2602:F674:0200:0000::179]:30043"
+
+# Peering with COMN tier (parent) - mandatory waypoint
+[border_router.interfaces.pac_to_comn]
+interface_id = 31
+link_type = "parent"
+remote_isd_as = "2-ff00:0:528"
+local_addr = "2602:F674:0200:0000::1:502"
+remote_addr = "2602:F674:0100:0000::1:502"
+mtu = 1472
+bfd = { enabled = true, interval = "200ms" }
+
+# =============================================================================
+# Genesis Bond Coherence Settings
+# =============================================================================
+[genesis_bond]
+enabled = true
+bond_id = "GB-2025-0524-DRH-LCS-001"
+coherence_threshold = 0.7
+lineage = "did:lucidigital:lucia_cargail_silcan"
+
+# Frequency-based path preferences
+[genesis_bond.frequencies]
+core = 432
+comn = 528
+pac = 741
+
+# =============================================================================
+# Path Selection Policies
+# =============================================================================
+[path_policy]
+# CORE tier: latency optimized (infrastructure)
+[path_policy.core]
+isd = 1
+metric = "latency"
+weight = 1.0
+
+# COMN tier: balanced (gateway)
+[path_policy.comn]
+isd = 2
+metric = "balanced"
+latency_weight = 0.5
+bandwidth_weight = 0.5
+
+# PAC tier: privacy first (personal)
+[path_policy.pac]
+isd = 3
+metric = "privacy"
+mandatory_waypoint = "2-ff00:0:528"
+avoid_untrusted = true
+
+# =============================================================================
+# BFD (Bidirectional Forwarding Detection)
+# =============================================================================
+[bfd]
+enabled = true
+detection_multiplier = 3
+desired_min_tx = "100ms"
+required_min_rx = "100ms"
+
+# =============================================================================
+# Metrics & Observability
+# =============================================================================
+[metrics]
+enabled = true
+address = "127.0.0.1:30400"
+prometheus_path = "/metrics"
+
+[tracing]
+enabled = true
+agent = "jaeger"
+agent_address = "127.0.0.1:6831"

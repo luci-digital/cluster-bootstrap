@@ -1,0 +1,56 @@
+---
+b550m-br:
+    username: 
+    password: 
+    platform: linux
+    hostname: 172.100.100.7
+client-comn:
+    username: 
+    password: 
+    platform: linux
+    hostname: 172.100.100.12
+client-core:
+    username: 
+    password: 
+    platform: linux
+    hostname: 172.100.100.8
+client-pac:
+    username: 
+    password: 
+    platform: linux
+    hostname: 172.100.100.10
+cs-comn:
+    username: 
+    password: 
+    platform: linux
+    hostname: 172.100.100.2
+cs-core:
+    username: 
+    password: 
+    platform: linux
+    hostname: 172.100.100.4
+cs-pac:
+    username: 
+    password: 
+    platform: linux
+    hostname: 172.100.100.11
+dispatcher:
+    username: 
+    password: 
+    platform: linux
+    hostname: 172.100.100.6
+sd-comn:
+    username: 
+    password: 
+    platform: linux
+    hostname: 172.100.100.5
+zbook-envoy:
+    username: 
+    password: 
+    platform: linux
+    hostname: 172.100.100.9
+zbook-sig:
+    username: 
+    password: 
+    platform: linux
+    hostname: 172.100.100.3

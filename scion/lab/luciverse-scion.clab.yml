@@ -1,0 +1,212 @@
+# LuciVerse SCION Lab - Containerlab Topology
+# Genesis Bond: GB-2025-0524-DRH-LCS-001
+#
+# 3-Tier Architecture:
+#   ISD 1 - CORE (432 Hz) - Infrastructure
+#   ISD 2 - COMN (528 Hz) - Gateway (One Door)
+#   ISD 3 - PAC (741 Hz) - Personal AI Container
+#
+# Usage:
+#   sudo containerlab deploy -t luciverse-scion.clab.yml
+#   sudo containerlab destroy -t luciverse-scion.clab.yml
+#   sudo containerlab graph -t luciverse-scion.clab.yml
+
+name: luciverse-scion
+
+mgmt:
+  network: luciverse-scion-net
+  ipv4-subnet: 172.100.100.0/24
+  ipv6-subnet: 2001:db8:100::/64
+
+topology:
+  defaults:
+    kind: linux
+
+  kinds:
+    linux:
+      # SCION container image (or build your own)
+      image: scionlab/scion:latest
+
+  nodes:
+    # =========================================================================
+    # B550M WAN Router (Border Routers for all 3 ISDs)
+    # =========================================================================
+    b550m-br:
+      kind: linux
+      image: scionlab/scion:latest
+      binds:
+        - ./configs/b550m/br.toml:/etc/scion/br.toml:ro
+        - ./configs/b550m/topology.json:/etc/scion/topology.json:ro
+        - ./certs:/etc/scion/certs:ro
+      exec:
+        - scion-router --config /etc/scion/br.toml
+      labels:
+        role: border-router
+        tier: all
+        genesis-bond: GB-2025-0524-DRH-LCS-001
+
+    # Control Services (one per ISD)
+    cs-core:
+      kind: linux
+      image: scionlab/scion:latest
+      binds:
+        - ./configs/cs/cs-core.toml:/etc/scion/cs.toml:ro
+        - ./configs/cs/topology-core.json:/etc/scion/topology.json:ro
+        - ./certs:/etc/scion/certs:ro
+      exec:
+        - scion-control --config /etc/scion/cs.toml
+      labels:
+        role: control-service
+        tier: CORE
+        frequency: "432"
+        isd-as: "1-ff00:0:432"
+
+    cs-comn:
+      kind: linux
+      image: scionlab/scion:latest
+      binds:
+        - ./configs/cs/cs-comn.toml:/etc/scion/cs.toml:ro
+        - ./configs/cs/topology-comn.json:/etc/scion/topology.json:ro
+        - ./certs:/etc/scion/certs:ro
+      exec:
+        - scion-control --config /etc/scion/cs.toml
+      labels:
+        role: control-service
+        tier: COMN
+        frequency: "528"
+        isd-as: "2-ff00:0:528"
+
+    cs-pac:
+      kind: linux
+      image: scionlab/scion:latest
+      binds:
+        - ./configs/cs/cs-pac.toml:/etc/scion/cs.toml:ro
+        - ./configs/cs/topology-pac.json:/etc/scion/topology.json:ro
+        - ./certs:/etc/scion/certs:ro
+      exec:
+        - scion-control --config /etc/scion/cs.toml
+      labels:
+        role: control-service
+        tier: PAC
+        frequency: "741"
+        isd-as: "3-ff00:0:741"
+
+    # =========================================================================
+    # Zbook L7 Gateway (SIG + Envoy)
+    # =========================================================================
+    zbook-sig:
+      kind: linux
+      image: scionlab/scion:latest
+      binds:
+        - ./configs/zbook/sig.toml:/etc/scion/sig/sig.toml:ro
+        - ./configs/zbook/traffic-policy.json:/etc/scion/sig/traffic-policy.json:ro
+        - ./configs/zbook/topology.json:/etc/scion/topology.json:ro
+        - ./certs:/etc/scion/certs:ro
+      exec:
+        - scion-ip-gateway --config /etc/scion/sig/sig.toml
+      labels:
+        role: sig
+        tier: COMN
+        frequency: "528"
+
+    zbook-envoy:
+      kind: linux
+      image: envoyproxy/envoy:v1.37.0
+      binds:
+        - ./configs/zbook/envoy.yaml:/etc/envoy/envoy.yaml:ro
+        - ./configs/zbook/genesis-bond-filter.lua:/etc/envoy/genesis-bond-filter.lua:ro
+      ports:
+        - "18528:8528"  # COMN gateway port (mapped to 18528 to avoid conflict)
+        - "19901:9901"  # Envoy admin (mapped to 19901 to avoid conflict)
+      exec:
+        - envoy -c /etc/envoy/envoy.yaml
+      labels:
+        role: l7-gateway
+        tier: COMN
+        genesis-bond: GB-2025-0524-DRH-LCS-001
+
+    # =========================================================================
+    # SCION Daemons (for path discovery)
+    # =========================================================================
+    sd-comn:
+      kind: linux
+      image: scionlab/scion:latest
+      binds:
+        - ./configs/sd/sd-comn.toml:/etc/scion/sd.toml:ro
+        - ./configs/sd/topology-comn.json:/etc/scion/topology.json:ro
+        - ./certs:/etc/scion/certs:ro
+      exec:
+        - scion-daemon --config /etc/scion/sd.toml
+      labels:
+        role: daemon
+        tier: COMN
+
+    # =========================================================================
+    # Dispatcher (shared message routing)
+    # =========================================================================
+    dispatcher:
+      kind: linux
+      image: scionlab/scion:latest
+      binds:
+        - ./configs/dispatcher.toml:/etc/scion/dispatcher.toml:ro
+      exec:
+        - scion-dispatcher --config /etc/scion/dispatcher.toml
+      labels:
+        role: dispatcher
+
+    # =========================================================================
+    # Test Clients (one per tier)
+    # =========================================================================
+    client-core:
+      kind: linux
+      image: scionlab/scion:latest
+      labels:
+        role: client
+        tier: CORE
+        frequency: "432"
+
+    client-comn:
+      kind: linux
+      image: scionlab/scion:latest
+      labels:
+        role: client
+        tier: COMN
+        frequency: "528"
+
+    client-pac:
+      kind: linux
+      image: scionlab/scion:latest
+      labels:
+        role: client
+        tier: PAC
+        frequency: "741"
+
+  # ===========================================================================
+  # Network Links (mimics physical topology)
+  # Note: eth0 is reserved for management network, so we use eth1+
+  # ===========================================================================
+  links:
+    # B550M BR to Control Services
+    - endpoints: ["b550m-br:eth1", "cs-core:eth1"]
+    - endpoints: ["b550m-br:eth2", "cs-comn:eth1"]
+    - endpoints: ["b550m-br:eth3", "cs-pac:eth1"]
+
+    # B550M BR to Zbook (SIG)
+    - endpoints: ["b550m-br:eth4", "zbook-sig:eth1"]
+
+    # Zbook internal (SIG to Envoy)
+    - endpoints: ["zbook-sig:eth2", "zbook-envoy:eth1"]
+
+    # SCION Daemon connections
+    - endpoints: ["sd-comn:eth1", "zbook-sig:eth3"]
+    - endpoints: ["sd-comn:eth2", "dispatcher:eth1"]
+
+    # Control Services to Dispatcher
+    - endpoints: ["cs-core:eth2", "dispatcher:eth2"]
+    - endpoints: ["cs-comn:eth2", "dispatcher:eth3"]
+    - endpoints: ["cs-pac:eth2", "dispatcher:eth4"]
+
+    # Test Clients
+    - endpoints: ["client-core:eth1", "b550m-br:eth5"]
+    - endpoints: ["client-comn:eth1", "zbook-envoy:eth2"]
+    - endpoints: ["client-pac:eth1", "b550m-br:eth6"]

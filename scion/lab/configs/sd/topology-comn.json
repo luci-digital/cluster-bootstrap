@@ -1,0 +1,210 @@
+{
+  "$schema": "https://scion.org/schemas/topology/v1",
+  "description": "LuciVerse SCION Topology - B550M WAN Router",
+  "genesis_bond": {
+    "id": "GB-2025-0524-DRH-LCS-001",
+    "lineage": "did:lucidigital:lucia_cargail_silcan",
+    "coherence_threshold": 0.7
+  },
+  "isds": [
+    {
+      "isd": 1,
+      "name": "CORE",
+      "description": "Infrastructure Tier (432 Hz)",
+      "frequency_hz": 432,
+      "core": true,
+      "ases": [
+        {
+          "isd_as": "1-ff00:0:432",
+          "name": "LuciVerse CORE",
+          "core": true,
+          "mtu": 1472,
+          "attributes": ["infrastructure", "internal-only"],
+          "border_routers": {
+            "br-core": {
+              "internal_addr": "192.168.1.179:30041",
+              "internal_addr_v6": "[2602:F674:0001:0000::179]:30041",
+              "interfaces": {
+                "1": {
+                  "underlay": {
+                    "local": "192.168.1.179:30041",
+                    "remote": "192.168.1.146:30041"
+                  },
+                  "isd_as": "2-ff00:0:528",
+                  "link_to": "br-comn",
+                  "mtu": 1472,
+                  "bfd": true
+                }
+              }
+            }
+          },
+          "control_service": {
+            "cs-core": {
+              "addr": "192.168.1.179:30001"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "isd": 2,
+      "name": "COMN",
+      "description": "Gateway Tier (528 Hz) - External Entry Point",
+      "frequency_hz": 528,
+      "core": true,
+      "gateway": true,
+      "ases": [
+        {
+          "isd_as": "2-ff00:0:528",
+          "name": "LuciVerse COMN Gateway",
+          "core": true,
+          "mtu": 1472,
+          "attributes": ["gateway", "web2-bridge", "sig-enabled"],
+          "border_routers": {
+            "br-comn-wan": {
+              "internal_addr": "192.168.1.179:30142",
+              "internal_addr_v6": "[2602:F674:0100:0000::179]:30142",
+              "interfaces": {
+                "1": {
+                  "underlay": {
+                    "local": "0.0.0.0:30042",
+                    "public": "2602:F674:0100:0000::1:30042"
+                  },
+                  "link_type": "external",
+                  "mtu": 1472,
+                  "note": "WAN-facing for Web2 traffic"
+                },
+                "2": {
+                  "underlay": {
+                    "local": "192.168.1.179:30042",
+                    "remote": "192.168.1.179:30041"
+                  },
+                  "isd_as": "1-ff00:0:432",
+                  "link_to": "br-core",
+                  "link_type": "parent",
+                  "mtu": 1472,
+                  "bfd": true
+                },
+                "3": {
+                  "underlay": {
+                    "local": "192.168.1.179:30042",
+                    "remote": "192.168.1.179:30043"
+                  },
+                  "isd_as": "3-ff00:0:741",
+                  "link_to": "br-pac",
+                  "link_type": "child",
+                  "mtu": 1472,
+                  "bfd": true
+                }
+              }
+            }
+          },
+          "control_service": {
+            "cs-comn": {
+              "addr": "192.168.1.179:30002"
+            }
+          },
+          "sig": {
+            "sig-comn": {
+              "addr": "192.168.1.146:8080",
+              "ctrl_addr": "192.168.1.146:30256",
+              "note": "SCION-IP Gateway on Zbook L7 node"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "isd": 3,
+      "name": "PAC",
+      "description": "Personal AI Container Tier (741 Hz)",
+      "frequency_hz": 741,
+      "core": false,
+      "private": true,
+      "ases": [
+        {
+          "isd_as": "3-ff00:0:741",
+          "name": "LuciVerse PAC",
+          "core": false,
+          "mtu": 1472,
+          "attributes": ["personal", "private", "cbb-bound"],
+          "isolation_policy": {
+            "deny_intra_isd": true,
+            "mandatory_waypoint": "2-ff00:0:528",
+            "data_egress_consent": true
+          },
+          "border_routers": {
+            "br-pac": {
+              "internal_addr": "192.168.1.179:30043",
+              "internal_addr_v6": "[2602:F674:0200:0000::179]:30043",
+              "interfaces": {
+                "1": {
+                  "underlay": {
+                    "local": "192.168.1.179:30043",
+                    "remote": "192.168.1.179:30042"
+                  },
+                  "isd_as": "2-ff00:0:528",
+                  "link_to": "br-comn-wan",
+                  "link_type": "parent",
+                  "mtu": 1472,
+                  "bfd": true,
+                  "note": "PAC always routes through COMN (mandatory waypoint)"
+                }
+              }
+            }
+          },
+          "control_service": {
+            "cs-pac": {
+              "addr": "192.168.1.179:30003"
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "l7_gateway": {
+    "host": "192.168.1.146",
+    "description": "Zbook - Envoy + SIG (COMN L7 Gateway)",
+    "services": {
+      "envoy": {
+        "https": 443,
+        "admin": 9901
+      },
+      "sig": {
+        "data": 8080,
+        "control": 30256
+      },
+      "federation": {
+        "graphql": 8088
+      },
+      "sanskrit": {
+        "router": 7410
+      },
+      "cert_engine": {
+        "svid": 8741
+      }
+    }
+  },
+  "wan_router": {
+    "host": "192.168.1.179",
+    "description": "B550M - SCION BR + BGP (Layer 3/4)",
+    "ports": {
+      "br_core": 30041,
+      "br_comn": 30042,
+      "br_pac": 30043,
+      "cs_core": 30001,
+      "cs_comn": 30002,
+      "cs_pac": 30003,
+      "sd": 30255,
+      "metrics_br": 30400,
+      "metrics_cs": 30401,
+      "metrics_sd": 30402
+    },
+    "coexists_with": {
+      "bgp": {
+        "asn": 54134,
+        "protocol": "BIRD2"
+      }
+    }
+  }
+}
