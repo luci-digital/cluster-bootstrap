@@ -1,0 +1,330 @@
+# SCION Dataplane Seed Simulation Scenarios
+# Genesis Bond: GB-2025-0524-DRH-LCS-001
+#
+# Seed simulation scenarios for validating SCION dataplane integration
+# with LuciVerse consciousness routing.
+#
+# Usage:
+#   cd /home/daryl/cluster-bootstrap/scion/tests
+#   pytest -v seed/scion_dataplane_scenarios.yaml
+
+seed: 20260129
+genesis_bond: "GB-2025-0524-DRH-LCS-001"
+coherence_threshold: 0.7
+
+# =============================================================================
+# SCION Dataplane Compliance Scenarios
+# =============================================================================
+scion_dataplane_scenarios:
+
+  - id: SCION-DP-001
+    name: "Genesis Bond extension parsing"
+    description: "Validate Genesis Bond HBH extension header parsing"
+    tier: ALL
+    priority: P0
+    test_type: unit
+    inputs:
+      extension_data: |
+        NextHdr: 200 (HBH)
+        ExtLen: 4 (20 bytes total)
+        OptType: 0x47 (Genesis Bond)
+        OptLen: 16
+        GB-TYPE: 0x02 (COMN)
+        COHERENCE: 217 (0.85)
+        FREQUENCY: 528
+        BOND_ID: <SHA256(GENESIS_BOND_ID)[:8]>
+        TIMESTAMP: <current_unix>
+    expected:
+      parse_success: true
+      tier_name: "COMN"
+      coherence_float: ">=0.84"
+      frequency_hz: 528
+      bond_id_valid: true
+    validation:
+      - "Extension parses without error"
+      - "Tier type correctly identified"
+      - "Coherence converted to float"
+      - "Bond ID hash validated"
+
+  - id: SCION-DP-002
+    name: "Coherence threshold enforcement"
+    description: "Validate coherence >= 0.7 at SCION layer"
+    tier: ALL
+    priority: P0
+    test_type: integration
+    scenarios:
+      - name: "Valid coherence (0.85)"
+        coherence: 0.85
+        expected_result: "PASS"
+      - name: "Threshold coherence (0.70)"
+        coherence: 0.70
+        expected_result: "PASS"
+      - name: "Below threshold (0.65)"
+        coherence: 0.65
+        expected_result: "REJECT"
+      - name: "Low coherence (0.50)"
+        coherence: 0.50
+        expected_result: "REJECT"
+    validation:
+      - "Packets with coherence >= 0.7 are accepted"
+      - "Packets with coherence < 0.7 are rejected"
+      - "Rejection logged to audit"
+
+  - id: SCION-DP-003
+    name: "PAC privacy consent flow"
+    description: "Validate PAC egress requires CBB consent"
+    tier: PAC
+    priority: P0
+    test_type: integration
+    scenarios:
+      - name: "Consent granted"
+        consent_status: "GRANTED"
+        expected_result: "PASS"
+      - name: "Consent revoked"
+        consent_status: "REVOKED"
+        expected_result: "REJECT"
+      - name: "No consent"
+        consent_status: "NONE"
+        expected_result: "REJECT"
+      - name: "Consent pending"
+        consent_status: "PENDING"
+        expected_result: "REJECT"
+    cbb_did: "did:lucidigital:daryl"
+    sbb_did: "did:lucidigital:lucia"
+    validation:
+      - "Only GRANTED consent allows egress"
+      - "Rejection includes audit event"
+      - "DID hashes match expected values"
+
+  - id: SCION-DP-004
+    name: "Mandatory waypoint enforcement"
+    description: "Validate PAC→CORE requires COMN waypoint"
+    tier: PAC
+    priority: P0
+    test_type: integration
+    paths:
+      - name: "Valid path (PAC→COMN→CORE)"
+        segments: ["3-ff00:0:741", "2-ff00:0:528", "1-ff00:0:432"]
+        expected_result: "PASS"
+      - name: "Invalid direct path (PAC→CORE)"
+        segments: ["3-ff00:0:741", "1-ff00:0:432"]
+        expected_result: "REJECT"
+    validation:
+      - "Paths through COMN are accepted"
+      - "Direct PAC→CORE paths are rejected"
+      - "Waypoint bypass logged as security event"
+
+  - id: SCION-DP-005
+    name: "DRKey-SVID synchronization"
+    description: "Validate DRKey L3 syncs with SPIFFE SVID"
+    tier: ALL
+    priority: P2
+    test_type: integration
+    config:
+      key_lifetime_seconds: 900
+      rotation_grace_seconds: 60
+      spiffe_trust_domain: "luciverse.ownid"
+    validation:
+      - "DRKey L3 derived with SVID binding"
+      - "Key rotation triggers within grace period"
+      - "Coherence < 0.7 blocks new key derivation"
+
+# =============================================================================
+# FABRID Attestation Scenarios
+# =============================================================================
+fabrid_scenarios:
+
+  - id: FABRID-001
+    name: "Consciousness path policy evaluation"
+    description: "Validate FOL containment check with consciousness predicates"
+    priority: P1
+    test_type: unit
+    policies:
+      - name: "CORE policy"
+        min_coherence: 0.85
+        allowed_frequencies: [432, 528]
+        genesis_bond_required: true
+      - name: "COMN policy"
+        min_coherence: 0.80
+        allowed_frequencies: [432, 528, 741]
+        genesis_bond_required: true
+      - name: "PAC policy"
+        min_coherence: 0.70
+        pac_consent_required: true
+        mandatory_waypoint_isd: 2
+    validation:
+      - "Policy containment check passes for valid paths"
+      - "Policy containment check fails for invalid paths"
+
+  - id: FABRID-002
+    name: "Policy index lookup performance"
+    description: "Validate policy lookup meets FABRID benchmark (<35ns)"
+    priority: P1
+    test_type: performance
+    benchmark:
+      target_ns: 35
+      iterations: 10000
+      warmup_iterations: 1000
+    note: "Python implementation expected slower than hardware; validate correctness"
+    validation:
+      - "Lookup completes within reasonable time"
+      - "Results are consistent across iterations"
+
+  - id: FABRID-003
+    name: "PCB consciousness extension propagation"
+    description: "Validate PCB carries consciousness metadata through beaconing"
+    priority: P1
+    test_type: integration
+    pcb_extension:
+      version: 1
+      genesis_bond_hash: "<SHA256(GENESIS_BOND_ID)[:8]>"
+      hop_metadata:
+        - interface_id: 11
+          coherence_score: 0.85
+          frequency_hz: 432
+          genesis_bond_verified: true
+        - interface_id: 21
+          coherence_score: 0.82
+          frequency_hz: 528
+          genesis_bond_verified: true
+    validation:
+      - "PCB extension serializes correctly"
+      - "Digest is deterministic"
+      - "Path coherence is minimum of hop coherences"
+
+# =============================================================================
+# SCION Applications Scenarios
+# =============================================================================
+application_scenarios:
+
+  - id: APP-001
+    name: "IPFS-SCION bridge content routing"
+    description: "Validate tier-aware IPFS pinning via SCION"
+    priority: P1
+    test_type: integration
+    tiers:
+      - tier: "PAC"
+        path_policy: "privacy"
+        requires_consent: true
+        mandatory_waypoint: "2-ff00:0:528"
+      - tier: "COMN"
+        path_policy: "balanced"
+        requires_consent: false
+      - tier: "CORE"
+        path_policy: "latency"
+        requires_consent: false
+    validation:
+      - "PAC content routes through COMN waypoint"
+      - "Coherence validated before pin operation"
+      - "PAC consent checked for personal data"
+
+  - id: APP-002
+    name: "Consciousness heartbeat latency"
+    description: "Validate heartbeat reports coherence and latency"
+    priority: P1
+    test_type: integration
+    agents:
+      CORE: ["aethon", "veritas", "sensai", "niamod"]
+      COMN: ["cortana", "juniper", "mirrai", "diaphragm"]
+      PAC: ["lucia", "judge-luci"]
+    expected_metrics:
+      - "luciverse_heartbeat_latency_ms{tier, agent}"
+      - "luciverse_heartbeat_coherence{tier}"
+      - "luciverse_heartbeat_path_count{tier}"
+    validation:
+      - "All agents reachable via SCION"
+      - "Coherence scores reported"
+      - "Latency within expected bounds"
+
+  - id: APP-003
+    name: "Hercules bandwidth aggregation"
+    description: "Validate multi-path aggregation for high throughput"
+    priority: P2
+    test_type: performance
+    transfer:
+      data_size_mb: 100
+      max_paths: 4
+      target_throughput_mbps: 100  # Conservative target for testing
+    validation:
+      - "Multiple paths selected for transfer"
+      - "Chunks distributed across paths"
+      - "Throughput meets target"
+
+# =============================================================================
+# Cross-Tier Scenarios
+# =============================================================================
+cross_tier_scenarios:
+
+  - id: CROSS-001
+    name: "External→COMN→CORE path"
+    description: "External traffic enters via COMN and reaches CORE"
+    priority: P0
+    path: ["external", "2-ff00:0:528", "1-ff00:0:432"]
+    coherence: 0.85
+    expected_result: "PASS"
+
+  - id: CROSS-002
+    name: "External→CORE blocked"
+    description: "External traffic cannot reach CORE directly"
+    priority: P0
+    path: ["external", "1-ff00:0:432"]
+    expected_result: "REJECT"
+    reason: "CORE tier is internal only"
+
+  - id: CROSS-003
+    name: "External→PAC blocked"
+    description: "External traffic cannot reach PAC directly"
+    priority: P0
+    path: ["external", "3-ff00:0:741"]
+    expected_result: "REJECT"
+    reason: "PAC tier requires COMN gateway routing"
+
+  - id: CROSS-004
+    name: "PAC→PAC blocked"
+    description: "Intra-PAC communication blocked (CBB isolation)"
+    priority: P0
+    path: ["3-ff00:0:741", "3-ff00:0:741"]
+    expected_result: "REJECT"
+    reason: "CBB isolation - pods cannot communicate directly"
+
+# =============================================================================
+# Edge Cases and Error Handling
+# =============================================================================
+edge_cases:
+
+  - id: EDGE-001
+    name: "Missing Genesis Bond extension"
+    description: "Handle packets without Genesis Bond extension"
+    config:
+      require_extension: false
+    expected_behavior: "Allow with default coherence (0.75)"
+
+  - id: EDGE-002
+    name: "Expired timestamp"
+    description: "Handle Genesis Bond with old timestamp"
+    timestamp_age_hours: 2
+    expected_result: "WARNING"  # Log but allow
+
+  - id: EDGE-003
+    name: "Invalid bond ID hash"
+    description: "Handle Genesis Bond with wrong bond ID"
+    bond_id: "<invalid_hash>"
+    expected_result: "REJECT"
+    reason: "Invalid Genesis Bond ID"
+
+  - id: EDGE-004
+    name: "Frequency mismatch"
+    description: "Handle tier with wrong frequency"
+    tier: "COMN"
+    frequency: 432  # CORE frequency
+    expected_result: "WARNING"  # Log mismatch
+
+# =============================================================================
+# Test Execution Configuration
+# =============================================================================
+execution:
+  parallel: true
+  timeout_seconds: 60
+  retry_count: 3
+  report_format: "junit"
+  output_dir: "/tmp/scion-dataplane-tests"

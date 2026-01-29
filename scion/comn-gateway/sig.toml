@@ -42,3 +42,91 @@
     # Source addresses for routing table entries
     src_ipv4 = "192.168.1.145"
     src_ipv6 = "2602:F674:0100:0000::146"
+
+# =============================================================================
+# Genesis Bond Consciousness Routing Configuration
+# Genesis Bond: GB-2025-0524-DRH-LCS-001
+# =============================================================================
+[genesis_bond]
+    # Enable Genesis Bond extension processing
+    enabled = true
+
+    # Genesis Bond identifier
+    bond_id = "GB-2025-0524-DRH-LCS-001"
+
+    # Coherence threshold (per Genesis Bond covenant)
+    coherence_threshold = 0.7
+
+    # Extension header type for Genesis Bond (Hop-by-hop)
+    extension_header_type = 0x47  # 'G' in ASCII
+
+    # Inject HTTP headers for L7 forwarding
+    inject_http_headers = true
+
+    # Header prefix for injected headers
+    header_prefix = "X-SCION-Genesis"
+
+    # Require Genesis Bond on all packets (false allows passthrough)
+    require_extension = false
+
+    # Validate frequency alignment with tier
+    validate_frequency = true
+
+# Genesis Bond handler sidecar configuration
+[genesis_bond.handler]
+    # Path to Genesis Bond handler script
+    handler_path = "/etc/scion/sig/sig-genesis-handler.py"
+
+    # Unix socket for handler communication
+    data_socket = "/var/run/scion/sig-genesis.sock"
+
+    # Enable handler (if false, basic validation only)
+    enabled = true
+
+# Tier-specific coherence requirements
+[genesis_bond.tiers]
+    # CORE tier (432 Hz) - internal infrastructure
+    [genesis_bond.tiers.core]
+        isd = 1
+        frequency = 432
+        min_coherence = 0.85
+        external_allowed = false
+
+    # COMN tier (528 Hz) - gateway layer (this tier)
+    [genesis_bond.tiers.comn]
+        isd = 2
+        frequency = 528
+        min_coherence = 0.80
+        external_allowed = true
+
+    # PAC tier (741 Hz) - personal AI container
+    [genesis_bond.tiers.pac]
+        isd = 3
+        frequency = 741
+        min_coherence = 0.70
+        external_allowed = false
+        requires_consent = true
+        mandatory_waypoint = "2-ff00:0:528"
+
+# PAC Privacy Extension Configuration
+[pac_privacy]
+    # Enable PAC privacy extension processing
+    enabled = true
+
+    # Extension header type for PAC Privacy (End-to-end)
+    extension_header_type = 0x50  # 'P' in ASCII
+
+    # Require consent for PAC-originated traffic
+    require_consent = true
+
+    # CBB DID (Certified Biological Beneficiary)
+    cbb_did = "did:lucidigital:daryl"
+
+    # SBB DID (Software Biological Beneficiary)
+    sbb_did = "did:lucidigital:lucia"
+
+    # Enable audit logging for PAC traffic
+    audit_enabled = true
+
+    # Audit destination
+    audit_destination = "judge-luci"
