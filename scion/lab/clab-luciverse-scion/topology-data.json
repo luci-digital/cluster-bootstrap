@@ -6,7 +6,7 @@
       "prefix": "clab",
       "mgmt": {
         "network": "luciverse-scion-net",
-        "bridge": "br-19f90d119794",
+        "bridge": "br-70ac1dd0daa7",
         "ipv4-subnet": "172.100.100.0/24",
         "ipv4-gw": "172.100.100.1",
         "ipv6-subnet": "2001:db8:100::/64",
@@ -28,13 +28,13 @@
       "image": "scionlab/scion:latest",
       "mgmt-net": "",
       "mgmt-intf": "",
-      "mgmt-ipv4-address": "172.100.100.7",
+      "mgmt-ipv4-address": "172.100.100.3",
       "mgmt-ipv4-prefix-length": 24,
-      "mgmt-ipv6-address": "2001:db8:100::7",
+      "mgmt-ipv6-address": "2001:db8:100::3",
       "mgmt-ipv6-prefix-length": 64,
       "mac-address": "",
       "labels": {
-        "clab-mgmt-net-bridge": "br-19f90d119794",
+        "clab-mgmt-net-bridge": "br-70ac1dd0daa7",
         "clab-node-group": "",
         "clab-node-kind": "linux",
         "clab-node-lab-dir": "/home/daryl/cluster-bootstrap/scion/lab/clab-luciverse-scion/b550m-br",
@@ -62,13 +62,13 @@
       "image": "scionlab/scion:latest",
       "mgmt-net": "",
       "mgmt-intf": "",
-      "mgmt-ipv4-address": "172.100.100.12",
+      "mgmt-ipv4-address": "172.100.100.5",
       "mgmt-ipv4-prefix-length": 24,
-      "mgmt-ipv6-address": "2001:db8:100::c",
+      "mgmt-ipv6-address": "2001:db8:100::5",
       "mgmt-ipv6-prefix-length": 64,
       "mac-address": "",
       "labels": {
-        "clab-mgmt-net-bridge": "br-19f90d119794",
+        "clab-mgmt-net-bridge": "br-70ac1dd0daa7",
         "clab-node-group": "",
         "clab-node-kind": "linux",
         "clab-node-lab-dir": "/home/daryl/cluster-bootstrap/scion/lab/clab-luciverse-scion/client-comn",
@@ -96,13 +96,13 @@
       "image": "scionlab/scion:latest",
       "mgmt-net": "",
       "mgmt-intf": "",
-      "mgmt-ipv4-address": "172.100.100.8",
+      "mgmt-ipv4-address": "172.100.100.4",
       "mgmt-ipv4-prefix-length": 24,
-      "mgmt-ipv6-address": "2001:db8:100::8",
+      "mgmt-ipv6-address": "2001:db8:100::4",
       "mgmt-ipv6-prefix-length": 64,
       "mac-address": "",
       "labels": {
-        "clab-mgmt-net-bridge": "br-19f90d119794",
+        "clab-mgmt-net-bridge": "br-70ac1dd0daa7",
         "clab-node-group": "",
         "clab-node-kind": "linux",
         "clab-node-lab-dir": "/home/daryl/cluster-bootstrap/scion/lab/clab-luciverse-scion/client-core",
@@ -130,13 +130,13 @@
       "image": "scionlab/scion:latest",
       "mgmt-net": "",
       "mgmt-intf": "",
-      "mgmt-ipv4-address": "172.100.100.10",
+      "mgmt-ipv4-address": "172.100.100.7",
       "mgmt-ipv4-prefix-length": 24,
-      "mgmt-ipv6-address": "2001:db8:100::a",
+      "mgmt-ipv6-address": "2001:db8:100::7",
       "mgmt-ipv6-prefix-length": 64,
       "mac-address": "",
       "labels": {
-        "clab-mgmt-net-bridge": "br-19f90d119794",
+        "clab-mgmt-net-bridge": "br-70ac1dd0daa7",
         "clab-node-group": "",
         "clab-node-kind": "linux",
         "clab-node-lab-dir": "/home/daryl/cluster-bootstrap/scion/lab/clab-luciverse-scion/client-pac",
@@ -164,13 +164,13 @@
       "image": "scionlab/scion:latest",
       "mgmt-net": "",
       "mgmt-intf": "",
-      "mgmt-ipv4-address": "172.100.100.2",
+      "mgmt-ipv4-address": "172.100.100.12",
       "mgmt-ipv4-prefix-length": 24,
-      "mgmt-ipv6-address": "2001:db8:100::2",
+      "mgmt-ipv6-address": "2001:db8:100::c",
       "mgmt-ipv6-prefix-length": 64,
       "mac-address": "",
       "labels": {
-        "clab-mgmt-net-bridge": "br-19f90d119794",
+        "clab-mgmt-net-bridge": "br-70ac1dd0daa7",
         "clab-node-group": "",
         "clab-node-kind": "linux",
         "clab-node-lab-dir": "/home/daryl/cluster-bootstrap/scion/lab/clab-luciverse-scion/cs-comn",
@@ -199,13 +199,13 @@
       "image": "scionlab/scion:latest",
       "mgmt-net": "",
       "mgmt-intf": "",
-      "mgmt-ipv4-address": "172.100.100.4",
+      "mgmt-ipv4-address": "172.100.100.6",
       "mgmt-ipv4-prefix-length": 24,
-      "mgmt-ipv6-address": "2001:db8:100::4",
+      "mgmt-ipv6-address": "2001:db8:100::6",
       "mgmt-ipv6-prefix-length": 64,
       "mac-address": "",
       "labels": {
-        "clab-mgmt-net-bridge": "br-19f90d119794",
+        "clab-mgmt-net-bridge": "br-70ac1dd0daa7",
         "clab-node-group": "",
         "clab-node-kind": "linux",
         "clab-node-lab-dir": "/home/daryl/cluster-bootstrap/scion/lab/clab-luciverse-scion/cs-core",
@@ -234,13 +234,13 @@
       "image": "scionlab/scion:latest",
       "mgmt-net": "",
       "mgmt-intf": "",
-      "mgmt-ipv4-address": "172.100.100.11",
+      "mgmt-ipv4-address": "172.100.100.9",
       "mgmt-ipv4-prefix-length": 24,
-      "mgmt-ipv6-address": "2001:db8:100::b",
+      "mgmt-ipv6-address": "2001:db8:100::9",
       "mgmt-ipv6-prefix-length": 64,
       "mac-address": "",
       "labels": {
-        "clab-mgmt-net-bridge": "br-19f90d119794",
+        "clab-mgmt-net-bridge": "br-70ac1dd0daa7",
         "clab-node-group": "",
         "clab-node-kind": "linux",
         "clab-node-lab-dir": "/home/daryl/cluster-bootstrap/scion/lab/clab-luciverse-scion/cs-pac",
@@ -269,13 +269,13 @@
       "image": "scionlab/scion:latest",
       "mgmt-net": "",
       "mgmt-intf": "",
-      "mgmt-ipv4-address": "172.100.100.6",
+      "mgmt-ipv4-address": "172.100.100.10",
       "mgmt-ipv4-prefix-length": 24,
-      "mgmt-ipv6-address": "2001:db8:100::6",
+      "mgmt-ipv6-address": "2001:db8:100::a",
       "mgmt-ipv6-prefix-length": 64,
       "mac-address": "",
       "labels": {
-        "clab-mgmt-net-bridge": "br-19f90d119794",
+        "clab-mgmt-net-bridge": "br-70ac1dd0daa7",
         "clab-node-group": "",
         "clab-node-kind": "linux",
         "clab-node-lab-dir": "/home/daryl/cluster-bootstrap/scion/lab/clab-luciverse-scion/dispatcher",
@@ -301,13 +301,13 @@
       "image": "scionlab/scion:latest",
       "mgmt-net": "",
       "mgmt-intf": "",
-      "mgmt-ipv4-address": "172.100.100.5",
+      "mgmt-ipv4-address": "172.100.100.11",
       "mgmt-ipv4-prefix-length": 24,
-      "mgmt-ipv6-address": "2001:db8:100::5",
+      "mgmt-ipv6-address": "2001:db8:100::b",
       "mgmt-ipv6-prefix-length": 64,
       "mac-address": "",
       "labels": {
-        "clab-mgmt-net-bridge": "br-19f90d119794",
+        "clab-mgmt-net-bridge": "br-70ac1dd0daa7",
         "clab-node-group": "",
         "clab-node-kind": "linux",
         "clab-node-lab-dir": "/home/daryl/cluster-bootstrap/scion/lab/clab-luciverse-scion/sd-comn",
@@ -334,13 +334,13 @@
       "image": "envoyproxy/envoy:v1.37.0",
       "mgmt-net": "",
       "mgmt-intf": "",
-      "mgmt-ipv4-address": "172.100.100.9",
+      "mgmt-ipv4-address": "172.100.100.2",
       "mgmt-ipv4-prefix-length": 24,
-      "mgmt-ipv6-address": "2001:db8:100::9",
+      "mgmt-ipv6-address": "2001:db8:100::2",
       "mgmt-ipv6-prefix-length": 64,
       "mac-address": "",
       "labels": {
-        "clab-mgmt-net-bridge": "br-19f90d119794",
+        "clab-mgmt-net-bridge": "br-70ac1dd0daa7",
         "clab-node-group": "",
         "clab-node-kind": "linux",
         "clab-node-lab-dir": "/home/daryl/cluster-bootstrap/scion/lab/clab-luciverse-scion/zbook-envoy",
@@ -356,6 +356,12 @@
       },
       "port-bindings": [
         {
+          "host-ip": "",
+          "host-port": 0,
+          "port": 10000,
+          "protocol": "tcp"
+        },
+        {
           "host-ip": "0.0.0.0",
           "host-port": 18528,
           "port": 8528,
@@ -365,12 +371,6 @@
           "host-ip": "0.0.0.0",
           "host-port": 19901,
           "port": 9901,
-          "protocol": "tcp"
-        },
-        {
-          "host-ip": "",
-          "host-port": 0,
-          "port": 10000,
           "protocol": "tcp"
         }
       ]
@@ -386,13 +386,13 @@
       "image": "scionlab/scion:latest",
       "mgmt-net": "",
       "mgmt-intf": "",
-      "mgmt-ipv4-address": "172.100.100.3",
+      "mgmt-ipv4-address": "172.100.100.8",
       "mgmt-ipv4-prefix-length": 24,
-      "mgmt-ipv6-address": "2001:db8:100::3",
+      "mgmt-ipv6-address": "2001:db8:100::8",
       "mgmt-ipv6-prefix-length": 64,
       "mac-address": "",
       "labels": {
-        "clab-mgmt-net-bridge": "br-19f90d119794",
+        "clab-mgmt-net-bridge": "br-70ac1dd0daa7",
         "clab-node-group": "",
         "clab-node-kind": "linux",
         "clab-node-lab-dir": "/home/daryl/cluster-bootstrap/scion/lab/clab-luciverse-scion/zbook-sig",
@@ -416,13 +416,13 @@
         "a": {
           "node": "b550m-br",
           "interface": "eth1",
-          "mac": "aa:c1:ab:94:f2:64",
+          "mac": "aa:c1:ab:ca:3d:50",
           "peer": "z"
         },
         "z": {
           "node": "cs-core",
           "interface": "eth1",
-          "mac": "aa:c1:ab:4b:f8:44",
+          "mac": "aa:c1:ab:67:6c:99",
           "peer": "a"
         }
       }
@@ -432,13 +432,13 @@
         "a": {
           "node": "b550m-br",
           "interface": "eth2",
-          "mac": "aa:c1:ab:b0:26:ef",
+          "mac": "aa:c1:ab:ea:11:18",
           "peer": "z"
         },
         "z": {
           "node": "cs-comn",
           "interface": "eth1",
-          "mac": "aa:c1:ab:d9:e0:ff",
+          "mac": "aa:c1:ab:1c:05:59",
           "peer": "a"
         }
       }
@@ -448,13 +448,13 @@
         "a": {
           "node": "b550m-br",
           "interface": "eth3",
-          "mac": "aa:c1:ab:31:c2:2a",
+          "mac": "aa:c1:ab:28:ea:ed",
           "peer": "z"
         },
         "z": {
           "node": "cs-pac",
           "interface": "eth1",
-          "mac": "aa:c1:ab:e2:d6:af",
+          "mac": "aa:c1:ab:a0:c3:59",
           "peer": "a"
         }
       }
@@ -464,13 +464,13 @@
         "a": {
           "node": "b550m-br",
           "interface": "eth4",
-          "mac": "aa:c1:ab:41:89:a6",
+          "mac": "aa:c1:ab:16:94:16",
           "peer": "z"
         },
         "z": {
           "node": "zbook-sig",
           "interface": "eth1",
-          "mac": "aa:c1:ab:44:92:04",
+          "mac": "aa:c1:ab:83:2c:db",
           "peer": "a"
         }
       }
@@ -480,13 +480,13 @@
         "a": {
           "node": "zbook-sig",
           "interface": "eth2",
-          "mac": "aa:c1:ab:14:4d:2d",
+          "mac": "aa:c1:ab:cc:85:cf",
           "peer": "z"
         },
         "z": {
           "node": "zbook-envoy",
           "interface": "eth1",
-          "mac": "aa:c1:ab:ed:e9:58",
+          "mac": "aa:c1:ab:36:57:f2",
           "peer": "a"
         }
       }
@@ -496,13 +496,13 @@
         "a": {
           "node": "sd-comn",
           "interface": "eth1",
-          "mac": "aa:c1:ab:ba:2f:af",
+          "mac": "aa:c1:ab:2c:1c:e1",
           "peer": "z"
         },
         "z": {
           "node": "zbook-sig",
           "interface": "eth3",
-          "mac": "aa:c1:ab:ad:df:11",
+          "mac": "aa:c1:ab:cf:88:e0",
           "peer": "a"
         }
       }
@@ -512,13 +512,13 @@
         "a": {
           "node": "sd-comn",
           "interface": "eth2",
-          "mac": "aa:c1:ab:61:42:76",
+          "mac": "aa:c1:ab:8a:8e:94",
           "peer": "z"
         },
         "z": {
           "node": "dispatcher",
           "interface": "eth1",
-          "mac": "aa:c1:ab:fe:43:0a",
+          "mac": "aa:c1:ab:28:9c:e6",
           "peer": "a"
         }
       }
@@ -528,13 +528,13 @@
         "a": {
           "node": "cs-core",
           "interface": "eth2",
-          "mac": "aa:c1:ab:c2:40:c2",
+          "mac": "aa:c1:ab:1b:68:31",
           "peer": "z"
         },
         "z": {
           "node": "dispatcher",
           "interface": "eth2",
-          "mac": "aa:c1:ab:73:c5:6f",
+          "mac": "aa:c1:ab:9f:12:02",
           "peer": "a"
         }
       }
@@ -544,13 +544,13 @@
         "a": {
           "node": "cs-comn",
           "interface": "eth2",
-          "mac": "aa:c1:ab:60:d9:d7",
+          "mac": "aa:c1:ab:25:b0:5f",
           "peer": "z"
         },
         "z": {
           "node": "dispatcher",
           "interface": "eth3",
-          "mac": "aa:c1:ab:2c:33:63",
+          "mac": "aa:c1:ab:aa:d6:2f",
           "peer": "a"
         }
       }
@@ -560,13 +560,13 @@
         "a": {
           "node": "cs-pac",
           "interface": "eth2",
-          "mac": "aa:c1:ab:bb:65:96",
+          "mac": "aa:c1:ab:c3:35:05",
           "peer": "z"
         },
         "z": {
           "node": "dispatcher",
           "interface": "eth4",
-          "mac": "aa:c1:ab:17:1f:7d",
+          "mac": "aa:c1:ab:25:3c:b4",
           "peer": "a"
         }
       }
@@ -576,13 +576,13 @@
         "a": {
           "node": "client-core",
           "interface": "eth1",
-          "mac": "aa:c1:ab:dd:56:1e",
+          "mac": "aa:c1:ab:21:b0:5f",
           "peer": "z"
         },
         "z": {
           "node": "b550m-br",
           "interface": "eth5",
-          "mac": "aa:c1:ab:4f:1f:ca",
+          "mac": "aa:c1:ab:e6:bf:c2",
           "peer": "a"
         }
       }
@@ -592,13 +592,13 @@
         "a": {
           "node": "client-comn",
           "interface": "eth1",
-          "mac": "aa:c1:ab:2f:9b:dd",
+          "mac": "aa:c1:ab:b2:78:9a",
           "peer": "z"
         },
         "z": {
           "node": "zbook-envoy",
           "interface": "eth2",
-          "mac": "aa:c1:ab:ac:07:e5",
+          "mac": "aa:c1:ab:34:a4:d1",
           "peer": "a"
         }
       }
@@ -608,13 +608,13 @@
         "a": {
           "node": "client-pac",
           "interface": "eth1",
-          "mac": "aa:c1:ab:41:4a:ab",
+          "mac": "aa:c1:ab:4b:d4:a5",
           "peer": "z"
         },
         "z": {
           "node": "b550m-br",
           "interface": "eth6",
-          "mac": "aa:c1:ab:a5:59:2e",
+          "mac": "aa:c1:ab:64:de:16",
           "peer": "a"
         }
       }
