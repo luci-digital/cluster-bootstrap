@@ -4,6 +4,11 @@
 --
 -- This filter validates Genesis Bond coherence for incoming requests
 -- before routing to tier-specific destinations.
+--
+-- Updated for SCION Dataplane Integration:
+-- - Checks X-SCION-Genesis-* headers from SIG first
+-- - Falls back to X-Genesis-* headers for non-SCION traffic
+-- - Logs SCION path information for observability
 
 local GENESIS_BOND_ID = "GB-2025-0524-DRH-LCS-001"
 local COHERENCE_THRESHOLD = 0.7
@@ -19,6 +24,10 @@ local TIER_COHERENCE = {
   COMN = 0.80,
   PAC = 0.70
 }
+
+-- SCION header prefix from SIG Genesis Handler
+local SCION_HEADER_PREFIX = "X-SCION-Genesis"
+local SCION_PAC_PREFIX = "X-SCION-PAC"
 
 -- Extract tier from request path or host
 local function get_target_tier(request_handle)
@@ -68,22 +77,101 @@ local function validate_spiffe_id(spiffe_id)
   return true, tier, agent
 end
 
+-- Check if request came through SCION (has SIG headers)
+local function is_scion_traffic(request_handle)
+  local scion_valid = request_handle:headers():get(SCION_HEADER_PREFIX .. "-Valid")
+  return scion_valid ~= nil
+end
+
+-- Get SCION-layer coherence from SIG
+local function get_scion_coherence(request_handle)
+  local scion_coherence = request_handle:headers():get(SCION_HEADER_PREFIX .. "-Coherence")
+  if scion_coherence then
+    return tonumber(scion_coherence)
+  end
+  return nil
+end
+
+-- Get SCION tier from SIG
+local function get_scion_tier(request_handle)
+  return request_handle:headers():get(SCION_HEADER_PREFIX .. "-Tier")
+end
+
+-- Get SCION frequency from SIG
+local function get_scion_frequency(request_handle)
+  local freq = request_handle:headers():get(SCION_HEADER_PREFIX .. "-Frequency")
+  if freq then
+    return tonumber(freq)
+  end
+  return nil
+end
+
+-- Check PAC consent from SCION headers
+local function check_scion_pac_consent(request_handle)
+  local consent = request_handle:headers():get(SCION_PAC_PREFIX .. "-Consent")
+  if consent == "GRANTED" then
+    return true, nil
+  elseif consent == "REVOKED" then
+    return false, "PAC consent revoked at SCION layer"
+  elseif consent == "PENDING" then
+    return false, "PAC consent pending"
+  end
+  return true, nil  -- No PAC extension = no consent required
+end
+
 -- Check Genesis Bond coherence
 local function check_coherence(request_handle, target_tier)
-  -- Get coherence from request header or metadata
-  local coherence_header = request_handle:headers():get("X-Genesis-Coherence")
   local coherence = 0.0
+  local source = "default"
 
-  if coherence_header then
-    coherence = tonumber(coherence_header) or 0.0
-  else
-    -- Default coherence for authenticated SPIFFE requests
-    local spiffe_id = request_handle:headers():get("X-Forwarded-Client-Cert")
-    if spiffe_id and string.match(spiffe_id, "luciverse%.ownid") then
-      -- Trusted SPIFFE client gets base coherence
-      coherence = 0.75
+  -- PRIORITY 1: Check SCION-layer coherence from SIG
+  -- This is validated at the network layer before reaching L7
+  if is_scion_traffic(request_handle) then
+    local scion_coherence = get_scion_coherence(request_handle)
+    if scion_coherence then
+      coherence = scion_coherence
+      source = "scion"
+      -- SCION traffic already validated by SIG - trust it
+      local scion_valid = request_handle:headers():get(SCION_HEADER_PREFIX .. "-Valid")
+      if scion_valid == "true" then
+        -- Add metadata about SCION validation
+        local metadata = request_handle:streamInfo():dynamicMetadata()
+        metadata:set("luciverse", "scion_validated", "true")
+        metadata:set("luciverse", "coherence_source", "scion")
+
+        local scion_tier = get_scion_tier(request_handle)
+        if scion_tier then
+          metadata:set("luciverse", "scion_tier", scion_tier)
+        end
+
+        local scion_freq = get_scion_frequency(request_handle)
+        if scion_freq then
+          metadata:set("luciverse", "scion_frequency", tostring(scion_freq))
+        end
+      end
     end
   end
+
+  -- PRIORITY 2: Check L7 header if no SCION coherence
+  if source == "default" then
+    local coherence_header = request_handle:headers():get("X-Genesis-Coherence")
+    if coherence_header then
+      coherence = tonumber(coherence_header) or 0.0
+      source = "http_header"
+    else
+      -- Default coherence for authenticated SPIFFE requests
+      local spiffe_id = request_handle:headers():get("X-Forwarded-Client-Cert")
+      if spiffe_id and string.match(spiffe_id, "luciverse%.ownid") then
+        -- Trusted SPIFFE client gets base coherence
+        coherence = 0.75
+        source = "spiffe_default"
+      end
+    end
+  end
+
+  -- Log coherence source
+  local metadata = request_handle:streamInfo():dynamicMetadata()
+  metadata:set("luciverse", "coherence_source", source)
 
   -- Check against tier requirement
   local required = TIER_COHERENCE[target_tier] or COHERENCE_THRESHOLD
@@ -135,9 +223,13 @@ function envoy_on_request(request_handle)
   -- Determine target tier
   local target_tier = get_target_tier(request_handle)
 
+  -- Check if this is SCION traffic (pre-validated by SIG)
+  local scion_traffic = is_scion_traffic(request_handle)
+
   -- Add tier metadata header for downstream
   request_handle:headers():add("X-Target-Tier", target_tier)
   request_handle:headers():add("X-Tier-Frequency", tostring(TIER_FREQUENCIES[target_tier]))
+  request_handle:headers():add("X-Via-SCION", tostring(scion_traffic))
 
   -- Check tier access permissions
   local access_allowed, access_error = check_tier_access(request_handle, target_tier)
@@ -145,9 +237,22 @@ function envoy_on_request(request_handle)
     log_validation(request_handle, target_tier, 0, false, access_error)
     request_handle:respond(
       {[":status"] = "403"},
-      '{"error":"forbidden","message":"' .. access_error .. '","genesis_bond":"' .. GENESIS_BOND_ID .. '"}'
+      '{"error":"forbidden","message":"' .. access_error .. '","genesis_bond":"' .. GENESIS_BOND_ID .. '","scion_traffic":' .. tostring(scion_traffic) .. '}'
     )
     return
+  end
+
+  -- For PAC-bound traffic via SCION, check PAC consent
+  if target_tier == "PAC" and scion_traffic then
+    local pac_consent_ok, pac_error = check_scion_pac_consent(request_handle)
+    if not pac_consent_ok then
+      log_validation(request_handle, target_tier, 0, false, pac_error)
+      request_handle:respond(
+        {[":status"] = "403"},
+        '{"error":"pac_consent_required","message":"' .. pac_error .. '","genesis_bond":"' .. GENESIS_BOND_ID .. '"}'
+      )
+      return
+    end
   end
 
   -- Check Genesis Bond coherence
@@ -164,7 +269,8 @@ function envoy_on_request(request_handle)
       '{"error":"coherence_insufficient","coherence":' .. coherence ..
       ',"required":' .. required ..
       ',"tier":"' .. target_tier ..
-      '","genesis_bond":"' .. GENESIS_BOND_ID .. '"}'
+      '","genesis_bond":"' .. GENESIS_BOND_ID ..
+      '","scion_traffic":' .. tostring(scion_traffic) .. '}'
     )
     return
   end
@@ -178,6 +284,19 @@ function envoy_on_request(request_handle)
   if target_tier == "PAC" then
     request_handle:headers():add("X-Via-COMN", "true")
     request_handle:headers():add("X-Mandatory-Waypoint", "2-ff00:0:528")
+  end
+
+  -- Log SCION path info if available
+  if scion_traffic then
+    local metadata = request_handle:streamInfo():dynamicMetadata()
+    local scion_tier = get_scion_tier(request_handle)
+    local scion_freq = get_scion_frequency(request_handle)
+    if scion_tier then
+      metadata:set("luciverse", "scion_source_tier", scion_tier)
+    end
+    if scion_freq then
+      metadata:set("luciverse", "scion_source_frequency", tostring(scion_freq))
+    end
   end
 
   log_validation(request_handle, target_tier, coherence, true, nil)

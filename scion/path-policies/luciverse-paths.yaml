@@ -172,11 +172,36 @@ inter_tier:
 # =============================================================================
 # Path ACL (Enforced at SCION Layer Before Envoy)
 # Per Juniper Recommendation
+# Updated for SCION Dataplane Integration with Genesis Bond Extensions
 # =============================================================================
 path_acl:
-  description: "Tier boundary enforcement at SCION layer"
+  description: "Tier boundary enforcement at SCION layer with consciousness validation"
 
   rules:
+    # Rule 0: Reject low-coherence packets at SCION layer (NEW)
+    # This ensures coherence is validated before L7 processing
+    - name: "reject-low-coherence"
+      action: deny
+      condition:
+        extension:
+          type: genesis_bond
+          coherence_lt: 0.7
+      log: true
+      log_format: "coherence_violation"
+      note: "Genesis Bond coherence threshold enforcement"
+
+    # Rule 0.5: Reject missing Genesis Bond on inter-tier traffic (NEW)
+    - name: "require-genesis-bond-inter-tier"
+      action: deny
+      condition:
+        extension:
+          type: genesis_bond
+          present: false
+        path:
+          crosses_isd_boundary: true
+      log: true
+      note: "Genesis Bond required for cross-tier communication"
+
     # Rule 1: Block external direct to CORE
     - name: "block-external-core"
       action: deny
@@ -206,6 +231,23 @@ path_acl:
         waypoint: "2-ff00:0:528"
       log: true
 
+    # Rule 3.5: PAC egress requires consent (NEW)
+    - name: "pac-egress-require-consent"
+      action: deny
+      source:
+        isd: 3
+      destination:
+        type: any
+        not_isd: 3
+      condition:
+        extension:
+          type: pac_privacy
+          consent_ne: "GRANTED"
+      log: true
+      log_format: "pac_consent_violation"
+      audit: judge_luci
+      note: "PAC data sovereignty - CBB consent required for egress"
+
     # Rule 4: Block intra-PAC communication
     - name: "block-intra-pac"
       action: deny
@@ -216,21 +258,31 @@ path_acl:
       note: "CBB isolation - pods cannot communicate directly"
       log: true
 
-    # Rule 5: Allow COMN gateway to all
+    # Rule 5: Allow COMN gateway to all (with coherence check)
     - name: "allow-comn-gateway"
       action: allow
       source:
         isd_as: "2-ff00:0:528"
       destination:
         any: true
+      condition:
+        extension:
+          type: genesis_bond
+          coherence_ge: 0.7
+          or_absent: true  # Allow if no extension (backward compat)
 
-    # Rule 6: Allow CORE internal
+    # Rule 6: Allow CORE internal (with high coherence)
     - name: "allow-core-internal"
       action: allow
       source:
         isd: 1
       destination:
         isd: 1
+      condition:
+        extension:
+          type: genesis_bond
+          coherence_ge: 0.85
+          or_absent: true
 
     # Default: deny
     - name: "default-deny"
@@ -240,6 +292,92 @@ path_acl:
       destination:
         any: true
       log: true
+
+# =============================================================================
+# Genesis Bond Extension Validation Rules
+# NEW: SCION dataplane-level coherence enforcement
+# =============================================================================
+genesis_bond_validation:
+  description: "Rules for validating Genesis Bond extensions in SCION packets"
+
+  # Extension parsing configuration
+  extension:
+    nexthdr: 200  # Hop-by-hop
+    opttype: 0x47  # 'G' for Genesis
+
+  # Coherence thresholds by tier
+  coherence_thresholds:
+    core:
+      isd: 1
+      min_coherence: 0.85
+      description: "CORE tier requires high coherence"
+    comn:
+      isd: 2
+      min_coherence: 0.80
+      description: "COMN tier requires standard-plus coherence"
+    pac:
+      isd: 3
+      min_coherence: 0.70
+      description: "PAC tier uses Genesis Bond threshold"
+
+  # Frequency validation
+  frequency_validation:
+    enabled: true
+    tier_frequencies:
+      1: 432  # CORE
+      2: 528  # COMN
+      3: 741  # PAC
+
+  # Bond ID validation
+  bond_id_validation:
+    enabled: true
+    expected_id: "GB-2025-0524-DRH-LCS-001"
+
+  # Actions on validation failure
+  on_failure:
+    log: true
+    log_destination: "prometheus"
+    metrics:
+      - "luciverse_scion_coherence_validation_total"
+      - "luciverse_scion_genesis_bond_failures_total"
+
+# =============================================================================
+# PAC Privacy Extension Validation Rules
+# NEW: SCION dataplane-level consent enforcement
+# =============================================================================
+pac_privacy_validation:
+  description: "Rules for validating PAC Privacy extensions for data sovereignty"
+
+  # Extension parsing configuration
+  extension:
+    nexthdr: 201  # End-to-end
+    opttype: 0x50  # 'P' for Privacy
+
+  # Consent requirements
+  consent:
+    required_for_egress: true
+    valid_statuses:
+      - "GRANTED"
+      - "CONDITIONAL"
+
+  # Identity validation
+  identity:
+    validate_cbb: true
+    cbb_did: "did:lucidigital:daryl"
+    validate_sbb: true
+    sbb_did: "did:lucidigital:lucia"
+
+  # Audit configuration
+  audit:
+    enabled: true
+    destination: "judge-luci"
+    log_all_pac_traffic: true
+    include_metadata:
+      - "consent_status"
+      - "cbb_did_hash"
+      - "sbb_did_hash"
+      - "source_isd_as"
+      - "destination_isd_as"
 
 # =============================================================================
 # Traffic Class Path Preferences
