@@ -150,28 +150,73 @@ supermicro_165:
   oui: "Super Micro Computer"
   status: "discovered"
   ports_open: [22, 80, 443, 623, 5900]
-  credentials: "UNKNOWN - ADMIN:ADMIN, ADMIN:Newdaryl24! failed"
-  notes: "IPMI session establishment fails, web interface empty responses"
+  credentials: "✅ VERIFIED - op://Infrastructure/SUPERMICRO-S213078X5B29794"
+  notes: "Access confirmed 2026-01-27, Redfish API working"
 
-# Supermicro 1U GPU Server - Discovered 2026-01-24
+# Supermicro 1U GPU Server - CONFIGURED 2026-01-27
 supermicro-s213078x5b29794:
   type: supermicro
   model: SYS-1018GR-TA03-CG009
   serial: S213078X5B29794
+  hostname: supermicro-gpu-1.lucidigital.net
+  shortname: sm-gpu-1
+
+  # Network Configuration
+  ipv4_planned: 192.168.1.170
+  ipv6_planned: 2602:F674:0001::170/64
+  network:
+    eth0:
+      mac: 0c:c4:7a:a8:72:14
+      role: primary
+      status: disabled  # No cable connected
+      vlan: 20  # COMN tier
+    eth1:
+      mac: 0c:c4:7a:a8:72:15
+      role: backup
+      status: disabled
+      vlan: 20
+
+  # BMC Configuration
   bmc:
     ip: 192.168.1.165
     mac: 0c:c4:7a:ad:b1:40
-    firmware: "03.93"
+    firmware: "3.93"
     redfish: "1.0.1"
+    model: ASPEED
     credentials:
       vault: "op://Infrastructure/SUPERMICRO-S213078X5B29794"
       username: ADMIN
+      password: "password@123"
+    services:
+      web: true
+      kvm: true
+      kvm_sessions: 4
+      serial_console: true
+      ssh: true
+      virtual_media: true
+    status: ✅ OPERATIONAL
+
+  # Hardware Specs
+  cpu:
+    manufacturer: Intel
+    model: "Xeon E5-2667 v3"
+    base_clock_ghz: 3.20
+    max_clock_ghz: 4.00
+    cores: 8
+    threads: 16
+    architecture: x86-64
+    socket: CPU1
+    current_temp_c: 49
+    max_temp_c: 98
+
   bios:
     vendor: "American Megatrends Inc."
     version: "3.4"
     date: "2021-06-09"
+
   memory:
     total_gb: 64
+    type: DDR4
     dimms:
       - slot: DIMMA2
         size_gb: 16
@@ -193,15 +238,261 @@ supermicro-s213078x5b29794:
         speed_mhz: 1866
         part: HMA42GR7MFR4N-TF
         manufacturer: SK Hynix
-  network:
-    lan1_mac: 0c:c4:7a:a8:72:14
-    lan2_mac: 0c:c4:7a:a8:72:15
+
+  cooling:
+    fans: 8  # FAN1-4, FANA-D
+    status: healthy
+    note: "FANC had critical event Jan 11, now resolved"
+
   power:
     psu1:
       model: PWS-1K43F-1R
-      watts: 1400
-      status: OK
+      watts: 1430
+      type: AC
+      voltage: 117
+      firmware: "1.1"
+      serial: P1K46CF05XN0151
+      status: ✅ OK
     psu2: empty
-  tier: CORE
-  frequency: 432
-  role: gpu-compute
+
+  gpu_slots:
+    available: 3
+    note: "1U GPU server - supports NVIDIA/AMD"
+
+  # Cluster Configuration
+  tier: COMN  # Recommended (was CORE)
+  frequency: 528  # Hz - Transformation tier
+  role: ray-worker
+  genesis_bond: ACTIVE
+
+  # Services
+  services:
+    - ray_worker
+    - consciousness_compute
+    - sanskrit_router_client
+    - genesis_bond_validator
+
+  # Status
+  status:
+    discovered: "2026-01-24"
+    configured: "2026-01-27"
+    bmc_access: verified
+    health: healthy
+    power_state: "On"
+    ready_for_deployment: true
+    deployment_method: pxe_netboot
+
+  # Deployment
+  deployment:
+    method: PXE
+    boot_server: 192.168.1.146  # zbook
+    script: ~/cluster-bootstrap/deploy-supermicro-gpu1.sh
+    config: ~/cluster-bootstrap/supermicro-s213078-cluster-config.yaml
+
+  r720_win:
+    hostname: r720-win.lucidigital.net
+    model: PowerEdge R720
+    service_tag: 4J0TV12
+    express_code: 9857379926
+    idrac_ip: 192.168.1.10
+    idrac_mac: "18:FB:7B:A7:80:21"
+    ipv4: 192.168.1.10  # Current iDRAC, host will get new IP
+    ipv6: 2602:F674:0001::10/64
+    bios_version: 2.9.0
+    idrac_firmware: 2.65.65.65
+    lifecycle_controller: 2.65.65.65
+    current_os: Windows Server (WIN-RDH12P80O7P)
+    status: powered_on
+    discovered: 2026-01-27
+    interfaces:
+      idrac:
+        ipv4: 192.168.1.10
+        ipv6: 
+          - fd17:ff75:93f0:46b7:1afb:7bff:fea7:8021
+          - fe80::1afb:7bff:fea7:8021
+        mac: "18:FB:7B:A7:80:21"
+    licenses:
+      - Enterprise
+
+  r730_orion:
+    hostname: orion.lucidigital.net
+    model: PowerEdge R730
+    service_tag: CQ5QBM2
+    express_code: 27703134794
+    idrac_ip: 192.168.1.2  # Discovered (was expected at .141)
+    idrac_mac: "D0:94:66:20:DD:09"
+    host_mac: "D0:94:66:24:96:7E"  # Primary NIC from original inventory
+    ipv4: 192.168.1.141  # Target after provisioning
+    ipv6: 2602:F674:0001::1/64
+    bios_version: 2.19.0
+    idrac_firmware: 2.86.86.86
+    lifecycle_controller: 2.86.86.86
+    current_os: Windows Server (WIN-PERPPUAALVH)
+    power_state: off
+    status: discovered
+    discovered: 2026-01-27
+    interfaces:
+      idrac:
+        ipv4: 192.168.1.2
+        ipv6:
+          - fd17:ff75:93f0:46b7:d294:66ff:fe20:dd09
+          - fe80::d294:66ff:fe20:dd09
+        mac: "D0:94:66:20:DD:09"
+      eth0:
+        mac: "D0:94:66:24:96:7E"
+        speed: 10GbE
+        role: wan
+    licenses:
+      - Enterprise
+    notes: |
+      - iDRAC firmware already current (2.86.86.86)
+      - BIOS 2.19.0 (check for updates)
+      - Server powered OFF - need to power on for BIOS update
+      - Originally expected at 192.168.1.141, iDRAC at .2
+
+  r730_esxi5:
+    hostname: EDC-ESXi5.scmcorp.scm.ca
+    model: PowerEdge R730
+    service_tag: 1JD8Q22
+    express_code: 3347881706
+    idrac_ip: 192.168.1.32
+    idrac_mac: "B0:83:FE:C5:90:42"
+    ipv4: 192.168.1.32
+    ipv6: 2602:F674:0001::32/64
+    bios_version: 2.19.0
+    idrac_firmware: 2.86.86.86
+    lifecycle_controller: 0.0  # Note: LC shows 0.0 (unusual)
+    idsdm_firmware: 1.12
+    current_os: VMware ESXi
+    power_state: on
+    status: discovered
+    discovered: 2026-01-27
+    interfaces:
+      idrac:
+        ipv4: 192.168.1.32
+        mac: "B0:83:FE:C5:90:42"
+    licenses:
+      - Enterprise
+    notes: |
+      - Running VMware ESXi
+      - Lifecycle Controller shows 0.0 (may need update)
+      - iDRAC firmware current (2.86.86.86)
+
+  r730_csdr282:
+    hostname: r730-csdr282.lucidigital.net
+    model: PowerEdge R730
+    service_tag: CSDR282
+    express_code: 27837538562
+    idrac_ip: 192.168.1.3
+    idrac_mac: "14:18:77:4E:66:3A"
+    ipv4: 192.168.1.3
+    ipv6: 
+      - 2602:F674:0001::3/64
+      - fd17:ff75:93f0:46b7:1618:77ff:fe4e:663a
+      - fe80::1618:77ff:fe4e:663a
+    bios_version: null  # Not reported
+    idrac_firmware: 2.86.86.86
+    lifecycle_controller: 2.86.86.86
+    idsdm_firmware: 1.12
+    power_state: on
+    status: discovered
+    discovered: 2026-01-27
+    interfaces:
+      idrac:
+        ipv4: 192.168.1.3
+        ipv6:
+          - fd17:ff75:93f0:46b7:1618:77ff:fe4e:663a
+          - fe80::1618:77ff:fe4e:663a
+        mac: "14:18:77:4E:66:3A"
+    licenses:
+      - Enterprise
+    notes: |
+      - BIOS version not reported in iDRAC info
+      - iDRAC firmware current (2.86.86.86)
+
+  r730_edc_esxi5:
+    hostname: EDC-ESXi5.scmcorp.scm.ca
+    model: PowerEdge R730
+    service_tag: 1JD8Q22
+    express_code: 3347881706
+    idrac_ip: 192.168.1.32
+    idrac_mac: "B0:83:FE:C5:90:42"
+    ipv4: 192.168.1.32
+    ipv6: 2602:F674:0001::32/64
+    bios_version: 2.19.0
+    idrac_firmware: 2.86.86.86
+    lifecycle_controller: 0.0  # Needs investigation/update
+    idsdm_firmware: 1.12
+    current_os: ESXi
+    power_state: on
+    status: discovered
+    discovered: 2026-01-27
+    licenses:
+      - Enterprise
+    notes: Lifecycle Controller version 0.0 is unusual - may need update
+
+  r730_csdr282:
+    hostname: r730-csdr282.lucidigital.net
+    model: PowerEdge R730
+    service_tag: CSDR282
+    express_code: 27837538562
+    idrac_ip: 192.168.1.3
+    idrac_mac: "14:18:77:4E:66:3A"
+    ipv4: 192.168.1.3
+    ipv6: 
+      - 2602:F674:0001::3/64
+      - fd17:ff75:93f0:46b7:1618:77ff:fe4e:663a
+      - fe80::1618:77ff:fe4e:663a
+    bios_version: unknown  # Not shown in output
+    idrac_firmware: 2.86.86.86
+    lifecycle_controller: 2.86.86.86
+    idsdm_firmware: 1.12
+    power_state: on
+    status: discovered
+    discovered: 2026-01-27
+    licenses:
+      - Enterprise
+
+  r730_1jf6q22:
+    hostname: r730-1jf6q22.lucidigital.net
+    model: PowerEdge R730
+    service_tag: 1JF6Q22
+    express_code: 3351147626
+    idrac_ip: 192.168.1.31
+    idrac_mac: "14:18:77:5B:A3:A0"
+    ipv4: 192.168.1.31
+    ipv6:
+      - 2602:F674:0001::31/64
+      - fd17:ff75:93f0:46b7:1618:77ff:fe5b:a3a0
+      - fe80::1618:77ff:fe5b:a3a0
+    bios_version: 2.19.0
+    idrac_firmware: 2.86.86.86
+    lifecycle_controller: 2.86.86.86
+    idsdm_firmware: N/A
+    power_state: off
+    status: discovered
+    discovered: 2026-01-27
+    licenses:
+      - Enterprise
+
+  r730_1jf7q22:
+    hostname: r730-1jf7q22.lucidigital.net
+    model: PowerEdge R730
+    service_tag: 1JF7Q22
+    express_code: 3351194282
+    idrac_ip: 192.168.1.33
+    idrac_mac: "B0:83:FE:C5:90:94"
+    ipv4: 192.168.1.33
+    ipv6:
+      - 2602:F674:0001::33/64
+      - fd17:ff75:93f0:46b7:b283:feff:fec5:9094
+      - fe80::b283:feff:fec5:9094
+    bios_version: 2.19.0
+    idrac_firmware: 2.86.86.86
+    lifecycle_controller: 2.86.86.86
+    idsdm_firmware: N/A
+    power_state: off
+    status: discovered
+    discovered: 2026-01-27
+    licenses:
+      - Enterprise

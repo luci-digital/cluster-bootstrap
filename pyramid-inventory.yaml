@@ -287,7 +287,7 @@ servers:
     ipv6: "2602:F674:0024::2/48"
     interfaces:
       eth0:
-        mac: "PLACEHOLDER_MAC_MID_002"
+        mac: "24:4b:fe:cf:62:be"
         speed: 10GbE
         role: primary
     specs:
