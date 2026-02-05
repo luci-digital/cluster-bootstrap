@@ -1,0 +1,74 @@
+# RoCE/RDMA Configuration for Broadcom NICs
+# Genesis Bond: ACTIVE @ 741 Hz
+# Target: BCM57xx series (bnxt_en/bnxt_re drivers)
+
+# RDMA device permissions
+- op: add
+  path: /machine/udev/rules
+  value:
+    # RDMA devices - allow container access
+    - KERNEL=="infiniband/*", MODE="0666"
+    - KERNEL=="rdma_cm", MODE="0666"
+    - KERNEL=="ucm", MODE="0666"
+    - KERNEL=="uverbs*", MODE="0666"
+    # Hugepages
+    - SUBSYSTEM=="hugepages", MODE="0666"
+    # Broadcom NIC
+    - SUBSYSTEM=="net", DRIVERS=="bnxt_en", MODE="0666"
+
+# RoCE network interface configuration (template - applied per-node)
+# This creates the VLAN 100 interface for RoCE traffic
+- op: add
+  path: /machine/network/interfaces
+  value:
+    - interface: roce0
+      deviceSelector:
+        driver: bnxt_en
+        hardwareAddr: "{{ .RoceMac }}"  # Templated by talm
+      mtu: 9000
+      dhcp: false
+      vlan:
+        vlanId: 100
+      addresses:
+        - "{{ .RoceIP }}/24"  # Templated by talm
+
+# Kernel parameters for optimal RDMA performance
+- op: add
+  path: /machine/sysctls
+  value:
+    # RDMA memory limits
+    net.core.rmem_max: "134217728"
+    net.core.wmem_max: "134217728"
+    # Disable RP filter for RoCE
+    net.ipv4.conf.all.rp_filter: "0"
+    net.ipv4.conf.default.rp_filter: "0"
+    # ECN for RoCEv2
+    net.ipv4.tcp_ecn: "1"
+    # ARP settings for RoCE
+    net.ipv4.conf.all.arp_announce: "2"
+    net.ipv4.conf.all.arp_ignore: "1"
+
+# RDMA kernel modules with parameters
+- op: replace
+  path: /machine/kernel/modules
+  value:
+    # Broadcom Ethernet + RoCE
+    - name: bnxt_en
+      parameters:
+        - enable_roce=1
+    - name: bnxt_re
+      parameters:
+        - max_cq=65535
+        - max_qp=65535
+        - max_mr=131072
+    # RDMA Core
+    - name: rdma_ucm
+    - name: rdma_cm
+    - name: ib_core
+      parameters:
+        - roce_mode=2
+    - name: ib_uverbs
+    - name: mlx5_core  # Fallback for Mellanox
+    - name: mlx5_ib
+    # Hugepages
+    - name: hugetlbfs

@@ -1,0 +1,151 @@
+# Common Talos patches for all LuciVerse nodes
+# Genesis Bond: ACTIVE @ 741 Hz
+
+# Kernel modules for RoCE/RDMA
+- op: add
+  path: /machine/kernel/modules
+  value:
+    # Broadcom drivers
+    - name: bnxt_en
+    - name: bnxt_re
+    # RDMA core
+    - name: rdma_ucm
+    - name: rdma_cm
+    - name: ib_core
+    - name: ib_uverbs
+    # Huge pages
+    - name: hugetlbfs
+    # GPU support (if present)
+    - name: nvidia
+      parameters:
+        - NVreg_OpenRmEnableUnsupportedGpus=1
+
+# High-performance sysctls
+- op: add
+  path: /machine/sysctls
+  value:
+    # Network buffer sizes for RoCE
+    net.core.rmem_max: "67108864"
+    net.core.wmem_max: "67108864"
+    net.core.rmem_default: "33554432"
+    net.core.wmem_default: "33554432"
+    net.core.optmem_max: "67108864"
+    net.core.netdev_max_backlog: "65536"
+    # TCP tuning
+    net.ipv4.tcp_rmem: "4096 87380 67108864"
+    net.ipv4.tcp_wmem: "4096 87380 67108864"
+    net.ipv4.tcp_mem: "67108864 67108864 67108864"
+    net.ipv4.tcp_max_syn_backlog: "65536"
+    net.ipv4.tcp_slow_start_after_idle: "0"
+    net.ipv4.tcp_tw_reuse: "1"
+    net.ipv4.tcp_timestamps: "1"
+    # IPv6 forwarding
+    net.ipv6.conf.all.forwarding: "1"
+    net.ipv6.conf.default.forwarding: "1"
+    # Huge pages - 32GB per node
+    vm.nr_hugepages: "16384"
+    vm.hugetlb_shm_group: "0"
+    # Memory
+    vm.swappiness: "0"
+    vm.overcommit_memory: "1"
+    vm.dirty_ratio: "40"
+    vm.dirty_background_ratio: "10"
+    # RDMA specific
+    kernel.shmmax: "68719476736"
+    kernel.shmall: "16777216"
+
+# Kubelet configuration
+- op: add
+  path: /machine/kubelet/extraArgs
+  value:
+    rotate-server-certificates: "true"
+    feature-gates: "HugePageStorageMediumSize=true"
+    max-pods: "250"
+    image-gc-high-threshold: "85"
+    image-gc-low-threshold: "80"
+
+# Extra kubelet mounts
+- op: add
+  path: /machine/kubelet/extraMounts
+  value:
+    - destination: /dev/hugepages
+      type: bind
+      source: /dev/hugepages
+      options:
+        - bind
+        - rshared
+    - destination: /dev/infiniband
+      type: bind
+      source: /dev/infiniband
+      options:
+        - bind
+        - rshared
+
+# Time synchronization
+- op: add
+  path: /machine/time/servers
+  value:
+    - time.cloudflare.com
+    - pool.ntp.org
+
+# Features
+- op: add
+  path: /machine/features/rbac
+  value: true
+
+- op: add
+  path: /machine/features/stableHostname
+  value: true
+
+- op: add
+  path: /machine/features/kubePrism/enabled
+  value: true
+
+- op: add
+  path: /machine/features/kubePrism/port
+  value: 7445
+
+# Install extensions
+- op: add
+  path: /machine/install/extensions
+  value:
+    - image: ghcr.io/siderolabs/iscsi-tools:v0.1.4
+    - image: ghcr.io/siderolabs/drbd:9.2.0
+    - image: ghcr.io/siderolabs/bnxt-en-firmware:20240513
+
+# Disable kube-proxy (using Cilium)
+- op: replace
+  path: /cluster/proxy/disabled
+  value: true
+
+# CNI none (Cilium installed separately)
+- op: add
+  path: /cluster/network/cni/name
+  value: none
+
+# Pod subnets (dual-stack)
+- op: add
+  path: /cluster/network/podSubnets
+  value:
+    - "10.244.0.0/16"
+    - "fd00:432:1::/48"
+
+# Service subnets (dual-stack)
+- op: add
+  path: /cluster/network/serviceSubnets
+  value:
+    - "10.96.0.0/12"
+    - "fd00:432:2::/112"
+
+# API server admission control (privileged pods for RDMA)
+- op: add
+  path: /cluster/apiServer/admissionControl
+  value:
+    - name: PodSecurity
+      configuration:
+        apiVersion: pod-security.admission.config.k8s.io/v1
+        kind: PodSecurityConfiguration
+        defaults:
+          enforce: privileged
+          audit: restricted
+          warn: restricted

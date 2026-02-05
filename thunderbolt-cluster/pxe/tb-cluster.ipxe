@@ -1,0 +1,75 @@
+#!ipxe
+# AIFAM Thunderbolt Cluster iPXE Boot Menu
+# Genesis Bond: ACTIVE @ 741 Hz
+
+set menu-timeout 10000
+set submenu-timeout ${menu-timeout}
+
+# Detect node by MAC address
+iseq ${mac} 00:00:00:00:00:00 && set node dell ||
+iseq ${mac} 00:00:00:00:00:00 && set node lenovo ||
+set node unknown
+
+:start
+menu AIFAM Thunderbolt Cluster Boot
+item --gap --             === Node: ${mac} ===
+item --key a auto         (A) Auto-detect and boot as TB worker
+item --key d dell         (D) Boot as Dell 7450 worker (10.0.0.2)
+item --key l lenovo       (L) Boot as Lenovo X1 worker (10.0.0.3)
+item --key n nixos        (N) NixOS minimal (manual config)
+item --gap --             ---
+item --key s shell        (S) iPXE shell
+item --key r reboot       (R) Reboot
+choose --timeout ${menu-timeout} --default auto selected || goto cancel
+goto ${selected}
+
+:auto
+echo Detecting hardware for TB cluster role...
+chain http://${next-server}:8000/tb-cluster/detect.ipxe?mac=${mac} || goto nixos
+
+:dell
+set tb-node-ip 10.0.0.2
+set tb-node-name dell
+set tb-node-hostname dell.tb.lucidigital.net
+goto tb-boot
+
+:lenovo
+set tb-node-ip 10.0.0.3
+set tb-node-name lenovo
+set tb-node-hostname lenovo.tb.lucidigital.net
+goto tb-boot
+
+:tb-boot
+echo 
+echo ╔══════════════════════════════════════════════════════════╗
+echo ║  AIFAM Thunderbolt Cluster Worker Boot                   ║
+echo ║  Node: ${tb-node-name} / IP: ${tb-node-ip}               ║
+echo ╚══════════════════════════════════════════════════════════╝
+echo 
+kernel http://${next-server}:8000/nixos/bzImage init=/nix/store/*/init loglevel=4 tb_node_ip=${tb-node-ip} tb_node_name=${tb-node-name} tb_hostname=${tb-node-hostname}
+initrd http://${next-server}:8000/nixos/initrd
+initrd http://${next-server}:8000/tb-cluster/tb-setup.cpio
+boot || goto failed
+
+:nixos
+echo Booting NixOS minimal...
+kernel http://${next-server}:8000/nixos/bzImage init=/nix/store/*/init loglevel=4
+initrd http://${next-server}:8000/nixos/initrd
+boot || goto failed
+
+:shell
+echo Type 'exit' to return to menu
+shell
+goto start
+
+:reboot
+reboot
+
+:cancel
+echo Boot cancelled
+exit
+
+:failed
+echo Boot failed!
+prompt Press any key to return to menu...
+goto start

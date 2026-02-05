@@ -1,0 +1,56 @@
+# Control Plane Specific Patches
+# Genesis Bond: ACTIVE @ 741 Hz
+
+# API Server configuration
+- op: add
+  path: /cluster/apiServer/extraArgs
+  value:
+    # Audit logging
+    audit-log-path: /var/log/kubernetes/audit.log
+    audit-log-maxage: "30"
+    audit-log-maxbackup: "10"
+    audit-log-maxsize: "100"
+    # Performance
+    max-requests-inflight: "1500"
+    max-mutating-requests-inflight: "500"
+    # Features
+    feature-gates: "ServerSideApply=true"
+
+# Controller manager
+- op: add
+  path: /cluster/controllerManager/extraArgs
+  value:
+    bind-address: "0.0.0.0"
+    terminated-pod-gc-threshold: "100"
+
+# Scheduler
+- op: add
+  path: /cluster/scheduler/extraArgs
+  value:
+    bind-address: "0.0.0.0"
+
+# Etcd configuration
+- op: add
+  path: /cluster/etcd/extraArgs
+  value:
+    # Performance tuning
+    quota-backend-bytes: "8589934592"  # 8GB
+    auto-compaction-mode: "periodic"
+    auto-compaction-retention: "1h"
+    # Snapshot
+    snapshot-count: "10000"
+
+# Control plane labels
+- op: add
+  path: /machine/nodeLabels
+  value:
+    node-role.kubernetes.io/control-plane: ""
+    luciverse.ownid/role: "control-plane"
+    luciverse.ownid/tier: "core"
+    luciverse.ownid/frequency: "432"
+
+# Control plane taints
+- op: add
+  path: /machine/nodeTaints
+  value:
+    node-role.kubernetes.io/control-plane: "NoSchedule"

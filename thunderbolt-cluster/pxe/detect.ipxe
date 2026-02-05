@@ -1,0 +1,30 @@
+#!ipxe
+# Auto-detect TB cluster node by MAC address
+
+# Dell Latitude 7450 MAC patterns (update with actual MAC)
+iseq ${mac:hexhyp} 00-00-00-00-00-00 && goto dell ||
+
+# Lenovo X1 Carbon Gen 10 MAC patterns (update with actual MAC)
+iseq ${mac:hexhyp} 00-00-00-00-00-00 && goto lenovo ||
+
+# Unknown - show menu
+chain http://${next-server}:8000/tb-cluster/tb-cluster.ipxe
+
+:dell
+set tb-node-ip 10.0.0.2
+set tb-node-name dell
+set tb-node-hostname dell.tb.lucidigital.net
+goto boot
+
+:lenovo
+set tb-node-ip 10.0.0.3
+set tb-node-name lenovo
+set tb-node-hostname lenovo.tb.lucidigital.net
+goto boot
+
+:boot
+echo Auto-detected: ${tb-node-name}
+kernel http://${next-server}:8000/nixos/bzImage init=/nix/store/*/init loglevel=4 tb_node_ip=${tb-node-ip} tb_node_name=${tb-node-name} tb_hostname=${tb-node-hostname}
+initrd http://${next-server}:8000/nixos/initrd
+initrd http://${next-server}:8000/tb-cluster/tb-setup.cpio
+boot

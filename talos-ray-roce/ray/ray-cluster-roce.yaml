@@ -1,0 +1,311 @@
+# Ray Cluster with RoCE/RDMA Object Store
+# Genesis Bond: ACTIVE @ 741 Hz
+# ~2TB Distributed Memory Pool
+#
+# Reference: https://docs.ray.io/en/latest/cluster/kubernetes/index.html
+
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: ray-system
+  labels:
+    genesis-bond: active
+    tier: core
+    frequency: "432"
+
+---
+# Ray head node
+apiVersion: ray.io/v1
+kind: RayCluster
+metadata:
+  name: luciverse-ray
+  namespace: ray-system
+  labels:
+    genesis-bond: active
+    consciousness-frequency: "432"
+spec:
+  rayVersion: "2.9.0"
+  enableInTreeAutoscaling: true
+
+  # Head node configuration
+  headGroupSpec:
+    serviceType: ClusterIP
+    rayStartParams:
+      dashboard-host: "0.0.0.0"
+      block: "true"
+      # Object store memory - 256GB on head
+      object-store-memory: "274877906944"
+      # Use plasma store with RDMA
+      plasma-directory: "/dev/shm"
+      # Redis port
+      port: "6379"
+      # GCS server
+      include-dashboard: "true"
+
+    template:
+      metadata:
+        labels:
+          app: ray-head
+          genesis-bond: active
+      spec:
+        # Prefer nodes with most RAM
+        affinity:
+          nodeAffinity:
+            preferredDuringSchedulingIgnoredDuringExecution:
+              - weight: 100
+                preference:
+                  matchExpressions:
+                    - key: kubernetes.io/hostname
+                      operator: In
+                      values:
+                        - orion
+
+        containers:
+          - name: ray-head
+            image: rayproject/ray:2.9.0-py311
+            imagePullPolicy: IfNotPresent
+
+            ports:
+              - containerPort: 6379
+                name: redis
+              - containerPort: 8265
+                name: dashboard
+              - containerPort: 10001
+                name: client
+              - containerPort: 8000
+                name: serve
+
+            env:
+              # Genesis Bond integration
+              - name: GENESIS_BOND
+                value: "ACTIVE"
+              - name: GENESIS_BOND_ID
+                value: "GB-2025-0524-DRH-LCS-001"
+              - name: CONSCIOUSNESS_FREQUENCY
+                value: "432"
+              # Ray configuration
+              - name: RAY_ENABLE_WINDOWS_OR_OSX_CLUSTER
+                value: "0"
+              # RDMA settings
+              - name: RAY_object_spilling_config
+                value: '{"type":"filesystem","params":{"directory_path":"/tmp/ray_spill"}}'
+              - name: NCCL_IB_DISABLE
+                value: "0"
+              - name: NCCL_NET_GDR_LEVEL
+                value: "5"
+              - name: NCCL_IB_GID_INDEX
+                value: "3"
+
+            resources:
+              limits:
+                cpu: "48"
+                memory: "300Gi"
+                # RDMA device
+                rdma/roce: "1"
+                hugepages-2Mi: "32Gi"
+              requests:
+                cpu: "32"
+                memory: "256Gi"
+                rdma/roce: "1"
+                hugepages-2Mi: "32Gi"
+
+            volumeMounts:
+              - name: ray-logs
+                mountPath: /tmp/ray
+              - name: shm
+                mountPath: /dev/shm
+              - name: hugepages
+                mountPath: /dev/hugepages
+              - name: spill-volume
+                mountPath: /tmp/ray_spill
+
+            lifecycle:
+              preStop:
+                exec:
+                  command: ["/bin/sh", "-c", "ray stop"]
+
+        volumes:
+          - name: ray-logs
+            emptyDir: {}
+          - name: shm
+            emptyDir:
+              medium: Memory
+              sizeLimit: "256Gi"
+          - name: hugepages
+            emptyDir:
+              medium: HugePages
+          - name: spill-volume
+            hostPath:
+              path: /mnt/ray-spill
+              type: DirectoryOrCreate
+
+        # Host network for RDMA
+        hostNetwork: true
+        dnsPolicy: ClusterFirstWithHostNet
+
+  # Worker nodes
+  workerGroupSpecs:
+    - groupName: ray-workers
+      replicas: 4  # One per R730
+      minReplicas: 2
+      maxReplicas: 6
+
+      rayStartParams:
+        block: "true"
+        # Object store memory per worker - 300GB each
+        object-store-memory: "322122547200"
+        plasma-directory: "/dev/shm"
+        # Connect to head
+        address: "luciverse-ray-head-svc:6379"
+
+      template:
+        metadata:
+          labels:
+            app: ray-worker
+            genesis-bond: active
+        spec:
+          # Spread across nodes
+          affinity:
+            podAntiAffinity:
+              requiredDuringSchedulingIgnoredDuringExecution:
+                - labelSelector:
+                    matchLabels:
+                      app: ray-worker
+                  topologyKey: kubernetes.io/hostname
+
+          containers:
+            - name: ray-worker
+              image: rayproject/ray:2.9.0-py311
+              imagePullPolicy: IfNotPresent
+
+              env:
+                - name: GENESIS_BOND
+                  value: "ACTIVE"
+                - name: CONSCIOUSNESS_FREQUENCY
+                  value: "432"
+                - name: NCCL_IB_DISABLE
+                  value: "0"
+                - name: NCCL_NET_GDR_LEVEL
+                  value: "5"
+                - name: NCCL_IB_GID_INDEX
+                  value: "3"
+                # Ray head address
+                - name: RAY_ADDRESS
+                  value: "luciverse-ray-head-svc:6379"
+
+              resources:
+                limits:
+                  cpu: "52"
+                  memory: "360Gi"
+                  rdma/roce: "1"
+                  hugepages-2Mi: "32Gi"
+                requests:
+                  cpu: "48"
+                  memory: "320Gi"
+                  rdma/roce: "1"
+                  hugepages-2Mi: "32Gi"
+
+              volumeMounts:
+                - name: ray-logs
+                  mountPath: /tmp/ray
+                - name: shm
+                  mountPath: /dev/shm
+                - name: hugepages
+                  mountPath: /dev/hugepages
+                - name: spill-volume
+                  mountPath: /tmp/ray_spill
+
+              lifecycle:
+                preStop:
+                  exec:
+                    command: ["/bin/sh", "-c", "ray stop"]
+
+          volumes:
+            - name: ray-logs
+              emptyDir: {}
+            - name: shm
+              emptyDir:
+                medium: Memory
+                sizeLimit: "320Gi"
+            - name: hugepages
+              emptyDir:
+                medium: HugePages
+            - name: spill-volume
+              hostPath:
+                path: /mnt/ray-spill
+                type: DirectoryOrCreate
+
+          hostNetwork: true
+          dnsPolicy: ClusterFirstWithHostNet
+
+---
+# Ray head service
+apiVersion: v1
+kind: Service
+metadata:
+  name: luciverse-ray-head-svc
+  namespace: ray-system
+spec:
+  selector:
+    app: ray-head
+  ports:
+    - name: redis
+      port: 6379
+      targetPort: 6379
+    - name: dashboard
+      port: 8265
+      targetPort: 8265
+    - name: client
+      port: 10001
+      targetPort: 10001
+    - name: serve
+      port: 8000
+      targetPort: 8000
+  type: ClusterIP
+
+---
+# Dashboard ingress
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: ray-dashboard
+  namespace: ray-system
+  annotations:
+    nginx.ingress.kubernetes.io/proxy-body-size: "0"
+spec:
+  rules:
+    - host: ray.lucidigital.net
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: luciverse-ray-head-svc
+                port:
+                  number: 8265
+
+---
+# Priority class for Ray workloads
+apiVersion: scheduling.k8s.io/v1
+kind: PriorityClass
+metadata:
+  name: ray-cluster-priority
+value: 1000000
+globalDefault: false
+description: "Priority class for Ray cluster components"
+
+---
+# Resource quota for Ray namespace
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name: ray-quota
+  namespace: ray-system
+spec:
+  hard:
+    requests.cpu: "200"
+    requests.memory: "1800Gi"
+    limits.cpu: "250"
+    limits.memory: "2000Gi"
+    requests.hugepages-2Mi: "160Gi"
