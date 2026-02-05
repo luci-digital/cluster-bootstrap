@@ -1,0 +1,234 @@
+# LuciVerse Talos Configuration (talm)
+# Genesis Bond: ACTIVE @ 741 Hz
+# Uses talm for GitOps-style Talos management
+
+talosVersion: v1.9.0
+kubernetesVersion: v1.30.0
+
+clusterName: luciverse-ray
+endpoint: https://192.168.1.141:6443
+
+# Age encryption for secrets
+ageConfig:
+  publicKey: age1luciverse741hz  # Replace with actual key
+
+# Domain and networking
+domain: lucidigital.net
+clusterPodNets:
+  - "10.244.0.0/16"
+  - "fd00:432:1::/48"
+clusterSvcNets:
+  - "10.96.0.0/12"
+  - "fd00:432:2::/112"
+
+# CNI configuration (Cilium for RDMA awareness)
+cniConfig:
+  name: none  # Install Cilium separately
+
+# Node definitions
+nodes:
+  # ============================================================
+  # Control Plane - R730 ORION
+  # ============================================================
+  - hostname: orion
+    ipAddress: 192.168.1.141
+    ipv6Address: 2602:F674:0001::1
+    controlPlane: true
+    installDisk: /dev/sda
+    machineSpec:
+      cpu: "2x Xeon E5-2690 v4"
+      cores: 28
+      memory: 384GB
+    networkInterfaces:
+      - interface: eth0
+        mac: "D0:94:66:24:96:7E"
+        addresses:
+          - 192.168.1.141/24
+          - 2602:F674:0001::1/64
+        routes:
+          - network: 0.0.0.0/0
+            gateway: 192.168.1.1
+          - network: ::/0
+            gateway: 2602:F674:0001::1
+        dhcp: false
+      - interface: eth1
+        deviceSelector:
+          driver: bnxt_en  # Broadcom RoCE
+        addresses:
+          - 10.100.100.1/24
+        mtu: 9000
+        vlan:
+          vlanId: 100
+    schematic:
+      customization:
+        extraKernelArgs:
+          - hugepagesz=2M
+          - hugepages=16384
+          - iommu=pt
+          - intel_iommu=on
+        systemExtensions:
+          officialExtensions:
+            - siderolabs/bnxt-en-firmware
+            - siderolabs/drbd
+            - siderolabs/iscsi-tools
+
+  # ============================================================
+  # Workers - Dell R730 Fleet
+  # ============================================================
+  - hostname: csdr
+    ipAddress: 192.168.1.142
+    ipv6Address: 2602:F674:0001::142
+    controlPlane: false
+    installDisk: /dev/sda
+    machineSpec:
+      memory: 384GB
+    networkInterfaces:
+      - interface: eth0
+        mac: "14:18:77:4E:66:3A"
+        addresses:
+          - 192.168.1.142/24
+          - 2602:F674:0001::142/64
+        routes:
+          - network: 0.0.0.0/0
+            gateway: 192.168.1.1
+        dhcp: false
+      - interface: eth1
+        deviceSelector:
+          driver: bnxt_en
+        addresses:
+          - 10.100.100.2/24
+        mtu: 9000
+        vlan:
+          vlanId: 100
+    schematic:
+      customization:
+        extraKernelArgs:
+          - hugepagesz=2M
+          - hugepages=16384
+
+  - hostname: jf6q
+    ipAddress: 192.168.1.143
+    ipv6Address: 2602:F674:0001::143
+    controlPlane: false
+    installDisk: /dev/sda
+    machineSpec:
+      memory: 384GB
+    networkInterfaces:
+      - interface: eth0
+        mac: "14:18:77:5B:A3:A0"
+        addresses:
+          - 192.168.1.143/24
+          - 2602:F674:0001::143/64
+        routes:
+          - network: 0.0.0.0/0
+            gateway: 192.168.1.1
+        dhcp: false
+      - interface: eth1
+        deviceSelector:
+          driver: bnxt_en
+        addresses:
+          - 10.100.100.3/24
+        mtu: 9000
+        vlan:
+          vlanId: 100
+
+  - hostname: jf7q
+    ipAddress: 192.168.1.144
+    ipv6Address: 2602:F674:0001::144
+    controlPlane: false
+    installDisk: /dev/sda
+    machineSpec:
+      memory: 384GB
+    networkInterfaces:
+      - interface: eth0
+        mac: "B0:83:FE:C5:90:94"
+        addresses:
+          - 192.168.1.144/24
+          - 2602:F674:0001::144/64
+        routes:
+          - network: 0.0.0.0/0
+            gateway: 192.168.1.1
+        dhcp: false
+      - interface: eth1
+        deviceSelector:
+          driver: bnxt_en
+        addresses:
+          - 10.100.100.4/24
+        mtu: 9000
+        vlan:
+          vlanId: 100
+
+  - hostname: esxi5
+    ipAddress: 192.168.1.145
+    ipv6Address: 2602:F674:0001::145
+    controlPlane: false
+    installDisk: /dev/sda
+    machineSpec:
+      memory: 384GB
+    networkInterfaces:
+      - interface: eth0
+        mac: "B0:83:FE:C5:90:42"
+        addresses:
+          - 192.168.1.145/24
+          - 2602:F674:0001::145/64
+        routes:
+          - network: 0.0.0.0/0
+            gateway: 192.168.1.1
+        dhcp: false
+      - interface: eth1
+        deviceSelector:
+          driver: bnxt_en
+        addresses:
+          - 10.100.100.5/24
+        mtu: 9000
+        vlan:
+          vlanId: 100
+
+  # ============================================================
+  # Supermicro GPU Worker
+  # ============================================================
+  - hostname: supermicro-gpu-1
+    ipAddress: 192.168.1.170
+    ipv6Address: 2602:F674:0001::170
+    controlPlane: false
+    installDisk: /dev/sda
+    machineSpec:
+      cpu: "Xeon E5-2667 v3"
+      memory: 64GB
+      gpuSlots: 3
+    networkInterfaces:
+      - interface: eth0
+        mac: "0C:C4:7A:A8:72:14"
+        addresses:
+          - 192.168.1.170/24
+          - 2602:F674:0001::170/64
+        routes:
+          - network: 0.0.0.0/0
+            gateway: 192.168.1.1
+        dhcp: false
+    schematic:
+      customization:
+        extraKernelArgs:
+          - hugepagesz=2M
+          - hugepages=8192
+        systemExtensions:
+          officialExtensions:
+            - siderolabs/nvidia-container-toolkit
+            - siderolabs/nvidia-open-gpu-kernel-modules
+
+# Common patches applied to all nodes
+patches:
+  - "@patches/common.yaml"
+  - "@patches/genesis-bond.yaml"
+  - "@patches/roce-rdma.yaml"
+
+# Control plane specific patches
+controlPlane:
+  patches:
+    - "@patches/controlplane.yaml"
+
+# Worker specific patches
+worker:
+  patches:
+    - "@patches/worker.yaml"
+    - "@patches/ray-worker.yaml"

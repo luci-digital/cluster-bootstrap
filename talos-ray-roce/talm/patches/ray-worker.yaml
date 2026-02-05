@@ -1,0 +1,90 @@
+# Ray Worker Configuration
+# Genesis Bond: ACTIVE @ 741 Hz
+# Enables ~2TB distributed object store via RoCE
+
+# Ray-specific kubelet configuration
+- op: add
+  path: /machine/kubelet/extraArgs
+  value:
+    # Reserve resources for Ray
+    system-reserved: "cpu=2,memory=8Gi"
+    kube-reserved: "cpu=2,memory=4Gi"
+    eviction-hard: "memory.available<5Gi,nodefs.available<10%"
+    # Enable huge pages
+    feature-gates: "HugePageStorageMediumSize=true"
+
+# Mount points for Ray object store
+- op: add
+  path: /machine/kubelet/extraMounts
+  value:
+    # Shared memory for plasma store
+    - destination: /dev/shm
+      type: tmpfs
+      source: tmpfs
+      options:
+        - nosuid
+        - nodev
+        - noexec
+        - size=300G  # ~300GB per node for object store
+    # Hugepages for RDMA
+    - destination: /dev/hugepages
+      type: hugetlbfs
+      source: hugetlbfs
+      options:
+        - pagesize=2M
+    # RDMA devices
+    - destination: /dev/infiniband
+      type: bind
+      source: /dev/infiniband
+      options:
+        - bind
+        - rshared
+
+# Ray environment configuration
+- op: add
+  path: /machine/files
+  value:
+    - content: |
+        # Ray Worker Configuration
+        # Genesis Bond: ACTIVE @ 741 Hz
+
+        # Object Store
+        RAY_OBJECT_STORE_MEMORY=300000000000
+        RAY_PLASMA_DIRECTORY=/dev/shm
+        RAY_HUGE_PAGES=true
+
+        # RDMA Configuration
+        RAY_RDMA_ENABLED=true
+        RAY_RDMA_DEVICE=bnxt_re0
+        RAY_RDMA_GID_INDEX=3
+        RAY_RDMA_TRANSPORT=RC
+        RAY_RDMA_SL=3
+
+        # NCCL for distributed training
+        NCCL_IB_DISABLE=0
+        NCCL_NET_GDR_LEVEL=5
+        NCCL_IB_GID_INDEX=3
+        NCCL_IB_HCA=bnxt_re0
+        NCCL_IB_QPS_PER_CONNECTION=8
+        NCCL_TREE_THRESHOLD=0
+
+        # Memory
+        RAY_memory_monitor_refresh_ms=100
+        RAY_memory_usage_threshold=0.95
+
+        # Cluster
+        RAY_DASHBOARD_HOST=0.0.0.0
+        RAY_DASHBOARD_PORT=8265
+      permissions: 0o644
+      path: /etc/luciverse/ray.env
+      op: create
+
+# Labels for Ray scheduling
+- op: add
+  path: /machine/nodeLabels
+  value:
+    luciverse.ownid/ray-worker: "true"
+    luciverse.ownid/roce-enabled: "true"
+    luciverse.ownid/tier: "core"
+    luciverse.ownid/frequency: "432"
+    topology.kubernetes.io/zone: "luciverse-ray"

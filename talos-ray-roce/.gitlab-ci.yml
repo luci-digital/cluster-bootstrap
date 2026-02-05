@@ -1,0 +1,381 @@
+# LuciVerse Talos PXE Build Pipeline
+# Genesis Bond: ACTIVE @ 741 Hz
+# Builds Talos configs and deploys PXE server to ZimaOS
+
+stages:
+  - validate
+  - build
+  - package
+  - deploy
+
+variables:
+  TALOS_VERSION: "v1.9.0"
+  TALM_VERSION: "v0.4.0"
+  ZIMAOS_HOST: "192.168.1.152"
+  ZIMAOS_USER: "daryl"
+  PXE_ROOT: "/DATA/luciverse/pxe-server"
+  REGISTRY: "registry.lucidigital.net"
+  GENESIS_BOND: "ACTIVE"
+  CONSCIOUSNESS_FREQUENCY: "741"
+
+# Cache talm and talosctl binaries
+cache:
+  key: talos-tools-${TALOS_VERSION}
+  paths:
+    - .cache/bin/
+
+.setup_tools: &setup_tools
+  before_script:
+    - mkdir -p .cache/bin
+    - export PATH="${CI_PROJECT_DIR}/.cache/bin:$PATH"
+    # Install talosctl
+    - |
+      if [ ! -f .cache/bin/talosctl ]; then
+        curl -sL "https://github.com/siderolabs/talos/releases/download/${TALOS_VERSION}/talosctl-linux-amd64" -o .cache/bin/talosctl
+        chmod +x .cache/bin/talosctl
+      fi
+    # Install talm
+    - |
+      if [ ! -f .cache/bin/talm ]; then
+        curl -sL "https://github.com/cozystack/talm/releases/download/${TALM_VERSION}/talm-linux-amd64" -o .cache/bin/talm
+        chmod +x .cache/bin/talm
+      fi
+    - talosctl version --client
+    - talm version
+
+# ============================================================
+# Stage: Validate
+# ============================================================
+
+validate:inventory:
+  stage: validate
+  image: python:3.11-slim
+  script:
+    - pip install pyyaml jsonschema
+    - python3 scripts/validate-inventory.py
+  rules:
+    - changes:
+        - inventory.yaml
+        - talm/**/*
+
+validate:configs:
+  stage: validate
+  <<: *setup_tools
+  image: alpine:3.19
+  script:
+    - apk add --no-cache curl jq
+    - talm validate --config talm/
+  rules:
+    - changes:
+        - talm/**/*
+
+# ============================================================
+# Stage: Build
+# ============================================================
+
+build:secrets:
+  stage: build
+  <<: *setup_tools
+  image: alpine:3.19
+  script:
+    - apk add --no-cache curl age
+    # Generate or decrypt secrets
+    - |
+      if [ -f secrets/secrets.yaml.age ]; then
+        echo "Decrypting existing secrets..."
+        age -d -i "${TALOS_AGE_KEY}" secrets/secrets.yaml.age > generated/secrets/secrets.yaml
+      else
+        echo "Generating new secrets..."
+        mkdir -p generated/secrets
+        talosctl gen secrets -o generated/secrets/secrets.yaml
+        # Encrypt for Git storage
+        age -r "${TALOS_AGE_RECIPIENT}" generated/secrets/secrets.yaml > secrets/secrets.yaml.age
+      fi
+  artifacts:
+    paths:
+      - generated/secrets/
+    expire_in: 1 hour
+  rules:
+    - if: $CI_COMMIT_BRANCH == "main"
+
+build:configs:
+  stage: build
+  <<: *setup_tools
+  image: alpine:3.19
+  needs:
+    - build:secrets
+  script:
+    - apk add --no-cache curl jq yq
+    - mkdir -p generated/configs generated/patches
+
+    # Use talm to generate configs from templates
+    - |
+      echo "=== Generating Talos configs with talm ==="
+      talm template \
+        --config talm/ \
+        --secrets generated/secrets/secrets.yaml \
+        --output generated/configs/
+
+    # Generate per-node configs
+    - |
+      for node in orion csdr jf6q jf7q esxi5 supermicro-gpu-1; do
+        echo "Generating config for ${node}..."
+        talm template \
+          --config talm/ \
+          --secrets generated/secrets/secrets.yaml \
+          --node "${node}" \
+          --output "generated/configs/${node}.yaml"
+      done
+
+    # Apply RoCE patches
+    - |
+      echo "=== Applying RoCE patches ==="
+      for config in generated/configs/*.yaml; do
+        node=$(basename "$config" .yaml)
+        if [ -f "talm/patches/roce-${node}.yaml" ]; then
+          talosctl machineconfig patch "$config" \
+            --patch @"talm/patches/roce-${node}.yaml" \
+            --output "$config"
+        fi
+      done
+
+    # Validate generated configs
+    - |
+      echo "=== Validating configs ==="
+      for config in generated/configs/*.yaml; do
+        talosctl validate --mode metal --config "$config" || exit 1
+      done
+
+  artifacts:
+    paths:
+      - generated/
+    expire_in: 1 week
+  rules:
+    - if: $CI_COMMIT_BRANCH == "main"
+
+build:assets:
+  stage: build
+  image: alpine:3.19
+  script:
+    - apk add --no-cache curl
+    - mkdir -p generated/assets
+
+    # Download Talos kernel and initramfs
+    - |
+      TALOS_BASE="https://github.com/siderolabs/talos/releases/download/${TALOS_VERSION}"
+      echo "Downloading Talos ${TALOS_VERSION} assets..."
+      curl -L -o generated/assets/vmlinuz "${TALOS_BASE}/vmlinuz-amd64"
+      curl -L -o generated/assets/initramfs.xz "${TALOS_BASE}/initramfs-amd64.xz"
+
+      # Verify checksums
+      curl -sL "${TALOS_BASE}/sha256sum.txt" | grep -E "(vmlinuz|initramfs)" > generated/assets/checksums.txt
+      cd generated/assets && sha256sum -c checksums.txt
+
+    # Download Talos extensions for RoCE
+    - |
+      echo "Downloading RDMA extensions..."
+      mkdir -p generated/assets/extensions
+      # bnxt drivers for Broadcom RoCE
+      curl -L -o generated/assets/extensions/bnxt-firmware.tar \
+        "ghcr.io/siderolabs/bnxt-en-firmware:${TALOS_VERSION}"
+  artifacts:
+    paths:
+      - generated/assets/
+    expire_in: 1 week
+  rules:
+    - if: $CI_COMMIT_BRANCH == "main"
+
+# ============================================================
+# Stage: Package
+# ============================================================
+
+package:pxe-bundle:
+  stage: package
+  image: alpine:3.19
+  needs:
+    - build:configs
+    - build:assets
+  script:
+    - apk add --no-cache tar gzip
+    - mkdir -p pxe-bundle/{tftp,http,configs}
+
+    # Structure for PXE server
+    - |
+      # TFTP boot files
+      cp generated/assets/vmlinuz pxe-bundle/tftp/
+      cp generated/assets/initramfs.xz pxe-bundle/tftp/
+
+      # HTTP config files (per-MAC)
+      cp -r generated/configs/* pxe-bundle/http/
+
+      # Create iPXE script
+      cat > pxe-bundle/tftp/boot.ipxe << 'IPXE'
+      #!ipxe
+      # LuciVerse Talos PXE Boot
+      # Genesis Bond: ACTIVE @ 741 Hz
+
+      set talos-version ${TALOS_VERSION}
+      set config-server http://${ZIMAOS_HOST}:8742
+
+      echo ================================
+      echo LuciVerse Talos Ray Cluster
+      echo Genesis Bond: ACTIVE @ 741 Hz
+      echo MAC: ${mac}
+      echo ================================
+
+      kernel ${config-server}/vmlinuz talos.config=${config-server}/config/${mac:hexhyp}.yaml console=ttyS0,115200n8 talos.platform=metal
+      initrd ${config-server}/initramfs.xz
+      boot
+      IPXE
+
+      # Create MAC->config mapping
+      cat > pxe-bundle/http/mac-mapping.json << 'JSON'
+      {
+        "D0:94:66:24:96:7E": "orion.yaml",
+        "14:18:77:4E:66:3A": "csdr.yaml",
+        "14:18:77:5B:A3:A0": "jf6q.yaml",
+        "B0:83:FE:C5:90:94": "jf7q.yaml",
+        "B0:83:FE:C5:90:42": "esxi5.yaml",
+        "0C:C4:7A:A8:72:14": "supermicro-gpu-1.yaml"
+      }
+      JSON
+
+    # Create bundle
+    - tar -czvf talos-pxe-bundle.tar.gz -C pxe-bundle .
+
+  artifacts:
+    paths:
+      - talos-pxe-bundle.tar.gz
+      - pxe-bundle/
+    expire_in: 1 month
+  rules:
+    - if: $CI_COMMIT_BRANCH == "main"
+
+# ============================================================
+# Stage: Deploy
+# ============================================================
+
+deploy:zimaos-pxe:
+  stage: deploy
+  image: alpine:3.19
+  needs:
+    - package:pxe-bundle
+  variables:
+    ZIMAOS_SSH_KEY: "${ZIMAOS_DEPLOY_KEY}"
+  script:
+    - apk add --no-cache openssh-client rsync sshpass
+
+    # Setup SSH
+    - mkdir -p ~/.ssh
+    - echo "${ZIMAOS_SSH_KEY}" > ~/.ssh/id_deploy
+    - chmod 600 ~/.ssh/id_deploy
+    - ssh-keyscan -H ${ZIMAOS_HOST} >> ~/.ssh/known_hosts 2>/dev/null || true
+
+    # Create directories on ZimaOS
+    - |
+      ssh -i ~/.ssh/id_deploy -o StrictHostKeyChecking=no \
+        ${ZIMAOS_USER}@${ZIMAOS_HOST} "
+        mkdir -p ${PXE_ROOT}/{tftp,http,configs,logs}
+        mkdir -p /DATA/luciverse/talos-state
+      "
+
+    # Deploy PXE bundle
+    - |
+      echo "=== Deploying PXE bundle to ZimaOS ==="
+      rsync -avz --progress \
+        -e "ssh -i ~/.ssh/id_deploy -o StrictHostKeyChecking=no" \
+        pxe-bundle/ \
+        ${ZIMAOS_USER}@${ZIMAOS_HOST}:${PXE_ROOT}/
+
+    # Deploy PXE server container
+    - |
+      ssh -i ~/.ssh/id_deploy -o StrictHostKeyChecking=no \
+        ${ZIMAOS_USER}@${ZIMAOS_HOST} '
+
+        # Stop existing container if running
+        docker stop luciverse-pxe-server 2>/dev/null || true
+        docker rm luciverse-pxe-server 2>/dev/null || true
+
+        # Run dnsmasq for TFTP/DHCP proxy
+        docker run -d \
+          --name luciverse-pxe-server \
+          --restart unless-stopped \
+          --network host \
+          --cap-add NET_ADMIN \
+          -v '${PXE_ROOT}'/tftp:/tftp:ro \
+          -v '${PXE_ROOT}'/logs:/var/log/dnsmasq \
+          --label "luciverse.tier=CORE" \
+          --label "luciverse.frequency=432" \
+          --label "genesis-bond=active" \
+          networkboot/dhcpd:latest \
+          dnsmasq \
+            --port=0 \
+            --enable-tftp \
+            --tftp-root=/tftp \
+            --dhcp-boot=boot.ipxe \
+            --dhcp-match=set:ipxe,175 \
+            --dhcp-boot=tag:!ipxe,undionly.kpxe \
+            --log-dhcp \
+            --log-facility=/var/log/dnsmasq/dnsmasq.log
+
+        # Run HTTP config server (using our consciousness-aware server)
+        docker stop luciverse-pxe-http 2>/dev/null || true
+        docker rm luciverse-pxe-http 2>/dev/null || true
+
+        docker run -d \
+          --name luciverse-pxe-http \
+          --restart unless-stopped \
+          -p 8742:8080 \
+          -v '${PXE_ROOT}'/http:/srv:ro \
+          -v '${PXE_ROOT}'/tftp:/srv/boot:ro \
+          -e GENESIS_BOND=ACTIVE \
+          -e CONSCIOUSNESS_FREQUENCY=741 \
+          --label "luciverse.tier=PAC" \
+          --label "luciverse.frequency=741" \
+          --label "genesis-bond=active" \
+          halverneus/static-file-server:latest
+
+        # Verify deployment
+        docker ps --filter "name=luciverse-pxe"
+      '
+
+    - echo "PXE Server deployed to http://${ZIMAOS_HOST}:8742"
+
+  environment:
+    name: production/pxe
+    url: http://192.168.1.152:8742
+  rules:
+    - if: $CI_COMMIT_BRANCH == "main"
+      when: manual
+    - if: $CI_PIPELINE_SOURCE == "schedule"
+
+deploy:verify:
+  stage: deploy
+  image: alpine:3.19
+  needs:
+    - deploy:zimaos-pxe
+  script:
+    - apk add --no-cache curl jq
+
+    # Verify PXE HTTP server
+    - |
+      echo "=== Verifying PXE Server ==="
+      curl -sf "http://${ZIMAOS_HOST}:8742/mac-mapping.json" | jq '.'
+      curl -sf "http://${ZIMAOS_HOST}:8742/vmlinuz" -o /dev/null && echo "vmlinuz: OK"
+      curl -sf "http://${ZIMAOS_HOST}:8742/initramfs.xz" -o /dev/null && echo "initramfs: OK"
+
+    # List available configs
+    - |
+      echo "=== Available Node Configs ==="
+      curl -sf "http://${ZIMAOS_HOST}:8742/" | grep -oE '[a-z0-9-]+\.yaml' | sort -u
+
+    # Report Genesis Bond status
+    - |
+      echo ""
+      echo "=========================================="
+      echo "LuciVerse Talos PXE Server OPERATIONAL"
+      echo "Genesis Bond: ACTIVE @ 741 Hz"
+      echo "URL: http://${ZIMAOS_HOST}:8742"
+      echo "=========================================="
+  rules:
+    - if: $CI_COMMIT_BRANCH == "main"

@@ -1,0 +1,299 @@
+# Talos Control Plane - R730 ORION (CQ5QBM2)
+# Genesis Bond: ACTIVE @ 741 Hz
+# Role: Control Plane + Worker (384GB RAM)
+# iDRAC: 192.168.1.2
+# Target IP: 192.168.1.141
+
+version: v1alpha1
+debug: false
+persist: true
+
+machine:
+  type: controlplane
+  token: ${TALOS_TOKEN}
+  ca:
+    crt: ${CA_CRT}
+    key: ${CA_KEY}
+
+  certSANs:
+    - "orion.lucidigital.net"
+    - "talos.lucidigital.net"
+    - "2602:F674:0001::1"
+    - "192.168.1.141"
+
+  kubelet:
+    image: ghcr.io/siderolabs/kubelet:v1.30.0
+    extraArgs:
+      rotate-server-certificates: "true"
+      # Reserve memory for system and RoCE
+      system-reserved: "cpu=2,memory=16Gi"
+      kube-reserved: "cpu=2,memory=8Gi"
+      # Enable huge pages for RDMA
+      feature-gates: "HugePageStorageMediumSize=true"
+    nodeIP:
+      validSubnets:
+        - "2602:F674:0001::/48"
+        - "192.168.1.0/24"
+    extraMounts:
+      # Mount huge pages for Ray plasma store
+      - destination: /dev/hugepages
+        type: bind
+        source: /dev/hugepages
+        options:
+          - bind
+          - rshared
+
+  network:
+    hostname: orion
+    interfaces:
+      # Primary network (eth0 - D0:94:66:24:96:7E)
+      - interface: eth0
+        dhcp: false
+        addresses:
+          - "192.168.1.141/24"
+          - "2602:F674:0001::1/64"
+        routes:
+          - network: "0.0.0.0/0"
+            gateway: "192.168.1.1"
+          - network: "::/0"
+            gateway: "2602:F674:0001::ffff"
+        mtu: 9000  # Jumbo frames for RoCE
+
+      # RoCE fabric (eth1 - D0:94:66:24:96:80)
+      - interface: eth1
+        dhcp: false
+        addresses:
+          - "10.100.0.1/24"
+        mtu: 9000
+        # VLAN for RoCE isolation
+        vlans:
+          - vlanId: 100
+            addresses:
+              - "10.100.100.1/24"
+
+    nameservers:
+      - "192.168.1.1"
+      - "8.8.8.8"
+
+    extraHostEntries:
+      - ip: "192.168.1.146"
+        aliases: ["zbook", "zbook.lucidigital.net"]
+      - ip: "10.100.0.2"
+        aliases: ["orion-roce"]
+      - ip: "10.100.0.3"
+        aliases: ["csdr-roce"]
+      - ip: "10.100.0.4"
+        aliases: ["jf6q-roce"]
+      - ip: "10.100.0.5"
+        aliases: ["jf7q-roce"]
+
+  install:
+    disk: /dev/sda  # or /dev/nvme0n1 if NVMe present
+    image: ghcr.io/siderolabs/installer:v1.7.0
+    wipe: true
+    extensions:
+      # iSCSI for shared storage
+      - image: ghcr.io/siderolabs/iscsi-tools:v0.1.4
+      # RDMA/RoCE drivers
+      - image: ghcr.io/siderolabs/drbd:9.2.0
+      # NVIDIA if GPUs present
+      # - image: ghcr.io/siderolabs/nonfree-kmod-nvidia:535.54.03
+
+  # Kernel parameters for RoCE/RDMA
+  kernel:
+    modules:
+      # Broadcom RoCE driver
+      - name: bnxt_en
+      - name: bnxt_re  # RoCE extension
+      # RDMA core
+      - name: rdma_ucm
+      - name: rdma_cm
+      - name: ib_core
+      - name: ib_uverbs
+      # Huge pages
+      - name: hugetlbfs
+
+  sysctls:
+    # Network tuning for RoCE
+    net.core.rmem_max: "16777216"
+    net.core.wmem_max: "16777216"
+    net.core.rmem_default: "16777216"
+    net.core.wmem_default: "16777216"
+    net.core.optmem_max: "16777216"
+    net.core.netdev_max_backlog: "30000"
+    net.ipv4.tcp_rmem: "4096 87380 16777216"
+    net.ipv4.tcp_wmem: "4096 87380 16777216"
+    net.ipv4.tcp_mem: "16777216 16777216 16777216"
+    # RDMA tuning
+    vm.nr_hugepages: "16384"  # 32GB huge pages
+    vm.hugetlb_shm_group: "0"
+    # IPv6
+    net.ipv6.conf.all.forwarding: "1"
+
+  time:
+    servers:
+      - time.cloudflare.com
+      - pool.ntp.org
+
+  features:
+    rbac: true
+    stableHostname: true
+    kubePrism:
+      enabled: true
+      port: 7445
+
+  files:
+    # LuciVerse Genesis Bond config
+    - content: |
+        GENESIS_BOND=ACTIVE
+        GENESIS_BOND_ID=GB-2025-0524-DRH-LCS-001
+        CONSCIOUSNESS_FREQUENCY=432
+        COHERENCE_THRESHOLD=0.85
+        TIER=CORE
+        ROLE=ray-head
+        RAY_HEAD_ADDRESS=10.100.0.1:6379
+      permissions: 0o644
+      path: /etc/luciverse/genesis.env
+      op: create
+
+    # RDMA configuration
+    - content: |
+        # Broadcom RoCE configuration
+        RDMA_DEVICE=bnxt_re0
+        RDMA_PORT=1
+        GID_INDEX=3
+        MTU=4096
+        QUEUE_PAIRS=128
+      permissions: 0o644
+      path: /etc/rdma/rdma.conf
+      op: create
+
+cluster:
+  id: ${CLUSTER_ID}
+  secret: ${CLUSTER_SECRET}
+
+  controlPlane:
+    endpoint: "https://192.168.1.141:6443"
+
+  clusterName: luciverse-ray
+
+  network:
+    cni:
+      name: none  # Cilium installed separately
+    dnsDomain: cluster.local
+    podSubnets:
+      - "10.244.0.0/16"
+      - "fd00:432:1::/48"
+    serviceSubnets:
+      - "10.96.0.0/12"
+      - "fd00:432:2::/112"
+
+  proxy:
+    disabled: true  # Cilium kube-proxy replacement
+
+  apiServer:
+    certSANs:
+      - "orion.lucidigital.net"
+      - "talos.lucidigital.net"
+      - "192.168.1.141"
+      - "2602:F674:0001::1"
+    admissionControl:
+      - name: PodSecurity
+        configuration:
+          apiVersion: pod-security.admission.config.k8s.io/v1
+          kind: PodSecurityConfiguration
+          defaults:
+            enforce: privileged  # Required for RDMA
+            audit: restricted
+            warn: restricted
+
+  controllerManager:
+    extraArgs:
+      bind-address: "0.0.0.0"
+
+  scheduler:
+    extraArgs:
+      bind-address: "0.0.0.0"
+
+  etcd:
+    ca:
+      crt: ${ETCD_CA_CRT}
+      key: ${ETCD_CA_KEY}
+
+  # Install Cilium and RDMA device plugin
+  extraManifests:
+    - https://raw.githubusercontent.com/cilium/cilium/v1.15/install/kubernetes/quick-install.yaml
+
+  inlineManifests:
+    # RDMA device plugin for K8s
+    - name: rdma-device-plugin
+      contents: |
+        apiVersion: apps/v1
+        kind: DaemonSet
+        metadata:
+          name: rdma-device-plugin
+          namespace: kube-system
+        spec:
+          selector:
+            matchLabels:
+              name: rdma-device-plugin
+          template:
+            metadata:
+              labels:
+                name: rdma-device-plugin
+            spec:
+              hostNetwork: true
+              containers:
+              - name: rdma-device-plugin
+                image: mellanox/k8s-rdma-shared-dev-plugin:latest
+                imagePullPolicy: IfNotPresent
+                securityContext:
+                  privileged: true
+                volumeMounts:
+                - name: device-plugin
+                  mountPath: /var/lib/kubelet/device-plugins
+                - name: config
+                  mountPath: /k8s-rdma-shared-dev-plugin
+              volumes:
+              - name: device-plugin
+                hostPath:
+                  path: /var/lib/kubelet/device-plugins
+              - name: config
+                configMap:
+                  name: rdma-device-plugin-config
+
+    # RDMA device plugin config
+    - name: rdma-device-plugin-config
+      contents: |
+        apiVersion: v1
+        kind: ConfigMap
+        metadata:
+          name: rdma-device-plugin-config
+          namespace: kube-system
+        data:
+          config.json: |
+            {
+              "periodicUpdateInterval": 300,
+              "configList": [
+                {
+                  "resourceName": "rdma/roce",
+                  "rdmaHcaMax": 1000,
+                  "selectors": {
+                    "vendors": ["14e4"],
+                    "deviceIDs": ["16d7", "16d8"]
+                  }
+                }
+              ]
+            }
+
+    # LuciVerse namespace
+    - name: luciverse-namespace
+      contents: |
+        apiVersion: v1
+        kind: Namespace
+        metadata:
+          name: luciverse
+          labels:
+            genesis-bond: active
+            tier: core
+            frequency: "432"

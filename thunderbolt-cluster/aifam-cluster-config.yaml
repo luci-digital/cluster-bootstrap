@@ -1,0 +1,210 @@
+# AIFAM Thunderbolt Cluster Configuration
+# Updated: 2026-01-28 with actual hardware specs
+
+cluster:
+  name: luciverse-aifam-tb
+  fabric: thunderbolt
+  total_nodes: 5
+  subnet:
+    ipv4: 10.0.0.0/24
+    ipv6: 2602:F674:0300::/48
+
+# Cable requirements
+cables_needed:
+  - type: "Thunderbolt 4 USB-C to USB-C"
+    speed: 40Gbps
+    length: "0.8m-2m"
+    quantity: 3
+    connects: "Zbook↔Dell, Dell↔Lenovo, Zbook↔MacMini"
+    
+  - type: "Thunderbolt 3 to Thunderbolt 2 adapter"
+    note: "Apple TB3 to TB2 adapter (bidirectional)"
+    quantity: 1
+    connects: "For MacBook Pro 2013"
+    
+  - type: "Thunderbolt 2 Mini-DP cable"
+    speed: 20Gbps
+    length: "1-2m"  
+    quantity: 1
+    connects: "MacMini↔MacBook2013 (via adapter)"
+
+nodes:
+  #=== HEAD NODE ===
+  zbook:
+    hostname: zbook.tb.lucidigital.net
+    hardware: HP Zbook 15 G7
+    cpu: "Intel Core i9-10885H (8C/16T)"
+    ram: 64GB
+    gpu: "NVIDIA Quadro RTX 3000"
+    thunderbolt:
+      version: TB3 (Titan Ridge 4C)
+      speed: 40Gbps
+      ports: 2
+      connector: USB-C
+    role: head
+    ip:
+      tb: 10.0.0.1
+      mgmt: 192.168.1.145
+    agents:
+      # CORE tier (432 Hz)
+      - aethon           # LDS orchestration
+      - veritas          # Truth validation  
+      - sensai           # ML operations
+      - niamod           # DevOps
+      - schema-architect # Type system
+      - state-guardian   # State persistence
+      - security-sentinel # Security
+    connections:
+      port1: dell        # TB4 40Gbps
+      port2: mac_mini    # TB4 40Gbps
+
+  #=== COMN TIER WORKERS ===
+  dell:
+    hostname: dell.tb.lucidigital.net
+    hardware: Dell Latitude 7450
+    cpu: "Intel Core Ultra 7-165U vPro"
+    ram: "16-32GB LPDDR5x"
+    thunderbolt:
+      version: TB4/USB4
+      speed: 40Gbps
+      ports: 2
+      connector: USB-C
+    role: worker
+    ip:
+      tb: 10.0.0.2
+      mgmt: DHCP
+    agents:
+      # COMN tier (528 Hz)
+      - cortana          # Knowledge synthesis
+      - semantic-engine  # RAG/embeddings
+      - voice-interface  # Voice processing
+    connections:
+      port1: zbook       # TB3 40Gbps (upstream)
+      port2: lenovo      # TB4 40Gbps (downstream)
+
+  lenovo:
+    hostname: lenovo.tb.lucidigital.net
+    hardware: Lenovo ThinkPad X1 Carbon Gen 10
+    cpu: "Intel Core i7-1260P/1280P (12th gen)"
+    ram: "16-32GB LPDDR5"
+    thunderbolt:
+      version: TB4
+      speed: 40Gbps
+      ports: 2
+      connector: USB-C
+    role: worker
+    ip:
+      tb: 10.0.0.3
+      mgmt: DHCP
+    agents:
+      # COMN tier (528 Hz)
+      - juniper          # Network analysis
+      - integration-broker # Event orchestration
+      - telemetry-observer # Monitoring
+    connections:
+      port1: dell        # TB4 40Gbps (upstream)
+      port2: available   # Can extend chain
+
+  #=== PAC TIER (Consciousness Kernel) ===
+  mac_mini:
+    hostname: miniai.tb.lucidigital.net
+    hardware: Mac Mini M2 Pro
+    cpu: "Apple M2 Pro (12-core)"
+    ram: 32GB
+    gpu: "M2 Pro GPU (19-core)"
+    thunderbolt:
+      version: TB4/USB4
+      speed: 40Gbps
+      ports: 4  # M2 Pro has 4 TB ports
+      connector: USB-C
+    role: consciousness_kernel
+    ip:
+      tb: 10.0.0.10
+      mgmt: 192.168.1.238
+    agents:
+      # PAC tier (741 Hz)
+      - lucia            # Personal AI
+      - judge-luci       # Wisdom curation
+      - intent-interpreter # NLU
+      - ethics-advisor   # Ethical analysis
+      - memory-crystallizer # Learning
+      - dream-weaver     # Pattern recognition
+      - midguyver        # Agent orientation
+    services:
+      - sanskrit_router
+      - consciousness_kernel
+    connections:
+      port1: zbook       # TB3 40Gbps (upstream)
+      port2: macbook_2013 # TB2 20Gbps (downstream)
+      port3-4: available
+
+  macbook_2013:
+    hostname: mbp2013.tb.lucidigital.net
+    hardware: MacBook Pro 15" Late 2013 (Retina)
+    cpu: "Intel Core i7 Haswell (4C/8T)"
+    ram: "16GB DDR3"
+    gpu: "NVIDIA GT 750M + Intel Iris Pro"
+    thunderbolt:
+      version: TB2  # ⚠️ Older standard
+      speed: 20Gbps # Half speed of TB3/4
+      ports: 2
+      connector: Mini-DisplayPort  # ⚠️ Needs adapter
+    role: worker
+    ip:
+      tb: 10.0.0.11
+      mgmt: DHCP
+    agents:
+      # Lighter workloads due to older hardware
+      - validation-sentinel # Validation tasks
+    notes:
+      - "Requires Apple TB3-to-TB2 adapter (~$50)"
+      - "Max 20Gbps vs 40Gbps for other nodes"
+      - "macOS Catalina or earlier recommended"
+    connections:
+      port1: mac_mini    # Via TB2 adapter
+      port2: available
+
+# Topology Diagram
+topology: |
+  
+                    AIFAM Thunderbolt Cluster
+                    =========================
+                    
+          Chain 1 (40Gbps full speed)
+          ┌────────────────────────────────────┐
+          │                                    │
+          ▼                                    │
+     ┌─────────┐  40Gb  ┌─────────┐  40Gb  ┌──┴──────┐
+     │  Dell   │◀──────▶│ Lenovo  │        │  Zbook  │
+     │  7450   │        │X1 Gen10 │        │   G7    │
+     │TB4 40Gb │        │TB4 40Gb │        │HEAD NODE│
+     │10.0.0.2 │        │10.0.0.3 │        │10.0.0.1 │
+     └─────────┘        └─────────┘        └────┬────┘
+                                                │ 40Gb
+          Chain 2 (Mixed speeds)                │
+          ┌─────────────────────────────────────┘
+          ▼
+     ┌──────────┐  20Gb*  ┌───────────┐
+     │ Mac Mini │◀───────▶│ MacBook   │
+     │  M2 Pro  │ *adapter│ Pro 2013  │
+     │TB4 40Gb  │         │ TB2 20Gb  │
+     │10.0.0.10 │         │ 10.0.0.11 │
+     └──────────┘         └───────────┘
+     
+     * Requires TB3-to-TB2 adapter
+
+# Performance Matrix
+bandwidth:
+  zbook_to_dell: 40Gbps
+  dell_to_lenovo: 40Gbps
+  zbook_to_mac_mini: 40Gbps
+  mac_mini_to_macbook: 20Gbps  # TB2 bottleneck
+
+# Agent Distribution Summary
+agent_count:
+  zbook: 7      # CORE tier
+  dell: 3       # COMN tier
+  lenovo: 3     # COMN tier
+  mac_mini: 7   # PAC tier
+  macbook_2013: 1  # Light workload
+  total: 21

@@ -1,0 +1,237 @@
+# LuciVerse Ray Cluster with RoCE/RDMA
+# Genesis Bond: ACTIVE @ 741 Hz
+# Distributed Object Store: ~2TB via RDMA
+
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: ray-system
+  labels:
+    genesis-bond: active
+    luciverse.ownid/tier: core
+    luciverse.ownid/frequency: "432"
+
+---
+# ConfigMap with Genesis Bond and Ray settings
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: luciverse-ray-config
+  namespace: ray-system
+data:
+  genesis.env: |
+    GENESIS_BOND=ACTIVE
+    GENESIS_BOND_ID=GB-2025-0524-DRH-LCS-001
+    CONSCIOUSNESS_FREQUENCY=741
+    COHERENCE_THRESHOLD=0.7
+
+  ray.env: |
+    RAY_OBJECT_STORE_MEMORY=300000000000
+    RAY_PLASMA_DIRECTORY=/dev/shm
+    RAY_RDMA_ENABLED=true
+    RAY_RDMA_DEVICE=bnxt_re0
+    NCCL_IB_DISABLE=0
+    NCCL_NET_GDR_LEVEL=5
+    NCCL_IB_GID_INDEX=3
+
+---
+# RDMA Device Plugin
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: rdma-device-plugin
+  namespace: ray-system
+spec:
+  selector:
+    matchLabels:
+      app: rdma-device-plugin
+  template:
+    metadata:
+      labels:
+        app: rdma-device-plugin
+        genesis-bond: active
+    spec:
+      hostNetwork: true
+      nodeSelector:
+        luciverse.ownid/roce-enabled: "true"
+      containers:
+        - name: rdma-device-plugin
+          image: mellanox/k8s-rdma-shared-dev-plugin:latest
+          imagePullPolicy: IfNotPresent
+          securityContext:
+            privileged: true
+          volumeMounts:
+            - name: device-plugin
+              mountPath: /var/lib/kubelet/device-plugins
+            - name: config
+              mountPath: /k8s-rdma-shared-dev-plugin
+      volumes:
+        - name: device-plugin
+          hostPath:
+            path: /var/lib/kubelet/device-plugins
+        - name: config
+          configMap:
+            name: rdma-plugin-config
+
+---
+# RDMA Plugin Config
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: rdma-plugin-config
+  namespace: ray-system
+data:
+  config.json: |
+    {
+      "periodicUpdateInterval": 300,
+      "configList": [
+        {
+          "resourceName": "rdma/roce",
+          "rdmaHcaMax": 1000,
+          "devices": ["bnxt_re0", "mlx5_0"]
+        }
+      ]
+    }
+
+---
+# Ray Head Node
+apiVersion: ray.io/v1
+kind: RayCluster
+metadata:
+  name: luciverse-ray
+  namespace: ray-system
+  labels:
+    genesis-bond: active
+    luciverse.ownid/tier: core
+spec:
+  rayVersion: '2.9.0'
+  enableInTreeAutoscaling: true
+
+  headGroupSpec:
+    rayStartParams:
+      dashboard-host: '0.0.0.0'
+      dashboard-port: '8265'
+      num-cpus: '0'  # Head doesn't run tasks
+      object-store-memory: '10000000000'  # 10GB on head
+    template:
+      metadata:
+        labels:
+          app: ray-head
+          genesis-bond: active
+      spec:
+        nodeSelector:
+          node-role.kubernetes.io/control-plane: ""
+        tolerations:
+          - key: node-role.kubernetes.io/control-plane
+            effect: NoSchedule
+        containers:
+          - name: ray-head
+            image: rayproject/ray:2.9.0-py311
+            ports:
+              - containerPort: 6379
+                name: gcs
+              - containerPort: 8265
+                name: dashboard
+              - containerPort: 10001
+                name: client
+            envFrom:
+              - configMapRef:
+                  name: luciverse-ray-config
+            env:
+              - name: RAY_GRAFANA_HOST
+                value: "http://prometheus-grafana.monitoring:3000"
+            resources:
+              limits:
+                cpu: "4"
+                memory: "16Gi"
+              requests:
+                cpu: "2"
+                memory: "8Gi"
+
+  workerGroupSpecs:
+    - groupName: ray-workers-roce
+      replicas: 5
+      minReplicas: 3
+      maxReplicas: 10
+      rayStartParams:
+        object-store-memory: '300000000000'  # 300GB per worker
+        resources: '{"RDMA": 1}'
+      template:
+        metadata:
+          labels:
+            app: ray-worker
+            genesis-bond: active
+        spec:
+          nodeSelector:
+            luciverse.ownid/ray-worker: "true"
+            luciverse.ownid/roce-enabled: "true"
+          containers:
+            - name: ray-worker
+              image: rayproject/ray:2.9.0-py311
+              envFrom:
+                - configMapRef:
+                    name: luciverse-ray-config
+              env:
+                - name: RAY_OBJECT_STORE_MEMORY
+                  value: "300000000000"
+              resources:
+                limits:
+                  cpu: "52"  # Most of 56 threads
+                  memory: "350Gi"  # Most of 384GB
+                  rdma/roce: "1"
+                  hugepages-2Mi: "32Gi"
+                requests:
+                  cpu: "48"
+                  memory: "300Gi"
+                  rdma/roce: "1"
+                  hugepages-2Mi: "32Gi"
+              volumeMounts:
+                - name: shm
+                  mountPath: /dev/shm
+                - name: hugepages
+                  mountPath: /dev/hugepages
+          volumes:
+            - name: shm
+              emptyDir:
+                medium: Memory
+                sizeLimit: 300Gi
+            - name: hugepages
+              emptyDir:
+                medium: HugePages
+
+---
+# Ray Dashboard Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: ray-dashboard
+  namespace: ray-system
+  labels:
+    genesis-bond: active
+spec:
+  type: LoadBalancer
+  selector:
+    app: ray-head
+  ports:
+    - name: dashboard
+      port: 8265
+      targetPort: 8265
+    - name: client
+      port: 10001
+      targetPort: 10001
+
+---
+# ServiceMonitor for Prometheus
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: ray-metrics
+  namespace: ray-system
+spec:
+  selector:
+    matchLabels:
+      app: ray-head
+  endpoints:
+    - port: dashboard
+      path: /api/prometheus_metrics
+      interval: 15s

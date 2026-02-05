@@ -1,0 +1,197 @@
+# Broadcom RoCE (RDMA over Converged Ethernet) Configuration
+# Genesis Bond: ACTIVE @ 741 Hz
+# Target: BCM57xx series NICs in Dell R730 servers
+#
+# RoCE enables zero-copy memory access between servers
+# allowing Ray's plasma object store to share ~2TB of RAM
+
+roce_configuration:
+  version: "RoCEv2"
+  transport: "UDP"
+
+  # Broadcom NIC identification
+  broadcom_devices:
+    # Common BCM57xx PCI IDs in Dell servers
+    supported_vendors:
+      - vendor_id: "14e4"  # Broadcom
+        device_ids:
+          - "16d7"  # BCM57414 25Gb
+          - "16d8"  # BCM57416 10Gb
+          - "1750"  # BCM57508 100Gb
+          - "1751"  # BCM57504 100Gb
+          - "1604"  # BCM5719 1Gb (may not support RoCE)
+          - "165f"  # BCM5720 1Gb (may not support RoCE)
+
+  # Network configuration
+  network:
+    # Dedicated VLAN for RoCE traffic
+    vlan_id: 100
+    vlan_name: "roce-fabric"
+
+    # RoCE subnet
+    subnet: "10.100.100.0/24"
+    gateway: "10.100.100.1"
+
+    # Node IP assignments
+    nodes:
+      orion:
+        ip: "10.100.100.1"
+        gid_index: 3
+      csdr:
+        ip: "10.100.100.2"
+        gid_index: 3
+      jf6q:
+        ip: "10.100.100.3"
+        gid_index: 3
+      jf7q:
+        ip: "10.100.100.4"
+        gid_index: 3
+      esxi5:
+        ip: "10.100.100.5"
+        gid_index: 3
+
+    # MTU (jumbo frames required for efficiency)
+    mtu: 9000
+
+  # Priority Flow Control (PFC) - Required for lossless RoCE
+  pfc:
+    enabled: true
+    # Traffic class 3 for RoCE
+    priority: 3
+    # Enable PFC on priority 3
+    pfcwd_enabled: true
+
+  # Explicit Congestion Notification (ECN)
+  ecn:
+    enabled: true
+    # Mark packets at 50% queue depth
+    marking_threshold: "50%"
+
+  # RDMA parameters
+  rdma:
+    # Maximum Message Transfer Unit
+    max_mtu: 4096
+
+    # Queue Pairs per connection
+    queue_pairs: 128
+
+    # Completion Queue size
+    cq_size: 4096
+
+    # Memory Registration
+    max_mr: 131072
+    max_mr_size: "256GB"
+
+    # Inline data threshold
+    inline_data: 256
+
+  # Talos kernel module configuration
+  talos_modules:
+    # Broadcom Ethernet driver
+    bnxt_en:
+      parameters:
+        # Enable RoCE extension
+        enable_roce: 1
+        # Jumbo frame support
+        mtu: 9000
+
+    # Broadcom RoCE driver
+    bnxt_re:
+      parameters:
+        # Maximum CQs
+        max_cq: 65535
+        # Maximum QPs
+        max_qp: 65535
+        # Maximum MRs
+        max_mr: 131072
+
+    # RDMA core modules
+    rdma_ucm: {}
+    rdma_cm: {}
+    ib_core:
+      parameters:
+        # Enable RoCE mode
+        roce_mode: 2  # RoCEv2
+    ib_uverbs: {}
+
+  # Switch configuration requirements
+  switch_requirements:
+    - feature: "Priority Flow Control (PFC)"
+      required: true
+      priority: 3
+
+    - feature: "ECN (Explicit Congestion Notification)"
+      required: true
+
+    - feature: "DSCP marking"
+      required: true
+      dscp: 26  # AF31 for RoCE
+
+    - feature: "Jumbo Frames"
+      required: true
+      mtu: 9000
+
+    - feature: "VLAN support"
+      required: true
+      vlan: 100
+
+---
+# Testing script for RoCE connectivity
+roce_test_script: |
+  #!/bin/bash
+  # Test RoCE connectivity between nodes
+
+  # Install test tools
+  # dnf install -y perftest rdma-core libibverbs-utils
+
+  # List RDMA devices
+  ibv_devices
+
+  # Show device info
+  ibv_devinfo
+
+  # Test with ib_send_bw (run on server)
+  # Server: ib_send_bw -d bnxt_re0 -i 1 -s 65536 -q 8
+  # Client: ib_send_bw -d bnxt_re0 -i 1 -s 65536 -q 8 <server_ip>
+
+  # Expected bandwidth: ~20-25 Gbps for 25Gb NICs, ~8-10 Gbps for 10Gb
+
+---
+# Ray RDMA configuration
+ray_rdma_config:
+  # Enable RDMA for plasma object store
+  object_store:
+    # Use RDMA for object transfers
+    rdma_enabled: true
+
+    # RDMA device name
+    rdma_device: "bnxt_re0"
+
+    # GID index for RoCEv2
+    gid_index: 3
+
+    # Transport type
+    transport: "RC"  # Reliable Connection
+
+    # Service level
+    sl: 3  # Matches PFC priority
+
+  # NCCL settings for distributed training
+  nccl:
+    # Enable InfiniBand/RoCE
+    NCCL_IB_DISABLE: 0
+
+    # GDR (GPU Direct RDMA) level
+    NCCL_NET_GDR_LEVEL: 5
+
+    # GID index
+    NCCL_IB_GID_INDEX: 3
+
+    # HCA (Host Channel Adapter) selection
+    NCCL_IB_HCA: "bnxt_re0"
+
+    # Queue pairs
+    NCCL_IB_QPS_PER_CONNECTION: 8
+
+    # Enable tree algorithms
+    NCCL_TREE_THRESHOLD: 0
