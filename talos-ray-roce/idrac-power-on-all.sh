@@ -37,13 +37,19 @@ get_idrac_creds() {
     IDRAC_PASS="${IDRAC_PASS:-calvin}"
 }
 
-# iDRAC inventory
+# iDRAC inventory (OOB network 10.0.0.x)
+# Updated 2026-02-06 - Full OOB scan completed
+# SSH racadm works on R730/R720, web login (root/calvin) works on all
 declare -A IDRACS=(
-    ["orion"]="192.168.1.2"
-    ["csdr"]="192.168.1.3"
-    ["jf6q"]="192.168.1.31"
-    ["jf7q"]="192.168.1.33"
-    ["esxi5"]="192.168.1.32"
+    # Primary servers (SSH racadm verified)
+    ["orion"]="10.0.0.56"    # R730 (CQ5QBM2) - 56 cores, 384GB - Ray Head
+    ["csdr"]="10.0.0.99"     # R720 (4J0TV12) - 40 cores, 536GB - Ray Worker
+
+    # Additional servers (web login verified, SSH disabled)
+    ["dell-38"]="10.0.0.38"  # Dell (CSDR282) - model TBD
+    ["dell-51"]="10.0.0.51"  # Dell (4LNRF5J) - model TBD
+    ["dell-79"]="10.0.0.79"  # Dell (1JG5Q22) - model TBD
+    ["dell-115"]="10.0.0.115" # Dell (1JF7Q22) - model TBD
 )
 
 # Get power state
