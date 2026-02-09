@@ -227,7 +227,9 @@ systemctl enable luciswitch-dcb.service
 cat > /usr/local/bin/luciswitch-probe.sh << 'PROBE'
 #!/bin/bash
 # Probe hardware and report to ZBook provisioning server
+# Try main LAN first (post-reboot), fallback to OOB
 ZBOOK="http://192.168.1.146:9999"
+ZBOOK_OOB="http://10.0.0.1:9999"
 
 HWINFO=$(cat << HWEOF
 {
@@ -270,9 +272,13 @@ HWEOF
 echo "$HWINFO" | python3 -c "import sys,json; print(json.dumps(json.load(sys.stdin), indent=2))"
 
 # Report to ZBook
+# Try main LAN, then OOB network
 curl -sf -X POST "$ZBOOK/callback/luciswitch-probe" \
   -H "Content-Type: application/json" \
-  -d "$HWINFO" && echo "Reported to ZBook" || echo "ZBook unreachable (will retry)"
+  -d "$HWINFO" && echo "Reported to ZBook (LAN)" || \
+curl -sf -X POST "$ZBOOK_OOB/callback/luciswitch-probe" \
+  -H "Content-Type: application/json" \
+  -d "$HWINFO" && echo "Reported to ZBook (OOB)" || echo "ZBook unreachable (will retry)"
 PROBE
 chmod +x /usr/local/bin/luciswitch-probe.sh
 
@@ -303,6 +309,8 @@ mkdir -p /home/daryl/.ssh
 chmod 700 /home/daryl/.ssh
 
 # Copy ZBook's public key (will be populated by provisioning server)
+# Try OOB network first (install time), then main LAN
+curl -sf http://10.0.0.1:8000/ssh-keys/zbook.pub >> /home/daryl/.ssh/authorized_keys 2>/dev/null || \
 curl -sf http://192.168.1.146:8000/ssh-keys/zbook.pub >> /home/daryl/.ssh/authorized_keys 2>/dev/null
 chmod 600 /home/daryl/.ssh/authorized_keys 2>/dev/null
 chown -R daryl:daryl /home/daryl/.ssh
