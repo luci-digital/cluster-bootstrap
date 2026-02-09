@@ -1,0 +1,199 @@
+#!ipxe
+# ==============================================================================
+# LuciVerse Bootimus - iPXE Boot Menu
+# ==============================================================================
+# Genesis Bond: ACTIVE @ 741 Hz
+# PXE Server: zbook (192.168.1.145)
+# OS: openEuler 25.09 LTS
+# ==============================================================================
+
+# Configuration
+set pxe-server 192.168.1.145
+set http-port 8000
+set callback-port 9999
+set http-root http://${pxe-server}:${http-port}
+set kickstart-root ${http-root}/kickstart
+set openeuler-mirror https://repo.openeuler.org/openEuler-25.09/OS/x86_64
+set kernel-url ${http-root}/openeuler/vmlinuz
+set initrd-url ${http-root}/openeuler/initrd.img
+
+# Menu colors
+set menu-bg #000000
+set menu-fg #ffffff
+set submenu-bg #000022
+set item-bg #000044
+set selected-bg #00ff00
+set selected-fg #000000
+
+# Get system MAC address
+set mac ${net0/mac}
+
+# Register with provisioning server
+:register
+echo Registering with provisioning server...
+chain ${http-root}/ipxe-chain/${mac} || goto menu
+
+# ==============================================================================
+# Main Menu
+# ==============================================================================
+:menu
+clear
+menu LuciVerse Bootimus - Dell Fleet Provisioning
+item --gap --             ======== CORE Tier (432 Hz) ========
+item fabric               [FABRIC]     iSulad + IPFS + ZFS (3x R730 .140-.142)
+item infra                [INFRA]      FDB + Consul + Nomad (1x R630 .144)
+item core-gpu             [CORE-GPU]   Core GPU Processing (1x R730 .143)
+item storage              [STORAGE]    ZFS RAID-Z2 + NFS (2x R730 .146-.147)
+item --gap --             ======== COMN Tier (528 Hz) ========
+item compute-gpu          [COMPUTE-GPU] GPU Inference (2x R630+Tesla .150-.151)
+item compute              [COMPUTE]    StratoVirt + K8s Worker (2x R630 .152-.153)
+item --gap --             ======== Utilities ========
+item shell                [SHELL]      Drop to iPXE shell
+item reboot               [REBOOT]     Reboot system
+item poweroff             [POWEROFF]   Power off system
+item exit                 [EXIT]       Exit to BIOS/UEFI boot
+choose --timeout 30000 --default exit selected || goto exit
+goto ${selected}
+
+# ==============================================================================
+# FABRIC Node Installation (.140-.142)
+# ==============================================================================
+:fabric
+echo
+echo =====================================================
+echo   FABRIC Node Installation
+echo   Tier: CORE (432 Hz)
+echo   Role: iSulad + IPFS + ZFS Fabric
+echo   Target: Dell R730 (.140, .141, .142)
+echo =====================================================
+echo
+echo Loading kernel and initrd...
+kernel ${kernel-url} inst.repo=${openeuler-mirror} inst.ks=${kickstart-root}/luciverse-fabric.ks ip=dhcp console=tty0 console=ttyS0,115200n8
+initrd ${initrd-url}
+echo
+echo Starting openEuler 25.09 installation...
+echo Kickstart: ${kickstart-root}/luciverse-fabric.ks
+echo
+boot || goto failed
+
+# ==============================================================================
+# COMPUTE-GPU Node Installation (.150-.151)
+# ==============================================================================
+:compute-gpu
+echo
+echo =====================================================
+echo   COMPUTE-GPU Node Installation
+echo   Tier: COMN (528 Hz)
+echo   Role: GPU Inference, CUDA, Ollama
+echo   Target: Dell R630 + Tesla (.150, .151)
+echo =====================================================
+echo
+kernel ${kernel-url} inst.repo=${openeuler-mirror} inst.ks=${kickstart-root}/luciverse-compute-gpu.ks ip=dhcp console=tty0 console=ttyS0,115200n8
+initrd ${initrd-url}
+boot || goto failed
+
+# ==============================================================================
+# COMPUTE Node Installation (.152-.153)
+# ==============================================================================
+:compute
+echo
+echo =====================================================
+echo   COMPUTE Node Installation
+echo   Tier: COMN (528 Hz)
+echo   Role: StratoVirt VMs, K8s Worker
+echo   Target: Dell R630 (.152, .153)
+echo =====================================================
+echo
+kernel ${kernel-url} inst.repo=${openeuler-mirror} inst.ks=${kickstart-root}/luciverse-compute.ks ip=dhcp console=tty0 console=ttyS0,115200n8
+initrd ${initrd-url}
+boot || goto failed
+
+# ==============================================================================
+# INFRA Node Installation (.144)
+# ==============================================================================
+:infra
+echo
+echo =====================================================
+echo   INFRA Node Installation
+echo   Tier: CORE (432 Hz)
+echo   Role: FoundationDB + Consul + Nomad
+echo   Target: Dell R630 (.144)
+echo =====================================================
+echo
+kernel ${kernel-url} inst.repo=${openeuler-mirror} inst.ks=${kickstart-root}/luciverse-infra.ks ip=dhcp console=tty0 console=ttyS0,115200n8
+initrd ${initrd-url}
+boot || goto failed
+
+# ==============================================================================
+# CORE-GPU Node Installation (.143)
+# ==============================================================================
+:core-gpu
+echo
+echo =====================================================
+echo   CORE-GPU Node Installation
+echo   Tier: CORE (432 Hz)
+echo   Role: Core GPU Processing, Sensai
+echo   Target: Dell R730 (.143)
+echo =====================================================
+echo
+kernel ${kernel-url} inst.repo=${openeuler-mirror} inst.ks=${kickstart-root}/luciverse-core-gpu.ks ip=dhcp console=tty0 console=ttyS0,115200n8
+initrd ${initrd-url}
+boot || goto failed
+
+# ==============================================================================
+# STORAGE Node Installation (.146-.147)
+# ==============================================================================
+:storage
+echo
+echo =====================================================
+echo   STORAGE Node Installation
+echo   Tier: CORE (432 Hz)
+echo   Role: ZFS RAID-Z2, NFS/SMB
+echo   Target: Dell R730 (.146, .147)
+echo =====================================================
+echo
+kernel ${kernel-url} inst.repo=${openeuler-mirror} inst.ks=${kickstart-root}/luciverse-storage.ks ip=dhcp console=tty0 console=ttyS0,115200n8
+initrd ${initrd-url}
+boot || goto failed
+
+# ==============================================================================
+# Utilities
+# ==============================================================================
+:shell
+echo Dropping to iPXE shell...
+echo Type 'exit' to return to menu
+shell
+goto menu
+
+:reboot
+echo Rebooting system...
+reboot
+
+:poweroff
+echo Powering off system...
+poweroff
+
+:exit
+echo Exiting to BIOS/UEFI boot order...
+exit 0
+
+# ==============================================================================
+# Error Handling
+# ==============================================================================
+:failed
+echo
+echo =====================================================
+echo   BOOT FAILED
+echo =====================================================
+echo
+echo Failed to load kernel or initrd.
+echo Please check network connectivity and try again.
+echo
+echo Troubleshooting:
+echo   1. Verify PXE server is running: http://${pxe-server}:${http-port}
+echo   2. Check kernel exists: ${kernel-url}
+echo   3. Check initrd exists: ${initrd-url}
+echo
+echo Press any key to return to menu...
+prompt
+goto menu

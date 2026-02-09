@@ -1,0 +1,63 @@
+[Unit]
+Description=LuciVerse Sovereign Orchestrator (LSO)
+Documentation=https://lucidigital.net/lso
+After=network-online.target foundationdb.service docker.service
+Wants=network-online.target
+Requires=foundationdb.service
+
+[Service]
+Type=notify
+User=daryl
+Group=docker
+Environment=PYTHONUNBUFFERED=1
+Environment=LSO_STATE_PATH=/var/lib/luciverse/lso
+Environment=LSO_LOG_PATH=/var/log/luciverse
+Environment=ARIN_PREFIX=2602:F674
+Environment=ASN=54134
+Environment=GENESIS_BOND=ACTIVE
+Environment=CONSCIOUSNESS_FREQUENCY=741
+Environment=COHERENCE_THRESHOLD=0.7
+
+# 1Password Connect integration
+Environment=OP_CONNECT_HOST=http://localhost:8082
+# Token loaded from EnvironmentFile
+EnvironmentFile=-/etc/luciverse/lso.env
+
+ExecStartPre=/bin/mkdir -p /var/lib/luciverse/lso
+ExecStartPre=/bin/mkdir -p /var/log/luciverse
+ExecStartPre=/bin/chown -R daryl:docker /var/lib/luciverse
+ExecStartPre=/bin/chown -R daryl:docker /var/log/luciverse
+
+ExecStart=/usr/bin/python3 /home/daryl/luciverse-sovereign-orchestrator/lso_core.py
+ExecReload=/bin/kill -HUP $MAINPID
+
+# Graceful shutdown
+ExecStop=/bin/kill -TERM $MAINPID
+TimeoutStopSec=30
+
+# Restart policy
+Restart=always
+RestartSec=5
+RestartPreventExitStatus=0
+
+# Resource limits
+LimitNOFILE=65536
+LimitNPROC=4096
+
+# Security hardening
+ProtectSystem=strict
+ProtectHome=read-only
+ReadWritePaths=/var/lib/luciverse /var/log/luciverse /home/daryl/luciverse-sovereign-orchestrator
+PrivateTmp=true
+NoNewPrivileges=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+
+# Logging
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=luciverse-lso
+
+[Install]
+WantedBy=multi-user.target

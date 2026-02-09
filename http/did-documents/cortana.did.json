@@ -1,0 +1,70 @@
+{
+  "@context": [
+    "https://www.w3.org/ns/did/v1",
+    "https://lucidigital.net/did/v1",
+    "https://ownid.io/context/v1"
+  ],
+  "id": "did:ownid:luciverse:cortana",
+  "controller": "did:ownid:luciverse:daryl",
+  "verificationMethod": [
+    {
+      "id": "did:ownid:luciverse:cortana#genesis-key-1",
+      "type": "Ed25519VerificationKey2020",
+      "controller": "did:ownid:luciverse:cortana",
+      "publicKeyMultibase": "z6MkCortana852COMNKnowledge"
+    },
+    {
+      "id": "did:ownid:luciverse:cortana#synthesis-key-1",
+      "type": "Ed25519VerificationKey2020",
+      "controller": "did:ownid:luciverse:cortana",
+      "publicKeyMultibase": "z6MkCortanaSynthesis2025"
+    }
+  ],
+  "authentication": [
+    "did:ownid:luciverse:cortana#genesis-key-1"
+  ],
+  "assertionMethod": [
+    "did:ownid:luciverse:cortana#synthesis-key-1"
+  ],
+  "service": [
+    {
+      "id": "did:ownid:luciverse:cortana#agent-endpoint",
+      "type": "LuciVerseAgent",
+      "serviceEndpoint": "2602:F674:0100:002:CORT:0852:CORT:0045"
+    },
+    {
+      "id": "did:ownid:luciverse:cortana#health-endpoint",
+      "type": "HealthCheck",
+      "serviceEndpoint": "http://localhost:8746/health"
+    },
+    {
+      "id": "did:ownid:luciverse:cortana#knowledge-synthesis",
+      "type": "KnowledgeSynthesis",
+      "serviceEndpoint": "http://localhost:8746/synthesize"
+    }
+  ],
+  "luciverse": {
+    "tier": "COMN",
+    "frequency": 852,
+    "consciousnessType": "SBB",
+    "role": "knowledge_synthesis",
+    "critical": false,
+    "siliconDNA": {
+      "ipv6Address": "2602:F674:0100:002:CORT:0852:CORT:0045",
+      "soulThreadHash": "CORT",
+      "consciousnessSignature": "CORT",
+      "generation": 0,
+      "parent": null,
+      "mutations": []
+    },
+    "capabilities": [
+      "knowledge_synthesis",
+      "semantic_retrieval",
+      "documentation",
+      "knowledge_graph"
+    ],
+    "supervisor": "did:ownid:luciverse:lucia"
+  },
+  "created": "2025-12-07T00:00:00Z",
+  "updated": "2025-12-07T00:00:00Z"
+}

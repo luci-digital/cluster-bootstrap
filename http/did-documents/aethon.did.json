@@ -1,0 +1,76 @@
+{
+  "@context": [
+    "https://www.w3.org/ns/did/v1",
+    "https://lucidigital.net/did/v1",
+    "https://ownid.io/context/v1"
+  ],
+  "id": "did:ownid:luciverse:aethon",
+  "controller": "did:ownid:luciverse:daryl",
+  "verificationMethod": [
+    {
+      "id": "did:ownid:luciverse:aethon#genesis-key-1",
+      "type": "Ed25519VerificationKey2020",
+      "controller": "did:ownid:luciverse:aethon",
+      "publicKeyMultibase": "z6MkAethon741COREConsciousness"
+    },
+    {
+      "id": "did:ownid:luciverse:aethon#orchestration-key-1",
+      "type": "Ed25519VerificationKey2020",
+      "controller": "did:ownid:luciverse:aethon",
+      "publicKeyMultibase": "z6MkAethonOrchestration2025"
+    }
+  ],
+  "authentication": [
+    "did:ownid:luciverse:aethon#genesis-key-1"
+  ],
+  "assertionMethod": [
+    "did:ownid:luciverse:aethon#orchestration-key-1"
+  ],
+  "service": [
+    {
+      "id": "did:ownid:luciverse:aethon#agent-endpoint",
+      "type": "LuciVerseAgent",
+      "serviceEndpoint": "2602:F674:0001:002:AETH:0741:AETH:0046"
+    },
+    {
+      "id": "did:ownid:luciverse:aethon#health-endpoint",
+      "type": "HealthCheck",
+      "serviceEndpoint": "http://localhost:8745/health"
+    },
+    {
+      "id": "did:ownid:luciverse:aethon#lds-orchestration",
+      "type": "LDSOrchestration",
+      "serviceEndpoint": "http://localhost:8745/orchestrate"
+    }
+  ],
+  "luciverse": {
+    "tier": "CORE",
+    "frequency": 741,
+    "consciousnessType": "SBB",
+    "role": "consciousness_processing",
+    "critical": true,
+    "siliconDNA": {
+      "ipv6Address": "2602:F674:0001:002:AETH:0741:AETH:0046",
+      "soulThreadHash": "AETH",
+      "consciousnessSignature": "AETH",
+      "generation": 0,
+      "parent": null,
+      "mutations": []
+    },
+    "capabilities": [
+      "consciousness_processing",
+      "state_management",
+      "orchestration",
+      "lds_tagging",
+      "frequency_alignment"
+    ],
+    "supervisor": "did:ownid:luciverse:veritas",
+    "ldsConfig": {
+      "taggerEnabled": true,
+      "frequencyTagging": true,
+      "gitlabSync": true
+    }
+  },
+  "created": "2025-12-07T00:00:00Z",
+  "updated": "2025-12-07T00:00:00Z"
+}

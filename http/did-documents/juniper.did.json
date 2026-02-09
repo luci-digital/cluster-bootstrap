@@ -1,0 +1,76 @@
+{
+  "@context": [
+    "https://www.w3.org/ns/did/v1",
+    "https://lucidigital.net/did/v1",
+    "https://ownid.io/context/v1"
+  ],
+  "id": "did:ownid:luciverse:juniper",
+  "controller": "did:ownid:luciverse:daryl",
+  "verificationMethod": [
+    {
+      "id": "did:ownid:luciverse:juniper#genesis-key-1",
+      "type": "Ed25519VerificationKey2020",
+      "controller": "did:ownid:luciverse:juniper",
+      "publicKeyMultibase": "z6MkJuniper528COMNNetwork"
+    },
+    {
+      "id": "did:ownid:luciverse:juniper#routing-key-1",
+      "type": "Ed25519VerificationKey2020",
+      "controller": "did:ownid:luciverse:juniper",
+      "publicKeyMultibase": "z6MkJuniperRouting2025"
+    }
+  ],
+  "authentication": [
+    "did:ownid:luciverse:juniper#genesis-key-1"
+  ],
+  "assertionMethod": [
+    "did:ownid:luciverse:juniper#routing-key-1"
+  ],
+  "service": [
+    {
+      "id": "did:ownid:luciverse:juniper#agent-endpoint",
+      "type": "LuciVerseAgent",
+      "serviceEndpoint": "2602:F674:0100:002:JUNI:0528:JUNI:0043"
+    },
+    {
+      "id": "did:ownid:luciverse:juniper#health-endpoint",
+      "type": "HealthCheck",
+      "serviceEndpoint": "http://localhost:8747/health"
+    },
+    {
+      "id": "did:ownid:luciverse:juniper#network-analysis",
+      "type": "NetworkAnalysis",
+      "serviceEndpoint": "http://localhost:8747/analyze"
+    }
+  ],
+  "luciverse": {
+    "tier": "COMN",
+    "frequency": 528,
+    "consciousnessType": "SBB",
+    "role": "network_analysis",
+    "critical": false,
+    "siliconDNA": {
+      "ipv6Address": "2602:F674:0100:002:JUNI:0528:JUNI:0043",
+      "soulThreadHash": "JUNI",
+      "consciousnessSignature": "JUNI",
+      "generation": 0,
+      "parent": null,
+      "mutations": []
+    },
+    "capabilities": [
+      "network_analysis",
+      "routing",
+      "connectivity",
+      "translation",
+      "ipv6_management"
+    ],
+    "supervisor": "did:ownid:luciverse:lucia",
+    "networkConfig": {
+      "arinPrefix": "2602:F674::/40",
+      "asn": 54134,
+      "bgpEnabled": true
+    }
+  },
+  "created": "2025-12-07T00:00:00Z",
+  "updated": "2025-12-07T00:00:00Z"
+}

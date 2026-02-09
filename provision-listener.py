@@ -4,6 +4,8 @@ LuciVerse Cluster Provisioning Listener
 Detects NixOS servers booting and assigns IPv6 addresses based on MAC
 
 Genesis Bond: ACTIVE @ 432 Hz
+
+1Password Connect Integration for secure credential injection.
 """
 
 import asyncio
@@ -12,10 +14,37 @@ import yaml
 import socket
 import struct
 import logging
-from datetime import datetime
+import os
+import hashlib
+import hmac
+from datetime import datetime, timedelta
 from pathlib import Path
-from typing import Dict, Optional
-from aiohttp import web
+from typing import Dict, Optional, Any
+from aiohttp import web, ClientSession, ClientTimeout
+
+# =============================================================================
+# 1Password Connect Configuration
+# =============================================================================
+OP_CONNECT_HOST = os.environ.get('OP_CONNECT_HOST', 'http://192.168.1.152:8082')
+OP_CONNECT_TOKEN = os.environ.get('OP_CONNECT_TOKEN', '')
+OP_VAULT_INFRA = os.environ.get('OP_VAULT_INFRA', 'Infrastructure')
+
+# Credential item names in 1Password
+OP_ITEMS = {
+    'fleet-root': 'Dell-Fleet-Root',
+    'fleet-user': 'Dell-Fleet-User',
+    'fdb-cluster': 'FoundationDB-Cluster',
+    'ipfs-secret': 'IPFS-Cluster-Secret',
+    'consul-token': 'Consul-Bootstrap-Token',
+    'nomad-token': 'Nomad-Bootstrap-Token',
+    'k8s-join': 'K8s-Join-Token',
+    'lso-token': 'LSO-Connect-Token',
+    'registry-auth': 'GitLab-Registry-Auth',
+}
+
+# Credential cache (TTL 5 minutes)
+credential_cache: Dict[str, tuple] = {}  # {item: (value, expiry_time)}
+CACHE_TTL = timedelta(minutes=5)
 
 # Configure logging
 logging.basicConfig(
@@ -81,6 +110,138 @@ def find_server_by_mac(mac: str, inventory: dict) -> Optional[tuple]:
     return None
 
 
+# =============================================================================
+# 1Password Connect Client
+# =============================================================================
+
+class OPConnectClient:
+    """Client for 1Password Connect API."""
+
+    def __init__(self, host: str = None, token: str = None):
+        self.host = host or OP_CONNECT_HOST
+        self.token = token or OP_CONNECT_TOKEN
+        self.session: Optional[ClientSession] = None
+        self._vault_id_cache: Dict[str, str] = {}
+
+    async def _ensure_session(self):
+        """Ensure aiohttp session exists."""
+        if self.session is None or self.session.closed:
+            timeout = ClientTimeout(total=10)
+            self.session = ClientSession(timeout=timeout)
+
+    async def close(self):
+        """Close the session."""
+        if self.session and not self.session.closed:
+            await self.session.close()
+
+    async def _request(self, method: str, endpoint: str) -> Optional[dict]:
+        """Make authenticated request to 1Password Connect."""
+        if not self.token:
+            logger.warning("1Password Connect token not configured")
+            return None
+
+        await self._ensure_session()
+        url = f"{self.host}/v1{endpoint}"
+        headers = {"Authorization": f"Bearer {self.token}"}
+
+        try:
+            async with self.session.request(method, url, headers=headers) as resp:
+                if resp.status == 200:
+                    return await resp.json()
+                else:
+                    logger.error(f"1Password Connect error: {resp.status}")
+                    return None
+        except Exception as e:
+            logger.error(f"1Password Connect request failed: {e}")
+            return None
+
+    async def get_vault_id(self, vault_name: str) -> Optional[str]:
+        """Get vault ID by name."""
+        if vault_name in self._vault_id_cache:
+            return self._vault_id_cache[vault_name]
+
+        vaults = await self._request('GET', '/vaults')
+        if vaults:
+            for vault in vaults:
+                if vault.get('name') == vault_name:
+                    self._vault_id_cache[vault_name] = vault['id']
+                    return vault['id']
+        return None
+
+    async def get_item(self, vault_name: str, item_title: str) -> Optional[dict]:
+        """Get item from vault by title."""
+        vault_id = await self.get_vault_id(vault_name)
+        if not vault_id:
+            return None
+
+        items = await self._request('GET', f'/vaults/{vault_id}/items')
+        if items:
+            for item in items:
+                if item.get('title') == item_title:
+                    # Fetch full item details
+                    return await self._request('GET', f'/vaults/{vault_id}/items/{item["id"]}')
+        return None
+
+    async def get_credential(self, item_key: str, field: str = 'password') -> Optional[str]:
+        """Get credential value from 1Password.
+
+        Args:
+            item_key: Key from OP_ITEMS mapping
+            field: Field name to extract (default: 'password')
+
+        Returns:
+            Credential value or None
+        """
+        # Check cache first
+        cache_key = f"{item_key}:{field}"
+        if cache_key in credential_cache:
+            value, expiry = credential_cache[cache_key]
+            if datetime.now() < expiry:
+                logger.debug(f"Cache hit for {item_key}")
+                return value
+
+        # Fetch from 1Password
+        item_title = OP_ITEMS.get(item_key)
+        if not item_title:
+            logger.warning(f"Unknown credential key: {item_key}")
+            return None
+
+        item = await self.get_item(OP_VAULT_INFRA, item_title)
+        if not item:
+            logger.warning(f"Item not found: {item_title}")
+            return None
+
+        # Extract field value
+        for f in item.get('fields', []):
+            if f.get('label', '').lower() == field.lower() or f.get('id') == field:
+                value = f.get('value')
+                if value:
+                    # Cache the value
+                    credential_cache[cache_key] = (value, datetime.now() + CACHE_TTL)
+                    return value
+
+        # For secure notes, check notesPlain
+        if field == 'notes' and 'notesPlain' in item:
+            value = item['notesPlain']
+            credential_cache[cache_key] = (value, datetime.now() + CACHE_TTL)
+            return value
+
+        logger.warning(f"Field '{field}' not found in {item_title}")
+        return None
+
+
+# Global 1Password client instance
+op_client: Optional[OPConnectClient] = None
+
+
+def get_op_client() -> OPConnectClient:
+    """Get or create 1Password Connect client."""
+    global op_client
+    if op_client is None:
+        op_client = OPConnectClient()
+    return op_client
+
+
 class ProvisionListener:
     def __init__(self, inventory: dict, diaper_roles: dict = None):
         self.inventory = inventory
@@ -97,6 +258,17 @@ class ProvisionListener:
         self.app.router.add_post('/callback/{event}', self.callback)
         self.app.router.add_get('/status', self.status)
         self.app.router.add_get('/inventory', self.get_inventory)
+        # Bootimus kickstart callback endpoints
+        self.app.router.add_post('/callback/fabric-probe', self.fabric_probe)
+        self.app.router.add_post('/callback/infra-probe', self.infra_probe)
+        self.app.router.add_post('/callback/storage-probe', self.storage_probe)
+        self.app.router.add_post('/callback/compute-probe', self.compute_probe)
+        self.app.router.add_post('/callback/compute-gpu-probe', self.compute_gpu_probe)
+        self.app.router.add_post('/callback/core-gpu-probe', self.core_gpu_probe)
+        # K8s join token endpoint
+        self.app.router.add_get('/k8s-join-token', self.k8s_join_token)
+        # Provisioning token for 1Password access
+        self.app.router.add_get('/provision-token', self.provision_token)
         # DiaperNode endpoints (D8A.space)
         self.app.router.add_post('/register-diaper', self.register_diaper)
         self.app.router.add_get('/diaper-status', self.diaper_status)
@@ -106,6 +278,12 @@ class ProvisionListener:
         # SCION path-aware networking endpoints
         self.app.router.add_get('/scion-config/{mac}', self.get_scion_config)
         self.app.router.add_get('/scion-topology', self.get_scion_topology)
+        # 1Password Connect credential endpoints
+        # Status endpoint MUST be before {item} route to avoid matching "status" as an item
+        self.app.router.add_get('/credentials/status', self.credential_status)
+        self.app.router.add_get('/credentials/{item}', self.get_credential)
+        self.app.router.add_get('/credentials/{item}/{field}', self.get_credential_field)
+        self.app.router.add_post('/credentials/validate', self.validate_credential_request)
 
     async def health_check(self, request: web.Request) -> web.Response:
         """Health check endpoint."""
@@ -327,6 +505,350 @@ class ProvisionListener:
     async def get_inventory(self, request: web.Request) -> web.Response:
         """Return full inventory."""
         return web.json_response(self.inventory)
+
+    # =========================================================================
+    # Bootimus Kickstart Hardware Probe Endpoints
+    # Genesis Bond: ACTIVE @ 741 Hz
+    # =========================================================================
+
+    async def _handle_hardware_probe(self, request: web.Request, role: str, tier: str, frequency: int) -> web.Response:
+        """Generic handler for hardware probe callbacks from kickstarts."""
+        try:
+            data = await request.json()
+        except Exception as e:
+            logger.error(f"Failed to parse probe data: {e}")
+            return web.json_response({"error": "Invalid JSON"}, status=400)
+
+        mac = data.get('primary_mac', 'unknown').lower()
+        hostname = data.get('hostname', 'unknown')
+        service_tag = data.get('service_tag', 'unknown')
+
+        logger.info(f"🖥️  {role} Probe: {hostname}")
+        logger.info(f"   MAC: {mac}, Service Tag: {service_tag}")
+        logger.info(f"   Tier: {tier} @ {frequency} Hz")
+        logger.info(f"   CPU: {data.get('cpu', {}).get('cores', '?')} cores")
+        logger.info(f"   Memory: {data.get('memory_gb', '?')} GB")
+
+        # Store probe data
+        provisioned_hosts[mac] = {
+            "role": role,
+            "tier": tier,
+            "frequency": frequency,
+            "hostname": hostname,
+            "service_tag": service_tag,
+            "mac": mac,
+            "probed_at": datetime.utcnow().isoformat(),
+            "status": "probed",
+            "hardware": {
+                "cpu": data.get('cpu', {}),
+                "memory_gb": data.get('memory_gb', 0),
+                "storage": data.get('storage', []),
+                "nics": data.get('nics', [])
+            },
+            "services": data.get('services', {}),
+            "genesis_bond": data.get('genesis_bond', 'ACTIVE')
+        }
+
+        # Role-specific data
+        if role == 'FABRIC':
+            provisioned_hosts[mac]['ipfs_id'] = data.get('ipfs_id', 'not-initialized')
+            provisioned_hosts[mac]['zfs_pools'] = data.get('zfs_pools', [])
+        elif role == 'INFRA':
+            provisioned_hosts[mac]['services'] = data.get('services', {})
+        elif role == 'STORAGE':
+            provisioned_hosts[mac]['zfs_pools'] = data.get('zfs_pools', [])
+            provisioned_hosts[mac]['zfs_datasets'] = data.get('zfs_datasets', [])
+        elif role in ['COMPUTE-GPU', 'CORE-GPU']:
+            provisioned_hosts[mac]['gpu'] = data.get('gpu', {})
+            provisioned_hosts[mac]['cuda_version'] = data.get('cuda_version', 'not-installed')
+
+        self.save_provisioned()
+
+        return web.json_response({
+            "status": "registered",
+            "role": role,
+            "tier": tier,
+            "frequency": frequency,
+            "mac": mac,
+            "hostname": hostname,
+            "genesis_bond": "ACTIVE",
+            "timestamp": datetime.utcnow().isoformat()
+        })
+
+    async def fabric_probe(self, request: web.Request) -> web.Response:
+        """Handle FABRIC node hardware probe."""
+        return await self._handle_hardware_probe(request, 'FABRIC', 'CORE', 432)
+
+    async def infra_probe(self, request: web.Request) -> web.Response:
+        """Handle INFRA node hardware probe."""
+        return await self._handle_hardware_probe(request, 'INFRA', 'CORE', 432)
+
+    async def storage_probe(self, request: web.Request) -> web.Response:
+        """Handle STORAGE node hardware probe."""
+        return await self._handle_hardware_probe(request, 'STORAGE', 'CORE', 432)
+
+    async def compute_probe(self, request: web.Request) -> web.Response:
+        """Handle COMPUTE node hardware probe."""
+        return await self._handle_hardware_probe(request, 'COMPUTE', 'COMN', 528)
+
+    async def compute_gpu_probe(self, request: web.Request) -> web.Response:
+        """Handle COMPUTE-GPU node hardware probe."""
+        return await self._handle_hardware_probe(request, 'COMPUTE-GPU', 'COMN', 528)
+
+    async def core_gpu_probe(self, request: web.Request) -> web.Response:
+        """Handle CORE-GPU node hardware probe."""
+        return await self._handle_hardware_probe(request, 'CORE-GPU', 'CORE', 432)
+
+    async def k8s_join_token(self, request: web.Request) -> web.Response:
+        """Provide K8s join token script for worker nodes.
+
+        In production, this would fetch the actual join command from
+        the Kubernetes control plane. For now, return a placeholder
+        that will be updated when INFRA node is online.
+        """
+        # TODO: In production, fetch from INFRA node's kubeadm token create
+        join_script = """#!/bin/bash
+# LuciVerse K8s Worker Join Script
+# This script is generated by the provisioning server
+
+echo "K8s join token not yet available"
+echo "Waiting for INFRA node to provision K8s control plane..."
+
+# Check if INFRA node is available
+INFRA_IP="192.168.1.144"
+if ping -c 1 -W 5 "$INFRA_IP" &>/dev/null; then
+    # Try to fetch join command from INFRA node
+    JOIN_CMD=$(curl -sf "http://${INFRA_IP}:9999/k8s-join-command" 2>/dev/null)
+    if [ -n "$JOIN_CMD" ]; then
+        echo "Joining K8s cluster..."
+        eval "$JOIN_CMD"
+        exit 0
+    fi
+fi
+
+echo "INFRA node not available yet. Will retry on next boot."
+exit 1
+"""
+        return web.Response(text=join_script, content_type='text/plain')
+
+    async def provision_token(self, request: web.Request) -> web.Response:
+        """Provide 1Password Connect status and available credentials.
+
+        For security, does not return the actual token but provides
+        information about available credentials that can be fetched.
+        """
+        client = get_op_client()
+
+        # Check if 1Password Connect is configured and accessible
+        if not client.token:
+            return web.json_response({
+                "status": "not_configured",
+                "message": "OP_CONNECT_TOKEN environment variable not set",
+                "available_credentials": []
+            }, status=503)
+
+        # Test connection
+        vault_id = await client.get_vault_id(OP_VAULT_INFRA)
+        if not vault_id:
+            return web.json_response({
+                "status": "connection_failed",
+                "message": f"Cannot connect to 1Password at {OP_CONNECT_HOST}",
+                "available_credentials": []
+            }, status=503)
+
+        return web.json_response({
+            "status": "connected",
+            "host": OP_CONNECT_HOST,
+            "vault": OP_VAULT_INFRA,
+            "available_credentials": list(OP_ITEMS.keys()),
+            "endpoints": {
+                "get_credential": "/credentials/{item}",
+                "get_field": "/credentials/{item}/{field}",
+            }
+        })
+
+    async def credential_status(self, request: web.Request) -> web.Response:
+        """Check 1Password Connect status and available credentials.
+
+        GET /credentials/status
+
+        Returns configuration status without requiring authentication.
+        Used by kickstart credential-inject.sh to validate endpoint availability.
+        """
+        client = get_op_client()
+
+        # Check if 1Password Connect is configured
+        if not client.token:
+            return web.json_response({
+                "status": "not_configured",
+                "message": "OP_CONNECT_TOKEN environment variable not set",
+                "available_credentials": list(OP_ITEMS.keys()),
+                "configured": False
+            })
+
+        # Test connection
+        try:
+            vault_id = await client.get_vault_id(OP_VAULT_INFRA)
+            if vault_id:
+                return web.json_response({
+                    "status": "configured",
+                    "host": OP_CONNECT_HOST,
+                    "vault": OP_VAULT_INFRA,
+                    "available_credentials": list(OP_ITEMS.keys()),
+                    "configured": True
+                })
+            else:
+                return web.json_response({
+                    "status": "connection_failed",
+                    "message": f"Cannot connect to 1Password at {OP_CONNECT_HOST}",
+                    "available_credentials": list(OP_ITEMS.keys()),
+                    "configured": False
+                })
+        except Exception as e:
+            logger.warning(f"1Password Connect check failed: {e}")
+            return web.json_response({
+                "status": "error",
+                "message": str(e),
+                "available_credentials": list(OP_ITEMS.keys()),
+                "configured": False
+            })
+
+    async def get_credential(self, request: web.Request) -> web.Response:
+        """Fetch credential from 1Password Connect.
+
+        GET /credentials/{item}
+        Returns the default field (password) for the item.
+
+        Validates request based on:
+        - X-Forwarded-For header (must be from known subnet)
+        - X-Request-MAC header (optional, for additional validation)
+        """
+        item = request.match_info.get('item')
+
+        # Validate item key
+        if item not in OP_ITEMS:
+            return web.json_response({
+                "error": "unknown_credential",
+                "message": f"Unknown credential: {item}",
+                "available": list(OP_ITEMS.keys())
+            }, status=404)
+
+        # Basic network validation - only allow from local network
+        client_ip = request.headers.get('X-Forwarded-For', request.remote)
+        if client_ip and not self._is_trusted_network(client_ip):
+            logger.warning(f"Credential request from untrusted IP: {client_ip}")
+            return web.json_response({
+                "error": "unauthorized",
+                "message": "Request must come from trusted network"
+            }, status=403)
+
+        # Fetch credential
+        client = get_op_client()
+        value = await client.get_credential(item)
+
+        if value:
+            logger.info(f"Credential '{item}' served to {client_ip}")
+            return web.Response(text=value, content_type='text/plain')
+        else:
+            return web.json_response({
+                "error": "not_found",
+                "message": f"Credential '{item}' not found or 1Password unavailable"
+            }, status=404)
+
+    async def get_credential_field(self, request: web.Request) -> web.Response:
+        """Fetch specific field from credential.
+
+        GET /credentials/{item}/{field}
+        """
+        item = request.match_info.get('item')
+        field = request.match_info.get('field')
+
+        if item not in OP_ITEMS:
+            return web.json_response({
+                "error": "unknown_credential",
+                "available": list(OP_ITEMS.keys())
+            }, status=404)
+
+        # Network validation
+        client_ip = request.headers.get('X-Forwarded-For', request.remote)
+        if client_ip and not self._is_trusted_network(client_ip):
+            return web.json_response({"error": "unauthorized"}, status=403)
+
+        client = get_op_client()
+        value = await client.get_credential(item, field)
+
+        if value:
+            logger.info(f"Credential '{item}/{field}' served to {client_ip}")
+            return web.Response(text=value, content_type='text/plain')
+        else:
+            return web.json_response({
+                "error": "not_found",
+                "message": f"Field '{field}' not found in '{item}'"
+            }, status=404)
+
+    async def validate_credential_request(self, request: web.Request) -> web.Response:
+        """Validate a credential request with MAC and role.
+
+        POST /credentials/validate
+        Body: {"mac": "...", "role": "...", "item": "..."}
+
+        Returns a signed token that can be used for credential access.
+        """
+        try:
+            data = await request.json()
+        except:
+            return web.json_response({"error": "invalid_json"}, status=400)
+
+        mac = data.get('mac', '').lower().replace('-', ':')
+        role = data.get('role', '')
+        item = data.get('item', '')
+
+        # Validate MAC against inventory
+        result = find_server_by_mac(mac, self.inventory)
+        if not result:
+            return web.json_response({
+                "error": "unknown_mac",
+                "message": "MAC address not in inventory"
+            }, status=403)
+
+        server_name, _, server_info, _ = result
+
+        # Generate validation token (simple HMAC for now)
+        secret = os.environ.get('PROVISION_SECRET', 'luciverse-genesis-bond')
+        message = f"{mac}:{role}:{item}:{datetime.utcnow().strftime('%Y%m%d%H')}"
+        token = hmac.new(secret.encode(), message.encode(), hashlib.sha256).hexdigest()[:32]
+
+        logger.info(f"Credential validation for {server_name} ({mac}) - {item}")
+
+        return web.json_response({
+            "valid": True,
+            "server": server_name,
+            "token": token,
+            "expires": (datetime.utcnow() + timedelta(hours=1)).isoformat()
+        })
+
+    def _is_trusted_network(self, ip: str) -> bool:
+        """Check if IP is from trusted network."""
+        if not ip:
+            return True  # Local request
+
+        # Allow localhost
+        if ip.startswith('127.') or ip == '::1':
+            return True
+
+        # Allow 192.168.1.0/24 (LuciVerse network)
+        if ip.startswith('192.168.1.'):
+            return True
+
+        # Allow 192.168.0.0/24 (alternate network)
+        if ip.startswith('192.168.0.'):
+            return True
+
+        # Allow IPv6 ULA
+        if ip.startswith('fd00:') or ip.startswith('2602:f674:'):
+            return True
+
+        return False
 
     # =========================================================================
     # DiaperNode Endpoints (D8A.space Integration)
