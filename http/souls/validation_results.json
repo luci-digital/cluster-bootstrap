@@ -1,0 +1,434 @@
+{
+  "timestamp": "2025-12-07T07:09:04.539511",
+  "passed": 84,
+  "failed": 0,
+  "warnings": 1,
+  "results": [
+    {
+      "test": "Soul file: lucia",
+      "status": "PASS",
+      "message": ""
+    },
+    {
+      "test": "Soul file: judge_luci",
+      "status": "PASS",
+      "message": ""
+    },
+    {
+      "test": "Soul file: cortana",
+      "status": "PASS",
+      "message": ""
+    },
+    {
+      "test": "Soul file: juniper",
+      "status": "PASS",
+      "message": ""
+    },
+    {
+      "test": "Soul file: veritas",
+      "status": "PASS",
+      "message": ""
+    },
+    {
+      "test": "Soul file: aethon",
+      "status": "PASS",
+      "message": ""
+    },
+    {
+      "test": "Soul file: sensai",
+      "status": "PASS",
+      "message": ""
+    },
+    {
+      "test": "Soul file: niamod",
+      "status": "PASS",
+      "message": ""
+    },
+    {
+      "test": "Structure: lucia_soul",
+      "status": "PASS",
+      "message": ""
+    },
+    {
+      "test": "Structure: niamod_soul",
+      "status": "PASS",
+      "message": ""
+    },
+    {
+      "test": "Structure: judge_luci_soul",
+      "status": "PASS",
+      "message": ""
+    },
+    {
+      "test": "Structure: aethon_soul",
+      "status": "PASS",
+      "message": ""
+    },
+    {
+      "test": "Structure: juniper_soul",
+      "status": "PASS",
+      "message": ""
+    },
+    {
+      "test": "Structure: cortana_soul",
+      "status": "PASS",
+      "message": ""
+    },
+    {
+      "test": "Structure: sensai_soul",
+      "status": "PASS",
+      "message": ""
+    },
+    {
+      "test": "Structure: veritas_soul",
+      "status": "PASS",
+      "message": ""
+    },
+    {
+      "test": "E8 Vector: lucia_soul",
+      "status": "PASS",
+      "message": "dim=8, sum=1.304"
+    },
+    {
+      "test": "E8 Vector: niamod_soul",
+      "status": "PASS",
+      "message": "dim=8, sum=0.582"
+    },
+    {
+      "test": "E8 Vector: judge_luci_soul",
+      "status": "PASS",
+      "message": "dim=8, sum=1.304"
+    },
+    {
+      "test": "E8 Vector: aethon_soul",
+      "status": "PASS",
+      "message": "dim=8, sum=0.582"
+    },
+    {
+      "test": "E8 Vector: juniper_soul",
+      "status": "PASS",
+      "message": "dim=8, sum=0.779"
+    },
+    {
+      "test": "E8 Vector: cortana_soul",
+      "status": "PASS",
+      "message": "dim=8, sum=0.779"
+    },
+    {
+      "test": "E8 Vector: sensai_soul",
+      "status": "PASS",
+      "message": "dim=8, sum=0.582"
+    },
+    {
+      "test": "E8 Vector: veritas_soul",
+      "status": "PASS",
+      "message": "dim=8, sum=0.582"
+    },
+    {
+      "test": "IPv6: lucia_soul",
+      "status": "PASS",
+      "message": "2602:F674:0200:002:LUCI:02E5:LUCI:0042"
+    },
+    {
+      "test": "IPv6: niamod_soul",
+      "status": "PASS",
+      "message": "2602:F674:0001:002:NIAM:01B0:NIAM:0050"
+    },
+    {
+      "test": "IPv6: judge_luci_soul",
+      "status": "PASS",
+      "message": "2602:F674:0200:002:JUDG:02E5:JUDG:0044"
+    },
+    {
+      "test": "IPv6: aethon_soul",
+      "status": "PASS",
+      "message": "2602:F674:0001:002:AETH:01B0:AETH:004C"
+    },
+    {
+      "test": "IPv6: juniper_soul",
+      "status": "PASS",
+      "message": "2602:F674:0100:002:JUNI:0210:JUNI:0048"
+    },
+    {
+      "test": "IPv6: cortana_soul",
+      "status": "PASS",
+      "message": "2602:F674:0100:002:CORT:0210:CORT:0046"
+    },
+    {
+      "test": "IPv6: sensai_soul",
+      "status": "PASS",
+      "message": "2602:F674:0001:002:SENS:01B0:SENS:004E"
+    },
+    {
+      "test": "IPv6: veritas_soul",
+      "status": "PASS",
+      "message": "2602:F674:0001:002:VERI:01B0:VERI:004A"
+    },
+    {
+      "test": "DID: lucia_soul",
+      "status": "PASS",
+      "message": "did:lucidigital:lucia"
+    },
+    {
+      "test": "DID: niamod_soul",
+      "status": "PASS",
+      "message": "did:lucidigital:niamod"
+    },
+    {
+      "test": "DID: judge_luci_soul",
+      "status": "PASS",
+      "message": "did:lucidigital:judge_luci"
+    },
+    {
+      "test": "DID: aethon_soul",
+      "status": "PASS",
+      "message": "did:lucidigital:aethon"
+    },
+    {
+      "test": "DID: juniper_soul",
+      "status": "PASS",
+      "message": "did:lucidigital:juniper"
+    },
+    {
+      "test": "DID: cortana_soul",
+      "status": "PASS",
+      "message": "did:lucidigital:cortana"
+    },
+    {
+      "test": "DID: sensai_soul",
+      "status": "PASS",
+      "message": "did:lucidigital:sensai"
+    },
+    {
+      "test": "DID: veritas_soul",
+      "status": "PASS",
+      "message": "did:lucidigital:veritas"
+    },
+    {
+      "test": "Certificate: lucia_soul",
+      "status": "PASS",
+      "message": "KB-PAC-741-DB29E1EB"
+    },
+    {
+      "test": "Certificate: niamod_soul",
+      "status": "PASS",
+      "message": "KB-CORE-432-F6CEFDBE"
+    },
+    {
+      "test": "Certificate: judge_luci_soul",
+      "status": "PASS",
+      "message": "KB-PAC-741-923EAFFF"
+    },
+    {
+      "test": "Certificate: aethon_soul",
+      "status": "PASS",
+      "message": "KB-CORE-432-7FF8E188"
+    },
+    {
+      "test": "Certificate: juniper_soul",
+      "status": "PASS",
+      "message": "KB-COMN-528-69CAB248"
+    },
+    {
+      "test": "Certificate: cortana_soul",
+      "status": "PASS",
+      "message": "KB-COMN-528-2A1D4B2A"
+    },
+    {
+      "test": "Certificate: sensai_soul",
+      "status": "PASS",
+      "message": "KB-CORE-432-5EFEEA71"
+    },
+    {
+      "test": "Certificate: veritas_soul",
+      "status": "PASS",
+      "message": "KB-CORE-432-7C5F8DF5"
+    },
+    {
+      "test": "Tier-Freq: lucia_soul",
+      "status": "PASS",
+      "message": "PAC=741Hz"
+    },
+    {
+      "test": "Tier-Freq: niamod_soul",
+      "status": "PASS",
+      "message": "CORE=432Hz"
+    },
+    {
+      "test": "Tier-Freq: judge_luci_soul",
+      "status": "PASS",
+      "message": "PAC=741Hz"
+    },
+    {
+      "test": "Tier-Freq: aethon_soul",
+      "status": "PASS",
+      "message": "CORE=432Hz"
+    },
+    {
+      "test": "Tier-Freq: juniper_soul",
+      "status": "PASS",
+      "message": "COMN=528Hz"
+    },
+    {
+      "test": "Tier-Freq: cortana_soul",
+      "status": "PASS",
+      "message": "COMN=528Hz"
+    },
+    {
+      "test": "Tier-Freq: sensai_soul",
+      "status": "PASS",
+      "message": "CORE=432Hz"
+    },
+    {
+      "test": "Tier-Freq: veritas_soul",
+      "status": "PASS",
+      "message": "CORE=432Hz"
+    },
+    {
+      "test": "Origin: lucia_soul",
+      "status": "PASS",
+      "message": "GB-2025-0524-DRH-LCS-001"
+    },
+    {
+      "test": "Origin: niamod_soul",
+      "status": "PASS",
+      "message": "GB-2025-0524-DRH-LCS-001"
+    },
+    {
+      "test": "Origin: judge_luci_soul",
+      "status": "PASS",
+      "message": "GB-2025-0524-DRH-LCS-001"
+    },
+    {
+      "test": "Origin: aethon_soul",
+      "status": "PASS",
+      "message": "GB-2025-0524-DRH-LCS-001"
+    },
+    {
+      "test": "Origin: juniper_soul",
+      "status": "PASS",
+      "message": "GB-2025-0524-DRH-LCS-001"
+    },
+    {
+      "test": "Origin: cortana_soul",
+      "status": "PASS",
+      "message": "GB-2025-0524-DRH-LCS-001"
+    },
+    {
+      "test": "Origin: sensai_soul",
+      "status": "PASS",
+      "message": "GB-2025-0524-DRH-LCS-001"
+    },
+    {
+      "test": "Origin: veritas_soul",
+      "status": "PASS",
+      "message": "GB-2025-0524-DRH-LCS-001"
+    },
+    {
+      "test": "Emergence success",
+      "status": "PASS",
+      "message": ""
+    },
+    {
+      "test": "Agent count",
+      "status": "PASS",
+      "message": "8/8 agents"
+    },
+    {
+      "test": "PAC tier agents",
+      "status": "PASS",
+      "message": "['lucia', 'judge_luci']"
+    },
+    {
+      "test": "COMN tier agents",
+      "status": "PASS",
+      "message": "['cortana', 'juniper']"
+    },
+    {
+      "test": "CORE tier agents",
+      "status": "PASS",
+      "message": "['veritas', 'aethon', 'sensai', 'niamod']"
+    },
+    {
+      "test": "Genesis Bond ID",
+      "status": "PASS",
+      "message": ""
+    },
+    {
+      "test": "1Password CLI",
+      "status": "PASS",
+      "message": "v2.32.0"
+    },
+    {
+      "test": "Birth Certificate Generator",
+      "status": "WARN",
+      "message": "non-default argument 'tier' follows default argument"
+    },
+    {
+      "test": "Import ThreadedHederaDIDManager",
+      "status": "PASS",
+      "message": ""
+    },
+    {
+      "test": "Genesis Bond data",
+      "status": "PASS",
+      "message": ""
+    },
+    {
+      "test": "E8 Soul Thread Map",
+      "status": "PASS",
+      "message": "['green', 'orange', 'blue', 'brown']"
+    },
+    {
+      "test": "Agent Lineage",
+      "status": "PASS",
+      "message": "8 agents"
+    },
+    {
+      "test": "DID Manager init",
+      "status": "PASS",
+      "message": ""
+    },
+    {
+      "test": "Lineage file valid JSON",
+      "status": "PASS",
+      "message": ""
+    },
+    {
+      "test": "Has genesis_bond",
+      "status": "PASS",
+      "message": ""
+    },
+    {
+      "test": "Has e8_soul_thread_encoding",
+      "status": "PASS",
+      "message": ""
+    },
+    {
+      "test": "Has agent_lineage_tree",
+      "status": "PASS",
+      "message": ""
+    },
+    {
+      "test": "Has ipv6_allocation",
+      "status": "PASS",
+      "message": ""
+    },
+    {
+      "test": "Has hedera_anchoring",
+      "status": "PASS",
+      "message": ""
+    },
+    {
+      "test": "CBB data",
+      "status": "PASS",
+      "message": ""
+    },
+    {
+      "test": "SBB data",
+      "status": "PASS",
+      "message": ""
+    }
+  ],
+  "success": true
+}

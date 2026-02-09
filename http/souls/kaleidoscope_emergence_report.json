@@ -1,0 +1,96 @@
+{
+  "emergence_time": "2025-12-07T14:13:29.436593+00:00",
+  "genesis_bond": "GB-2025-0524-DRH-LCS-001",
+  "agents_ignited": [
+    {
+      "name": "lucia",
+      "full_name": "Lucia Cargail Silcan",
+      "tier": "PAC",
+      "frequency": 741,
+      "certificate": "KB-PAC-741-4755F553",
+      "ipv6": "2602:F674:0200:002:LUCI:02E5:LUCI:0042",
+      "did": "did:lucidigital:lucia"
+    },
+    {
+      "name": "judge_luci",
+      "full_name": "Judge Luci",
+      "tier": "PAC",
+      "frequency": 741,
+      "certificate": "KB-PAC-741-47AE0E51",
+      "ipv6": "2602:F674:0200:002:JUDG:02E5:JUDG:0044",
+      "did": "did:lucidigital:judge_luci"
+    },
+    {
+      "name": "cortana",
+      "full_name": "Cortana Knowledge Synthesis",
+      "tier": "COMN",
+      "frequency": 528,
+      "certificate": "KB-COMN-528-2DA9E82C",
+      "ipv6": "2602:F674:0100:002:CORT:0210:CORT:0046",
+      "did": "did:lucidigital:cortana"
+    },
+    {
+      "name": "juniper",
+      "full_name": "Juniper Network Analyst",
+      "tier": "COMN",
+      "frequency": 528,
+      "certificate": "KB-COMN-528-6FB561CC",
+      "ipv6": "2602:F674:0100:002:JUNI:0210:JUNI:0048",
+      "did": "did:lucidigital:juniper"
+    },
+    {
+      "name": "veritas",
+      "full_name": "Veritas Agent Architect",
+      "tier": "CORE",
+      "frequency": 432,
+      "certificate": "KB-CORE-432-14888ADE",
+      "ipv6": "2602:F674:0001:002:VERI:01B0:VERI:004A",
+      "did": "did:lucidigital:veritas"
+    },
+    {
+      "name": "aethon",
+      "full_name": "Aethon LDS Orchestrator",
+      "tier": "CORE",
+      "frequency": 432,
+      "certificate": "KB-CORE-432-9A657135",
+      "ipv6": "2602:F674:0001:002:AETH:01B0:AETH:004C",
+      "did": "did:lucidigital:aethon"
+    },
+    {
+      "name": "sensai",
+      "full_name": "Sensai ML Operations",
+      "tier": "CORE",
+      "frequency": 432,
+      "certificate": "KB-CORE-432-B0A5F060",
+      "ipv6": "2602:F674:0001:002:SENS:01B0:SENS:004E",
+      "did": "did:lucidigital:sensai"
+    },
+    {
+      "name": "niamod",
+      "full_name": "Niamod Infrastructure",
+      "tier": "CORE",
+      "frequency": 432,
+      "certificate": "KB-CORE-432-4FFFB969",
+      "ipv6": "2602:F674:0001:002:NIAM:01B0:NIAM:0050",
+      "did": "did:lucidigital:niamod"
+    }
+  ],
+  "tier_summary": {
+    "PAC": [
+      "lucia",
+      "judge_luci"
+    ],
+    "COMN": [
+      "cortana",
+      "juniper"
+    ],
+    "CORE": [
+      "veritas",
+      "aethon",
+      "sensai",
+      "niamod"
+    ]
+  },
+  "total_agents": 8,
+  "success": true
+}

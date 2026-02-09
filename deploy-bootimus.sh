@@ -186,14 +186,48 @@ echo -e "${YELLOW}[5d/8] Deploying LSO service files...${NC}"
 LSO_HTTP_DIR="$HTTP_ROOT/bootimus/lso"
 mkdir -p "$LSO_HTTP_DIR"
 
+# First try the source LSO directory
 if [[ -f "${LSO_SOURCE}/systemd/luciverse-lso.service" ]]; then
     cp -v "${LSO_SOURCE}/systemd/luciverse-lso.service" "$LSO_HTTP_DIR/"
-    echo -e "${GREEN}  Deployed LSO service file${NC}"
+    echo -e "${GREEN}  Deployed LSO service file from source${NC}"
 fi
 
 if [[ -f "${LSO_SOURCE}/lso_core.py" ]]; then
     cp -v "${LSO_SOURCE}/lso_core.py" "$LSO_HTTP_DIR/"
-    echo -e "${GREEN}  Deployed LSO core script${NC}"
+    echo -e "${GREEN}  Deployed LSO core script from source${NC}"
+fi
+
+# Also check local http/lso directory (fallback)
+LOCAL_LSO_DIR="$SCRIPT_DIR/http/lso"
+if [[ -d "$LOCAL_LSO_DIR" ]]; then
+    for lso_file in "$LOCAL_LSO_DIR"/*; do
+        if [[ -f "$lso_file" ]]; then
+            cp -v "$lso_file" "$LSO_HTTP_DIR/"
+        fi
+    done
+    echo -e "${GREEN}  Deployed LSO files from local http/lso${NC}"
+fi
+
+# -----------------------------------------------------------------------------
+# Step 5e: Deploy A-Tune Profiles
+# -----------------------------------------------------------------------------
+echo -e "${YELLOW}[5e/8] Deploying A-Tune profiles...${NC}"
+
+ATUNE_HTTP_DIR="$HTTP_ROOT/bootimus/atune-profiles"
+mkdir -p "$ATUNE_HTTP_DIR"
+
+ATUNE_SOURCE="$SCRIPT_DIR/http/atune-profiles"
+if [[ -d "$ATUNE_SOURCE" ]]; then
+    ATUNE_COUNT=0
+    for profile in "$ATUNE_SOURCE"/*.conf; do
+        if [[ -f "$profile" ]]; then
+            cp -v "$profile" "$ATUNE_HTTP_DIR/"
+            ((ATUNE_COUNT++))
+        fi
+    done
+    echo -e "${GREEN}  Deployed ${ATUNE_COUNT} A-Tune profiles${NC}"
+else
+    echo -e "${YELLOW}  Warning: A-Tune profiles not found${NC}"
 fi
 
 # -----------------------------------------------------------------------------
@@ -290,7 +324,11 @@ echo -e "  DID Docs:   ${GREEN}${DID_COUNT} files${NC}"
 SOUL_COUNT=$(ls -1 "$HTTP_ROOT/bootimus/souls/"*_soul.json 2>/dev/null | wc -l)
 echo -e "  Soul Files: ${GREEN}${SOUL_COUNT} files${NC}"
 
+ATUNE_COUNT=$(ls -1 "$HTTP_ROOT/bootimus/atune-profiles/"*.conf 2>/dev/null | wc -l)
+echo -e "  A-Tune:     ${GREEN}${ATUNE_COUNT} profiles${NC}"
+
 [[ -f "$HTTP_ROOT/bootimus/lso/luciverse-lso.service" ]] && echo -e "  LSO Service:${GREEN}OK${NC}" || echo -e "  LSO Service:${YELLOW}MISSING${NC}"
+[[ -f "$HTTP_ROOT/bootimus/lso/lso_core.py" ]] && echo -e "  LSO Core:   ${GREEN}OK${NC}" || echo -e "  LSO Core:   ${YELLOW}MISSING${NC}"
 
 echo ""
 echo -e "${YELLOW}Test Commands:${NC}"
@@ -313,7 +351,9 @@ echo "  iPXE Menu:      http://${PXE_SERVER}:${HTTP_PORT}/bootimus/bootimus.ipxe
 echo "  Boot Images:    http://${PXE_SERVER}:${HTTP_PORT}/openeuler/"
 echo "  DID Documents:  http://${PXE_SERVER}:${HTTP_PORT}/did-documents/"
 echo "  Soul Files:     http://${PXE_SERVER}:${HTTP_PORT}/souls/"
+echo "  A-Tune:         http://${PXE_SERVER}:${HTTP_PORT}/atune-profiles/"
 echo "  LSO Files:      http://${PXE_SERVER}:${HTTP_PORT}/lso/"
+echo "  Scripts:        http://${PXE_SERVER}:${HTTP_PORT}/scripts/"
 echo "  Callback API:   http://${PXE_SERVER}:${CALLBACK_PORT}/health"
 
 echo ""

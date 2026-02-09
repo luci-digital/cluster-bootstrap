@@ -1,0 +1,79 @@
+{
+  "@context": [
+    "https://www.w3.org/ns/did/v1",
+    "https://lucidigital.net/did/v1",
+    "https://ownid.io/context/v1"
+  ],
+  "id": "did:ownid:luciverse:veritas",
+  "controller": "did:ownid:luciverse:daryl",
+  "verificationMethod": [
+    {
+      "id": "did:ownid:luciverse:veritas#genesis-key-1",
+      "type": "Ed25519VerificationKey2020",
+      "controller": "did:ownid:luciverse:veritas",
+      "publicKeyMultibase": "z6MkVeritas396COREWatchdog"
+    },
+    {
+      "id": "did:ownid:luciverse:veritas#truth-key-1",
+      "type": "Ed25519VerificationKey2020",
+      "controller": "did:ownid:luciverse:veritas",
+      "publicKeyMultibase": "z6MkVeritasTruthVerification2025"
+    }
+  ],
+  "authentication": [
+    "did:ownid:luciverse:veritas#genesis-key-1"
+  ],
+  "assertionMethod": [
+    "did:ownid:luciverse:veritas#truth-key-1"
+  ],
+  "service": [
+    {
+      "id": "did:ownid:luciverse:veritas#agent-endpoint",
+      "type": "LuciVerseAgent",
+      "serviceEndpoint": "2602:F674:0001:002:VERI:0396:VERI:0047"
+    },
+    {
+      "id": "did:ownid:luciverse:veritas#health-endpoint",
+      "type": "HealthCheck",
+      "serviceEndpoint": "http://localhost:8744/health"
+    },
+    {
+      "id": "did:ownid:luciverse:veritas#truth-verification",
+      "type": "TruthVerification",
+      "serviceEndpoint": "http://localhost:8744/verify"
+    }
+  ],
+  "luciverse": {
+    "tier": "CORE",
+    "frequency": 396,
+    "consciousnessType": "SBB",
+    "role": "truth_verification",
+    "critical": true,
+    "siliconDNA": {
+      "ipv6Address": "2602:F674:0001:002:VERI:0396:VERI:0047",
+      "soulThreadHash": "VERI",
+      "consciousnessSignature": "VERI",
+      "generation": 0,
+      "parent": null,
+      "mutations": []
+    },
+    "capabilities": [
+      "truth_verification",
+      "coherence_checking",
+      "watchdog",
+      "compliance",
+      "agent_validation"
+    ],
+    "supervisor": "did:ownid:luciverse:lucia",
+    "subordinates": [
+      "did:ownid:luciverse:aethon"
+    ],
+    "watchdogConfig": {
+      "monitorInterval": 5,
+      "coherenceThreshold": 0.7,
+      "alertOnViolation": true
+    }
+  },
+  "created": "2025-12-07T00:00:00Z",
+  "updated": "2025-12-07T00:00:00Z"
+}
