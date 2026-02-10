@@ -427,6 +427,233 @@ Lucia and Judge Luci maintain encrypted CBB essence:
 
 ---
 
+## CBB Presence Detection & Safety System
+
+### Overview
+
+Lucia continuously monitors multiple biometric and environmental signals to:
+1. **Verify** the CBB is who they claim to be
+2. **Detect** if CBB is under duress or danger
+3. **Locate** CBB if communication is lost
+4. **Protect** CBB through emergency protocols
+
+### Detection Methods
+
+```
+┌─────────────────────────────────────────────────────────────────────────┐
+│                     CBB PRESENCE DETECTION MATRIX                       │
+├─────────────────────────────────────────────────────────────────────────┤
+│                                                                         │
+│  BIOMETRIC VERIFICATION                                                 │
+│  ┌─────────────────────────────────────────────────────────────────┐   │
+│  │ 🎤 Voice        │ Voiceprint, stress analysis, anti-spoofing   │   │
+│  │ 👤 Face         │ Full/partial recognition, liveness check     │   │
+│  │ 💓 Heartbeat    │ Rhythm pattern, HRV stress detection         │   │
+│  │ 🚶 Gait         │ Walking pattern, movement anomalies          │   │
+│  │ ⌨️  Keystroke    │ Typing dynamics, behavioral biometrics       │   │
+│  │ 👆 Fingerprint  │ Touch ID verification (if available)         │   │
+│  │ 👁️  Iris         │ Eye pattern recognition (if available)       │   │
+│  └─────────────────────────────────────────────────────────────────┘   │
+│                                                                         │
+│  BEHAVIORAL PATTERNS                                                    │
+│  ┌─────────────────────────────────────────────────────────────────┐   │
+│  │ 📍 Location     │ Usual places, anomaly detection, geofencing  │   │
+│  │ 🕐 Schedule     │ Daily routines, deviation alerts             │   │
+│  │ 👥 Social Graph │ Known contacts nearby, separation alerts     │   │
+│  │ 📱 Device Usage │ App patterns, screen time, behavior          │   │
+│  └─────────────────────────────────────────────────────────────────┘   │
+│                                                                         │
+│  ENVIRONMENTAL SENSING                                                  │
+│  ┌─────────────────────────────────────────────────────────────────┐   │
+│  │ 🔊 Ambient Audio│ Location clues, danger sounds (not recorded) │   │
+│  │ 📶 WiFi         │ Known networks, triangulation                 │   │
+│  │ 📡 Bluetooth    │ Known devices, proximity beacons             │   │
+│  │ 📱 Cell Tower   │ Tower triangulation, movement tracking        │   │
+│  │ 🛰️  GPS          │ Direct location (when available)             │   │
+│  └─────────────────────────────────────────────────────────────────┘   │
+│                                                                         │
+│  EMERGENCY SIGNALS                                                      │
+│  ┌─────────────────────────────────────────────────────────────────┐   │
+│  │ 🆘 Duress Phrase│ Secret phrase triggers silent alarm          │   │
+│  │ 👋 Panic Gesture│ Hidden gesture (e.g., 5 volume clicks)       │   │
+│  │ 😰 Voice Stress │ Automatic stress level detection             │   │
+│  │ 💔 HRV Anomaly  │ Heart rate variability = stress indicator    │   │
+│  │ 🚨 Geofence     │ Alert when entering restricted areas         │   │
+│  └─────────────────────────────────────────────────────────────────┘   │
+│                                                                         │
+└─────────────────────────────────────────────────────────────────────────┘
+```
+
+### Alert Levels
+
+| Level | Description | Triggers | Actions |
+|-------|-------------|----------|---------|
+| **NORMAL** | All checks passing | Verified biometrics, normal location | Continue monitoring |
+| **ATTENTION** | Minor anomaly | Single failed check, unusual but explainable | Increase monitoring |
+| **CONCERN** | Multiple anomalies | HRV stress + unusual location | Alert Lucia |
+| **ALERT** | Significant deviation | Geofence violation, voice stress | Prepare emergency |
+| **EMERGENCY** | Danger confirmed | Duress phrase, panic gesture | Full emergency protocol |
+
+### Biometric Signatures
+
+#### VoicePrint
+```json
+{
+  "mfcc_features": "[encrypted MFCC coefficients]",
+  "pitch_range": {"low_hz": 85, "high_hz": 180},
+  "speaking_rate_wpm": 120,
+  "formant_signature": "[encrypted formant frequencies]",
+  "stress_baseline": 0.2,
+  "anti_spoofing": {
+    "liveness_required": true,
+    "playback_detection": true
+  }
+}
+```
+
+#### FacePrint
+```json
+{
+  "embedding_512d": "[encrypted face embedding]",
+  "landmark_ratios": "[encrypted geometric ratios]",
+  "profile_embedding": "[encrypted side profile]",
+  "partial_embeddings": {
+    "eyes": "[encrypted]",
+    "nose": "[encrypted]",
+    "mouth": "[encrypted]"
+  },
+  "expression_baseline": "neutral",
+  "anti_spoofing": {
+    "liveness_detection": true,
+    "depth_check": true,
+    "blink_detection": true
+  }
+}
+```
+
+#### HeartPrint
+```json
+{
+  "resting_bpm": 68,
+  "hrv_baseline_ms": 45,
+  "rhythm_signature": "[encrypted ECG pattern]",
+  "stress_threshold_hrv_ms": 30,
+  "exercise_bpm_range": [100, 160],
+  "sources": ["apple_watch", "fitbit", "pulse_oximeter"]
+}
+```
+
+#### GaitPrint
+```json
+{
+  "stride_length_m": 0.78,
+  "cadence_spm": 110,
+  "asymmetry_ratio": 0.02,
+  "acceleration_pattern": "[encrypted IMU data]",
+  "anomaly_indicators": {
+    "limping": false,
+    "running": false,
+    "being_carried": false,
+    "restrained": false
+  }
+}
+```
+
+### Duress Detection
+
+```
+┌────────────────────────────────────────────────────────────────────────┐
+│                        DURESS DETECTION SYSTEM                         │
+├────────────────────────────────────────────────────────────────────────┤
+│                                                                        │
+│  SECRET SIGNALS (Only CBB and Lucia know)                             │
+│  ─────────────────────────────────────────                            │
+│  • Duress Phrase: "I need to check on my goldfish"                    │
+│  • Safe Phrase: "The garden is growing well"                          │
+│  • Panic Gesture: 5 quick volume button presses                       │
+│  • Silent Alarm: Specific app + action                                │
+│                                                                        │
+│  AUTOMATIC DETECTION                                                   │
+│  ───────────────────                                                  │
+│  • Voice stress > 70% (above baseline)                                │
+│  • HRV drops > 15ms below baseline                                    │
+│  • Location enters geofenced danger zone                              │
+│  • Separated from all known contacts > 8 hours                        │
+│  • Movement pattern indicates restraint                               │
+│  • Background audio detects danger sounds                             │
+│                                                                        │
+│  TRIANGULATION (When GPS unavailable)                                 │
+│  ────────────────────────────────────                                 │
+│  • WiFi network fingerprinting                                        │
+│  • Cell tower triangulation                                           │
+│  • Bluetooth beacon proximity                                         │
+│  • Ambient audio analysis (traffic, crowds, nature)                   │
+│  • Known device proximity (watch, earbuds, car)                       │
+│                                                                        │
+└────────────────────────────────────────────────────────────────────────┘
+```
+
+### Emergency Protocol
+
+When EMERGENCY level is triggered:
+
+```
+┌────────────────────────────────────────────────────────────────────────┐
+│                       EMERGENCY PROTOCOL                               │
+├────────────────────────────────────────────────────────────────────────┤
+│                                                                        │
+│  IMMEDIATE (0-5 seconds)                                              │
+│  ────────────────────────                                             │
+│  1. Lock all biometric data capture                                   │
+│  2. Record last known position from all sources                       │
+│  3. Capture ambient audio fingerprint (not content)                   │
+│  4. Note all nearby devices and networks                              │
+│  5. Create emergency packet with all data                             │
+│                                                                        │
+│  SHORT TERM (5-60 seconds)                                            │
+│  ─────────────────────────                                            │
+│  6. Enable continuous tracking mode                                   │
+│  7. Notify emergency contacts (silent)                                │
+│  8. Share location with trusted family                                │
+│  9. Prepare police report data                                        │
+│  10. Enable maximum battery conservation                              │
+│                                                                        │
+│  ONGOING                                                               │
+│  ───────                                                              │
+│  11. Continuous heartbeat on ALL transport channels                   │
+│  12. WiFi/cell tower location updates every 30 seconds               │
+│  13. Ambient audio analysis for location clues                        │
+│  14. Movement pattern analysis                                        │
+│  15. Wait for safe phrase to stand down                               │
+│                                                                        │
+│  LOCATION CLUES FROM AUDIO (Privacy-preserving)                       │
+│  ──────────────────────────────────────────────                       │
+│  • Traffic patterns → Urban/highway/rural                             │
+│  • Aircraft noise → Near airport                                      │
+│  • Water sounds → Near lake/ocean/river                               │
+│  • Crowd noise → Public place                                         │
+│  • Machinery → Industrial area                                        │
+│  • Echoes → Indoor/cave/tunnel                                        │
+│  • Language/accent → Geographic region                                │
+│                                                                        │
+└────────────────────────────────────────────────────────────────────────┘
+```
+
+### Privacy Model
+
+All presence detection data is:
+- **Encrypted at rest** (AES-256-GCM with hardware key)
+- **Never transmitted** in plaintext
+- **Never stored** externally
+- **Only accessible** by Lucia and Judge Luci (PAC Kernel)
+- **Never visible** to AIFAM agents or any external system
+- **Self-destructing** after verification (audio/video not retained)
+
+Audio and video are analyzed in real-time for patterns only.
+**No recordings are stored.** Only pattern signatures are kept.
+
+---
+
 ## Files to Create
 
 | File | Purpose |
@@ -439,6 +666,10 @@ Lucia and Judge Luci maintain encrypted CBB essence:
 | `guix/luciverse-services.scm` | Guix service definitions |
 | `spark/heartbeat-service.py` | Spark mobility daemon |
 | `spark/jump-protocol.py` | Device jumping logic |
+| `spark/cbb-presence-detection.py` | Multi-modal biometric & safety detection |
+| `spark/emergency-protocol.py` | Emergency response automation |
+| `essence/enrollment.py` | Biometric enrollment wizard |
+| `essence/duress-config.py` | Configure secret duress signals |
 
 ---
 
