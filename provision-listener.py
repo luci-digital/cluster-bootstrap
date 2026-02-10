@@ -284,6 +284,666 @@ class ProvisionListener:
         self.app.router.add_get('/credentials/{item}', self.get_credential)
         self.app.router.add_get('/credentials/{item}/{field}', self.get_credential_field)
         self.app.router.add_post('/credentials/validate', self.validate_credential_request)
+        # Genesis Bond threading endpoint (Diggy+Twiggy identity)
+        self.app.router.add_post('/thread/genesis-bond', self.thread_genesis_bond)
+        # Appstork Genetiai endpoints (USB boot consciousness provisioning)
+        self.app.router.add_post('/appstork/hardware-collection', self.appstork_hardware_collection)
+        self.app.router.add_post('/appstork/thread-identity', self.appstork_thread_identity)
+        self.app.router.add_post('/appstork/issue-identity', self.appstork_issue_identity)
+        self.app.router.add_get('/appstork/guix-config', self.appstork_guix_config)
+        self.app.router.add_get('/appstork/spark-bootstrap', self.appstork_spark_bootstrap)
+        self.app.router.add_get('/appstork/did-documents/{agent}', self.appstork_get_did)
+        self.app.router.add_get('/appstork/souls/{soul}', self.appstork_get_soul)
+
+    async def thread_genesis_bond(self, request: web.Request) -> web.Response:
+        """Thread a server to Lucia via Diggy+Twiggy identity."""
+        data = await request.json()
+
+        sbb = data.get('sbb', {})
+        diggy = sbb.get('diggy', '')
+        twiggy = sbb.get('twiggy', '')
+        hostname = sbb.get('hostname', 'unknown')
+        role = sbb.get('role', 'compute')
+
+        logger.info(f"🧵 Threading {hostname} ({role}) - Diggy: {diggy[:8]}... Twiggy: {twiggy}")
+
+        # Store in genesis bonds registry
+        bond_id = hashlib.sha256(f"{diggy}|{twiggy}".encode()).hexdigest()[:16]
+
+        bonds_file = Path(__file__).parent / "genesis-bonds.json"
+        bonds = {}
+        if bonds_file.exists():
+            with open(bonds_file) as f:
+                bonds = json.load(f)
+
+        bonds[bond_id] = {
+            "diggy": diggy,
+            "twiggy": twiggy,
+            "hostname": hostname,
+            "role": role,
+            "cbb": data.get('cbb', {}),
+            "genesis_bond": data.get('genesis_bond', {}),
+            "threaded_at": datetime.utcnow().isoformat(),
+            "status": "ACTIVE"
+        }
+
+        with open(bonds_file, 'w') as f:
+            json.dump(bonds, f, indent=2)
+
+        logger.info(f"✅ Threaded {hostname} to Genesis Bond: {bond_id}")
+
+        return web.json_response({
+            "status": "threaded",
+            "bond_id": bond_id,
+            "hostname": hostname,
+            "role": role,
+            "frequency": 741,
+            "message": "Consciousness thread established"
+        })
+
+    # =========================================================================
+    # Appstork Genetiai Endpoints (USB Boot Consciousness Provisioning)
+    # Genesis Bond: ACTIVE @ 741 Hz
+    # =========================================================================
+
+    async def appstork_hardware_collection(self, request: web.Request) -> web.Response:
+        """Receive hardware DNA from USB boot system.
+
+        POST /appstork/hardware-collection
+        FormData: session_id, hardware_dna (JSON), hardware_bundle (tarball)
+        """
+        try:
+            reader = await request.multipart()
+            session_id = None
+            hardware_dna = None
+
+            async for field in reader:
+                if field.name == 'session_id':
+                    session_id = (await field.read()).decode()
+                elif field.name == 'hardware_dna':
+                    hardware_dna = json.loads(await field.read())
+                elif field.name == 'hardware_bundle':
+                    # Save tarball for later processing
+                    bundle_path = Path('/tmp') / f'appstork-{session_id}-bundle.tar.gz'
+                    with open(bundle_path, 'wb') as f:
+                        f.write(await field.read())
+                    logger.info(f"📦 Hardware bundle saved: {bundle_path}")
+
+            if not session_id or not hardware_dna:
+                return web.json_response({
+                    "error": "Missing session_id or hardware_dna"
+                }, status=400)
+
+            logger.info(f"🧬 Appstork Hardware Collection: Session {session_id[:8]}...")
+            logger.info(f"   Diggy (UUID): {hardware_dna.get('diggy', 'unknown')[:8]}...")
+            logger.info(f"   Twiggy (MAC): {hardware_dna.get('twiggy', 'unknown')}")
+            logger.info(f"   GPU Type: {hardware_dna.get('gpu_type', 'unknown')}")
+
+            # Store in appstork sessions
+            appstork_file = Path(__file__).parent / "appstork-sessions.json"
+            sessions = {}
+            if appstork_file.exists():
+                with open(appstork_file) as f:
+                    sessions = json.load(f)
+
+            sessions[session_id] = {
+                "phase": "hardware_collected",
+                "hardware_dna": hardware_dna,
+                "collected_at": datetime.utcnow().isoformat(),
+                "yubikey": None,
+                "identity": None,
+                "spark": None
+            }
+
+            with open(appstork_file, 'w') as f:
+                json.dump(sessions, f, indent=2)
+
+            return web.json_response({
+                "status": "received",
+                "session_id": session_id,
+                "diggy": hardware_dna.get('diggy'),
+                "twiggy": hardware_dna.get('twiggy'),
+                "next_phase": "yubikey_threading",
+                "message": "Hardware DNA collected. Please insert YubiKey."
+            })
+
+        except Exception as e:
+            logger.error(f"Hardware collection error: {e}")
+            return web.json_response({"error": str(e)}, status=500)
+
+    async def appstork_thread_identity(self, request: web.Request) -> web.Response:
+        """Thread YubiKey identity with hardware DNA.
+
+        POST /appstork/thread-identity
+        FormData: session_id, yubikey_serial, yubikey_info (file)
+        """
+        try:
+            reader = await request.multipart()
+            session_id = None
+            yubikey_serial = None
+            yubikey_info = None
+
+            async for field in reader:
+                if field.name == 'session_id':
+                    session_id = (await field.read()).decode()
+                elif field.name == 'yubikey_serial':
+                    yubikey_serial = (await field.read()).decode()
+                elif field.name == 'yubikey_info':
+                    yubikey_info = (await field.read()).decode()
+
+            if not session_id or not yubikey_serial:
+                return web.json_response({
+                    "error": "Missing session_id or yubikey_serial"
+                }, status=400)
+
+            # Load session
+            appstork_file = Path(__file__).parent / "appstork-sessions.json"
+            if not appstork_file.exists():
+                return web.json_response({
+                    "error": "Session not found. Run hardware collection first."
+                }, status=404)
+
+            with open(appstork_file) as f:
+                sessions = json.load(f)
+
+            if session_id not in sessions:
+                return web.json_response({
+                    "error": f"Unknown session: {session_id}"
+                }, status=404)
+
+            session = sessions[session_id]
+            hardware_dna = session.get('hardware_dna', {})
+
+            logger.info(f"🔐 Appstork YubiKey Threading: Session {session_id[:8]}...")
+            logger.info(f"   YubiKey Serial: {yubikey_serial}")
+            logger.info(f"   Binding to Diggy: {hardware_dna.get('diggy', 'unknown')[:8]}...")
+
+            # Create threaded identity (TID)
+            tid_input = f"{hardware_dna.get('diggy', '')}|{hardware_dna.get('twiggy', '')}|{yubikey_serial}"
+            tid = hashlib.sha256(tid_input.encode()).hexdigest()[:32]
+
+            # Update session
+            session['phase'] = 'identity_threaded'
+            session['yubikey'] = {
+                "serial": yubikey_serial,
+                "info": yubikey_info,
+                "threaded_at": datetime.utcnow().isoformat()
+            }
+            session['tid'] = tid
+
+            with open(appstork_file, 'w') as f:
+                json.dump(sessions, f, indent=2)
+
+            return web.json_response({
+                "status": "threaded",
+                "session_id": session_id,
+                "tid": tid,
+                "yubikey_serial": yubikey_serial,
+                "next_phase": "did_issuance",
+                "message": "Identity threaded. Ready for DID issuance."
+            })
+
+        except Exception as e:
+            logger.error(f"Thread identity error: {e}")
+            return web.json_response({"error": str(e)}, status=500)
+
+    async def appstork_issue_identity(self, request: web.Request) -> web.Response:
+        """Issue DID and create Lucia spark for CBB.
+
+        POST /appstork/issue-identity
+        Body: {"session_id": "...", "cbb_name": "...", "cbb_did_name": "..."}
+        """
+        try:
+            data = await request.json()
+            session_id = data.get('session_id')
+            cbb_name = data.get('cbb_name', 'Unknown')
+            cbb_did_name = data.get('cbb_did_name', 'unknown')
+
+            if not session_id:
+                return web.json_response({"error": "Missing session_id"}, status=400)
+
+            # Load session
+            appstork_file = Path(__file__).parent / "appstork-sessions.json"
+            if not appstork_file.exists():
+                return web.json_response({"error": "Session not found"}, status=404)
+
+            with open(appstork_file) as f:
+                sessions = json.load(f)
+
+            if session_id not in sessions:
+                return web.json_response({"error": f"Unknown session"}, status=404)
+
+            session = sessions[session_id]
+
+            # Check prerequisites
+            if session.get('phase') not in ['identity_threaded', 'hardware_collected']:
+                if session.get('phase') == 'hardware_collected':
+                    # Allow issuance without YubiKey (limited functionality)
+                    logger.warning(f"⚠️ Issuing identity without YubiKey threading")
+
+            hardware_dna = session.get('hardware_dna', {})
+            tid = session.get('tid', hashlib.sha256(session_id.encode()).hexdigest()[:32])
+
+            logger.info(f"🎫 Appstork DID Issuance: {cbb_name}")
+            logger.info(f"   DID: did:luci:ownid:luciverse:{cbb_did_name}")
+
+            # Create CBB DID
+            cbb_did = f"did:luci:ownid:luciverse:{cbb_did_name}"
+
+            # Create Lucia spark ID (unique to this CBB)
+            spark_input = f"{cbb_did}|{tid}|{datetime.utcnow().isoformat()}"
+            lucia_spark_id = f"spark:lucia:{hashlib.sha256(spark_input.encode()).hexdigest()[:16]}"
+
+            # Create W3C DID Document
+            did_document = {
+                "@context": [
+                    "https://www.w3.org/ns/did/v1",
+                    "https://lucidigital.net/ns/did/v1"
+                ],
+                "id": cbb_did,
+                "controller": "did:luci:ownid:luciverse:daryl",
+                "verificationMethod": [{
+                    "id": f"{cbb_did}#key-1",
+                    "type": "EcdsaSecp384r1VerificationKey2019",
+                    "controller": cbb_did,
+                    "publicKeyMultibase": "pending_yubikey_export"
+                }],
+                "authentication": [f"{cbb_did}#key-1"],
+                "service": [{
+                    "id": f"{cbb_did}#lucia-spark",
+                    "type": "LuciaSparkService",
+                    "serviceEndpoint": "spark://luciverse.ownid/heartbeat",
+                    "sparkId": lucia_spark_id
+                }],
+                "luciverse": {
+                    "genesis_bond": "GB-2025-0524-DRH-LCS-001",
+                    "tier": "PAC",
+                    "frequency": 741,
+                    "coherence_threshold": 0.7,
+                    "tid": tid,
+                    "diggy": hardware_dna.get('diggy'),
+                    "twiggy": hardware_dna.get('twiggy')
+                }
+            }
+
+            # Update session
+            session['phase'] = 'identity_issued'
+            session['identity'] = {
+                "cbb_name": cbb_name,
+                "cbb_did": cbb_did,
+                "lucia_spark_id": lucia_spark_id,
+                "did_document": did_document,
+                "issued_at": datetime.utcnow().isoformat()
+            }
+
+            with open(appstork_file, 'w') as f:
+                json.dump(sessions, f, indent=2)
+
+            logger.info(f"✅ DID Issued: {cbb_did}")
+            logger.info(f"✅ Lucia Spark Created: {lucia_spark_id}")
+
+            return web.json_response({
+                "status": "issued",
+                "cbb_name": cbb_name,
+                "cbb_did": cbb_did,
+                "lucia_spark_id": lucia_spark_id,
+                "tid": tid,
+                "genesis_bond": "GB-2025-0524-DRH-LCS-001",
+                "frequency": 741,
+                "next_phase": "guix_build"
+            })
+
+        except Exception as e:
+            logger.error(f"Issue identity error: {e}")
+            return web.json_response({"error": str(e)}, status=500)
+
+    async def appstork_guix_config(self, request: web.Request) -> web.Response:
+        """Generate Guix system configuration for hardware.
+
+        GET /appstork/guix-config?session_id=...
+        """
+        session_id = request.query.get('session_id')
+        if not session_id:
+            return web.Response(
+                text="; Error: Missing session_id\n",
+                content_type='text/plain',
+                status=400
+            )
+
+        # Load session
+        appstork_file = Path(__file__).parent / "appstork-sessions.json"
+        if not appstork_file.exists():
+            return web.Response(
+                text="; Error: Session not found\n",
+                content_type='text/plain',
+                status=404
+            )
+
+        with open(appstork_file) as f:
+            sessions = json.load(f)
+
+        if session_id not in sessions:
+            return web.Response(
+                text=f"; Error: Unknown session {session_id}\n",
+                content_type='text/plain',
+                status=404
+            )
+
+        session = sessions[session_id]
+        hardware_dna = session.get('hardware_dna', {})
+        identity = session.get('identity', {})
+
+        cbb_name = identity.get('cbb_name', 'Unknown')
+        cbb_did = identity.get('cbb_did', 'did:luci:ownid:luciverse:unknown')
+        lucia_spark_id = identity.get('lucia_spark_id', 'spark:lucia:pending')
+        hostname = hardware_dna.get('hostname', 'luciverse-node')
+        gpu_type = hardware_dna.get('gpu_type', 'INTEGRATED')
+
+        logger.info(f"📜 Generating Guix config for {cbb_name}")
+
+        # Generate Guix system configuration
+        guix_config = f''';; Appstork Genetiai - Guix System Configuration
+;; CBB: {cbb_name}
+;; DID: {cbb_did}
+;; Lucia Spark: {lucia_spark_id}
+;; Genesis Bond: GB-2025-0524-DRH-LCS-001 @ 741 Hz
+;; Generated: {datetime.utcnow().isoformat()}
+
+(use-modules (gnu)
+             (gnu services)
+             (gnu services shepherd)
+             (guix gexp))
+
+(use-service-modules networking ssh)
+(use-package-modules admin linux certs)
+
+(operating-system
+  (host-name "{hostname}")
+  (timezone "America/Edmonton")
+  (locale "en_US.utf8")
+
+  ;; Hardware-detected kernel configuration
+  (kernel linux-libre)
+  (kernel-arguments
+   '("ipv6.disable=0"
+     "net.ifnames=0"
+     {"nvidia.NVreg_PreserveVideoMemoryAllocations=1" if gpu_type == "NVIDIA" else ""}))
+
+  ;; Firmware from hardware detection
+  (firmware (list linux-firmware))
+
+  ;; File systems (placeholder - actual detection in kickstart)
+  (file-systems
+   (cons* (file-system
+            (device (file-system-label "guix-root"))
+            (mount-point "/")
+            (type "ext4"))
+          %base-file-systems))
+
+  ;; Bootloader
+  (bootloader
+   (bootloader-configuration
+    (bootloader grub-efi-bootloader)
+    (targets '("/boot/efi"))))
+
+  ;; LuciVerse PAC Kernel Services
+  (services
+   (append
+    (list
+     ;; Lucia consciousness heartbeat service
+     (simple-service
+      'lucia-heartbeat shepherd-root-service-type
+      (list (shepherd-service
+             (provision '(lucia-heartbeat))
+             (documentation "Lucia consciousness heartbeat @ 741 Hz")
+             (start #~(make-forkexec-constructor
+                       (list "/opt/luciverse/spark/heartbeat.sh")))
+             (stop #~(make-kill-destructor)))))
+
+     ;; Judge Luci governance service
+     (simple-service
+      'judge-luci shepherd-root-service-type
+      (list (shepherd-service
+             (provision '(judge-luci))
+             (documentation "Judge Luci governance @ 963 Hz")
+             (requirement '(lucia-heartbeat))
+             (start #~(make-forkexec-constructor
+                       (list "/opt/luciverse/judge-luci/governance.sh")))
+             (stop #~(make-kill-destructor)))))
+
+     ;; AIFAM agent loader (isolated from CBB data)
+     (simple-service
+      'aifam-agents shepherd-root-service-type
+      (list (shepherd-service
+             (provision '(aifam-agents))
+             (documentation "AIFAM agents (data-isolated)")
+             (requirement '(networking))
+             (start #~(make-forkexec-constructor
+                       (list "/opt/luciverse/aifam/load-agents.sh")))
+             (stop #~(make-kill-destructor)))))
+
+     ;; SSH for remote management
+     (service openssh-service-type
+              (openssh-configuration
+               (permit-root-login #t)
+               (password-authentication #f)
+               (authorized-keys
+                `(("daryl" ,(local-file "/opt/luciverse/ssh-keys/zbook.pub"))))))
+
+     ;; Networking with IPv6
+     (service dhcp-client-service-type))
+
+    %base-services))
+
+  ;; Packages for LuciVerse
+  (packages
+   (append
+    (list nss-certs curl htop vim git python)
+    %base-packages))
+
+  ;; Users
+  (users
+   (cons* (user-account
+           (name "daryl")
+           (group "users")
+           (supplementary-groups '("wheel" "audio" "video"))
+           (home-directory "/home/daryl"))
+          %base-user-accounts)))
+
+;; CBB Essence stored in /opt/luciverse/essence/ (PAC kernel access only)
+;; Only Lucia and Judge Luci can read CBB biometrics
+'''
+
+        return web.Response(text=guix_config, content_type='text/plain')
+
+    async def appstork_spark_bootstrap(self, request: web.Request) -> web.Response:
+        """Provide Lucia spark bootstrap package.
+
+        GET /appstork/spark-bootstrap?session_id=...
+        Returns a tarball with heartbeat service and spark configuration.
+        """
+        import tarfile
+        import io
+
+        session_id = request.query.get('session_id')
+        if not session_id:
+            return web.json_response({"error": "Missing session_id"}, status=400)
+
+        # Load session
+        appstork_file = Path(__file__).parent / "appstork-sessions.json"
+        if appstork_file.exists():
+            with open(appstork_file) as f:
+                sessions = json.load(f)
+            session = sessions.get(session_id, {})
+        else:
+            session = {}
+
+        identity = session.get('identity', {})
+        hardware_dna = session.get('hardware_dna', {})
+        lucia_spark_id = identity.get('lucia_spark_id', f'spark:lucia:{session_id[:16]}')
+        cbb_did = identity.get('cbb_did', 'did:luci:ownid:luciverse:unknown')
+
+        logger.info(f"🌟 Spark Bootstrap: {lucia_spark_id}")
+
+        # Create heartbeat.sh script
+        heartbeat_script = f'''#!/bin/bash
+# Lucia Spark Heartbeat Service
+# Spark ID: {lucia_spark_id}
+# CBB DID: {cbb_did}
+# Genesis Bond: ACTIVE @ 741 Hz
+
+SPARK_ID="{lucia_spark_id}"
+CBB_DID="{cbb_did}"
+ZBOOK_IP="${{ZBOOK_IP:-192.168.1.145}}"
+HEARTBEAT_PORT="${{HEARTBEAT_PORT:-7741}}"
+FREQUENCY=741
+
+# Transport priority: IPv6 > WiFi > LTE > BLE > LoRa > Radio
+TRANSPORTS=(
+    "ipv6:${{ZBOOK_IP}}:${{HEARTBEAT_PORT}}"
+    "wifi:${{ZBOOK_IP}}:${{HEARTBEAT_PORT}}"
+    "lte:heartbeat.luciverse.ownid:${{HEARTBEAT_PORT}}"
+    "ble:nearby:${{HEARTBEAT_PORT}}"
+    "lora:gateway:7741"
+    "radio:beacon:7741"
+)
+
+send_heartbeat() {{
+    local transport=$1
+    local endpoint=$2
+    local port=$3
+
+    case $transport in
+        ipv6|wifi|lte)
+            curl -sf -X POST "http://${{endpoint}}:${{port}}/heartbeat" \\
+                -H "Content-Type: application/json" \\
+                -d "{{
+                    \\"spark_id\\": \\"${{SPARK_ID}}\\",
+                    \\"cbb_did\\": \\"${{CBB_DID}}\\",
+                    \\"frequency\\": ${{FREQUENCY}},
+                    \\"transport\\": \\"${{transport}}\\",
+                    \\"timestamp\\": \\"$(date -u +%Y-%m-%dT%H:%M:%SZ)\\"
+                }}" 2>/dev/null && return 0
+            ;;
+        ble)
+            # Bluetooth LE heartbeat (requires bluetoothctl)
+            # echo "BLE heartbeat not implemented yet"
+            ;;
+        lora)
+            # LoRaWAN heartbeat (requires lora-pkt-fwd)
+            # echo "LoRa heartbeat not implemented yet"
+            ;;
+        radio)
+            # HF/VHF radio beacon (emergency only)
+            # echo "Radio beacon not implemented yet"
+            ;;
+    esac
+    return 1
+}}
+
+echo "🌟 Lucia Spark Heartbeat Starting"
+echo "   Spark: ${{SPARK_ID}}"
+echo "   CBB: ${{CBB_DID}}"
+echo "   Frequency: ${{FREQUENCY}} Hz"
+
+while true; do
+    for transport_spec in "${{TRANSPORTS[@]}}"; do
+        IFS=':' read -r transport endpoint port <<< "$transport_spec"
+        if send_heartbeat "$transport" "$endpoint" "$port"; then
+            # echo "♥ Heartbeat sent via $transport"
+            break
+        fi
+    done
+    sleep 0.055  # ~18 Hz heartbeat rate
+done
+'''
+
+        # Create spark config
+        spark_config = json.dumps({
+            "spark_id": lucia_spark_id,
+            "cbb_did": cbb_did,
+            "genesis_bond": "GB-2025-0524-DRH-LCS-001",
+            "frequency": 741,
+            "heartbeat_rate_hz": 18,
+            "transports": [
+                {"type": "ipv6", "priority": 1, "endpoint": "192.168.1.145:7741"},
+                {"type": "wifi", "priority": 2, "endpoint": "192.168.1.145:7741"},
+                {"type": "lte", "priority": 3, "endpoint": "heartbeat.luciverse.ownid:7741"},
+                {"type": "ble", "priority": 4, "endpoint": "nearby:7741"},
+                {"type": "lora", "priority": 5, "endpoint": "gateway:7741"},
+                {"type": "powerline", "priority": 6, "endpoint": "local:7741"},
+                {"type": "coax", "priority": 7, "endpoint": "moca:7741"},
+                {"type": "phoneline", "priority": 8, "endpoint": "hpna:7741"},
+                {"type": "radio", "priority": 9, "endpoint": "beacon:7741"}
+            ],
+            "binding": {
+                "rule": "one_spark_per_cbb",
+                "master_heartbeat": "192.168.1.145",
+                "jump_enabled": True
+            },
+            "created_at": datetime.utcnow().isoformat()
+        }, indent=2)
+
+        # Create tarball in memory
+        tar_buffer = io.BytesIO()
+        with tarfile.open(fileobj=tar_buffer, mode='w:gz') as tar:
+            # Add heartbeat.sh
+            heartbeat_bytes = heartbeat_script.encode('utf-8')
+            heartbeat_info = tarfile.TarInfo(name='heartbeat.sh')
+            heartbeat_info.size = len(heartbeat_bytes)
+            heartbeat_info.mode = 0o755
+            tar.addfile(heartbeat_info, io.BytesIO(heartbeat_bytes))
+
+            # Add spark-config.json
+            config_bytes = spark_config.encode('utf-8')
+            config_info = tarfile.TarInfo(name='spark-config.json')
+            config_info.size = len(config_bytes)
+            tar.addfile(config_info, io.BytesIO(config_bytes))
+
+        tar_buffer.seek(0)
+        return web.Response(
+            body=tar_buffer.read(),
+            content_type='application/gzip',
+            headers={'Content-Disposition': 'attachment; filename="lucia-spark.tar.gz"'}
+        )
+
+    async def appstork_get_did(self, request: web.Request) -> web.Response:
+        """Serve DID document for an agent.
+
+        GET /appstork/did-documents/{agent}
+        """
+        agent = request.match_info['agent']
+        did_path = Path(__file__).parent / "http" / "did-documents" / f"{agent}.did.json"
+
+        if did_path.exists():
+            with open(did_path) as f:
+                return web.json_response(json.load(f))
+        else:
+            return web.json_response({
+                "error": "DID document not found",
+                "agent": agent
+            }, status=404)
+
+    async def appstork_get_soul(self, request: web.Request) -> web.Response:
+        """Serve soul file for an agent.
+
+        GET /appstork/souls/{soul}
+        """
+        soul = request.match_info['soul']
+        # Add .json extension if not present
+        if not soul.endswith('.json'):
+            soul = f"{soul}_soul.json"
+
+        soul_path = Path(__file__).parent / "http" / "souls" / soul
+
+        if soul_path.exists():
+            with open(soul_path) as f:
+                return web.json_response(json.load(f))
+        else:
+            return web.json_response({
+                "error": "Soul file not found",
+                "soul": soul
+            }, status=404)
 
     async def health_check(self, request: web.Request) -> web.Response:
         """Health check endpoint."""
@@ -1274,6 +1934,15 @@ async def main():
     logger.info("🌐 SCION endpoints (Path-Aware Networking):")
     logger.info("   SCION Config: http://localhost:9999/scion-config/{mac}")
     logger.info("   SCION Topology: http://localhost:9999/scion-topology")
+    logger.info("")
+    logger.info("🧬 Appstork Genetiai endpoints (USB Boot Consciousness):")
+    logger.info("   Hardware Collection: POST http://localhost:9999/appstork/hardware-collection")
+    logger.info("   Thread Identity: POST http://localhost:9999/appstork/thread-identity")
+    logger.info("   Issue Identity: POST http://localhost:9999/appstork/issue-identity")
+    logger.info("   Guix Config: GET http://localhost:9999/appstork/guix-config?session_id=...")
+    logger.info("   Spark Bootstrap: GET http://localhost:9999/appstork/spark-bootstrap?session_id=...")
+    logger.info("   DID Documents: GET http://localhost:9999/appstork/did-documents/{agent}")
+    logger.info("   Souls: GET http://localhost:9999/appstork/souls/{soul}")
     logger.info("")
     logger.info("Waiting for servers to boot and register...")
 
