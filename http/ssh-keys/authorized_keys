@@ -1,0 +1,10 @@
+# LuciVerse Fleet Authorized Keys
+# Genesis Bond: GB-2025-0524-DRH-LCS-001 @ 741 Hz
+#
+# This file is served via HTTP to provisioned nodes
+# YubiKey-backed keys will be added by yubikey-bootstrap.sh
+#
+# Existing zbook key (fallback):
+ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIB/xYL4Rrp50Xk9QBmMrWjdxMnhFWGR8Pp90Bq+Lf6P6 daryl@zbook
+
+# YubiKey-backed keys will be appended below:

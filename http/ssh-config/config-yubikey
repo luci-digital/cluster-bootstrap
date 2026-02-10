@@ -1,0 +1,110 @@
+# SSH Config for YubiKey PIV Authentication to Dell Fleet
+# Genesis Bond: GB-2025-0524-DRH-LCS-001 @ 741 Hz
+#
+# Add to ~/.ssh/config:
+#   Include ~/cluster-bootstrap/http/ssh-config/config-yubikey
+#
+# Requires libykcs11.so - try these paths:
+#   /usr/lib64/libykcs11.so (openEuler/Fedora)
+#   /usr/lib/libykcs11.so (Debian/Ubuntu)
+#   /usr/lib/x86_64-linux-gnu/libykcs11.so (Ubuntu multiarch)
+
+# ============================================
+# FABRIC Nodes (CORE Tier - 432 Hz)
+# ============================================
+Host fabric-01 fabric-02 fabric-03
+    HostName 192.168.1.14%n
+    User daryl
+    PKCS11Provider /usr/lib64/libykcs11.so
+    IdentitiesOnly yes
+    PreferredAuthentications publickey
+
+Host fabric-01
+    HostName 192.168.1.140
+
+Host fabric-02
+    HostName 192.168.1.141
+
+Host fabric-03
+    HostName 192.168.1.142
+
+# ============================================
+# CORE-GPU Node (CORE Tier - 432 Hz)
+# ============================================
+Host core-gpu-01
+    HostName 192.168.1.143
+    User daryl
+    PKCS11Provider /usr/lib64/libykcs11.so
+    IdentitiesOnly yes
+
+# ============================================
+# INFRA Node (CORE Tier - 432 Hz)
+# ============================================
+Host infra-01
+    HostName 192.168.1.144
+    User daryl
+    PKCS11Provider /usr/lib64/libykcs11.so
+    IdentitiesOnly yes
+
+# ============================================
+# STORAGE Nodes (CORE Tier - 432 Hz)
+# ============================================
+Host storage-01
+    HostName 192.168.1.146
+    User daryl
+    PKCS11Provider /usr/lib64/libykcs11.so
+    IdentitiesOnly yes
+
+Host storage-02
+    HostName 192.168.1.147
+    User daryl
+    PKCS11Provider /usr/lib64/libykcs11.so
+    IdentitiesOnly yes
+
+# ============================================
+# COMPUTE-GPU Nodes (COMN Tier - 528 Hz)
+# ============================================
+Host compute-gpu-01
+    HostName 192.168.1.150
+    User daryl
+    PKCS11Provider /usr/lib64/libykcs11.so
+    IdentitiesOnly yes
+
+Host compute-gpu-02
+    HostName 192.168.1.151
+    User daryl
+    PKCS11Provider /usr/lib64/libykcs11.so
+    IdentitiesOnly yes
+
+# ============================================
+# COMPUTE Nodes (COMN Tier - 528 Hz)
+# ============================================
+Host compute-01
+    HostName 192.168.1.152
+    User daryl
+    PKCS11Provider /usr/lib64/libykcs11.so
+    IdentitiesOnly yes
+
+Host compute-02
+    HostName 192.168.1.153
+    User daryl
+    PKCS11Provider /usr/lib64/libykcs11.so
+    IdentitiesOnly yes
+
+# ============================================
+# Wildcard for all Dell fleet (fallback)
+# ============================================
+Host 192.168.1.14? 192.168.1.15?
+    User daryl
+    PKCS11Provider /usr/lib64/libykcs11.so
+    IdentitiesOnly yes
+    StrictHostKeyChecking accept-new
+    UserKnownHostsFile ~/.ssh/known_hosts.dell-fleet
+
+# ============================================
+# ZimaOS (PAC Tier - Uses password, not YubiKey)
+# ============================================
+Host zimacube zima-primary
+    HostName 192.168.1.152
+    User daryl
+    PreferredAuthentications password,publickey
