@@ -47,6 +47,26 @@
       "id": "1.3.6.1.4.1.57264.1.8",
       "critical": false,
       "value": {{ toJson .Token.ipv6_tid }}
+    },
+    {
+      "id": "1.3.6.1.4.1.57264.1.9",
+      "critical": false,
+      "value": {{ toJson .Token.spiffe_id }}
+    },
+    {
+      "id": "1.3.6.1.4.1.57264.1.10",
+      "critical": false,
+      "value": {{ toJson .Token.etsi_tsl_uri }}
+    },
+    {
+      "id": "1.3.6.1.4.1.57264.1.11",
+      "critical": false,
+      "value": {{ toJson .Token.qtsp_status }}
+    },
+    {
+      "id": "1.3.6.1.4.1.57264.1.12",
+      "critical": false,
+      "value": {{ toJson .Token.eudi_pid_issuer }}
     }
   ]
 }
