@@ -1,0 +1,59 @@
+{
+  "$schema": "https://smallstep.com/docs/step-ca/provisioners#pkcs11-provisioner",
+  "_comment": "YubiKey PKCS#11 Provisioner for LuciVerse WSCD",
+  "_genesis_bond": "ACTIVE @ 741 Hz",
+  "_reference": "EUDI ARF v2.8.0 - WSCD Type 4 (HSM/Smartcard)",
+
+  "type": "PKCS#11",
+  "name": "yubikey-piv",
+  "module": "/usr/lib64/libykcs11.so",
+  "slot": 0,
+  "pin": "${YUBIKEY_PIN}",
+
+  "claims": {
+    "minTLSCertDuration": "5m",
+    "maxTLSCertDuration": "24h",
+    "defaultTLSCertDuration": "1h",
+    "disableRenewal": false
+  },
+
+  "options": {
+    "x509": {
+      "templateFile": "/etc/step-ca/templates/genesis-bond.tpl"
+    },
+    "piv": {
+      "attestation": {
+        "roots": "/etc/step-ca/certs/yubico-piv-attestation-ca.pem",
+        "verify": true
+      },
+      "slots": {
+        "authentication": "9a",
+        "cardManagement": "9b",
+        "digitalSignature": "9c",
+        "keyManagement": "9d",
+        "cardAuthentication": "9e"
+      }
+    }
+  },
+
+  "luciverse": {
+    "wscd_type": 4,
+    "description": "Hardware Security Module (YubiKey PIV)",
+    "min_firmware": "5.4.0",
+    "required_extensions": [
+      "attestation",
+      "touch_policy"
+    ],
+    "allowed_tiers": ["CORE", "COMN", "PAC"],
+    "coherence_threshold": 0.7
+  },
+
+  "eudi_compliance": {
+    "arf_version": "2.8.0",
+    "wscd_level": "HIGH",
+    "key_protection": "HARDWARE",
+    "attestation_required": true,
+    "pin_policy": "ONCE",
+    "touch_policy": "CACHED"
+  }
+}
