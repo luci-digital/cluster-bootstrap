@@ -260,6 +260,12 @@ class OPConnectClient:
 
         item = await self.get_item(OP_VAULT_INFRA, item_title)
         if not item:
+            # Fallback to op CLI if Connect API fails
+            logger.info(f"Connect API failed for {item_title}, trying op CLI fallback")
+            value = await self._get_credential_via_cli(item_title, field)
+            if value:
+                credential_cache[cache_key] = (value, datetime.now() + CACHE_TTL)
+                return value
             logger.warning(f"Item not found: {item_title}")
             return None
 
@@ -279,6 +285,45 @@ class OPConnectClient:
             return value
 
         logger.warning(f"Field '{field}' not found in {item_title}")
+        return None
+
+    async def _get_credential_via_cli(self, item_title: str, field: str = 'password') -> Optional[str]:
+        """Fallback: Get credential via op CLI when Connect API is unavailable."""
+        try:
+            # Load service account token if available
+            sa_token_path = Path.home() / '.config/luciverse/secrets/op-provision-listener.token'
+            env = os.environ.copy()
+            if sa_token_path.exists():
+                sa_token = sa_token_path.read_text().strip()
+                env['OP_SERVICE_ACCOUNT_TOKEN'] = sa_token
+                # Must unset Connect variables when using service account
+                env.pop('OP_CONNECT_HOST', None)
+                env.pop('OP_CONNECT_TOKEN', None)
+                logger.debug("Using service account token for op CLI")
+
+            # Use asyncio subprocess to avoid blocking
+            proc = await asyncio.create_subprocess_exec(
+                'op', 'item', 'get', item_title,
+                '--vault', OP_VAULT_INFRA,
+                '--fields', field,
+                '--reveal',  # Required to get actual value instead of placeholder
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.PIPE,
+                env=env
+            )
+            stdout, stderr = await asyncio.wait_for(proc.communicate(), timeout=10.0)
+
+            if proc.returncode == 0 and stdout:
+                value = stdout.decode().strip()
+                if value and not value.startswith('['):  # Avoid placeholder like "[use 'op item get..."
+                    logger.info(f"Got {item_title}/{field} via op CLI")
+                    return value
+            else:
+                logger.warning(f"op CLI failed (rc={proc.returncode}): {stderr.decode() if stderr else 'no output'}")
+        except asyncio.TimeoutError:
+            logger.warning("op CLI timeout")
+        except Exception as e:
+            logger.warning(f"op CLI fallback failed: {e}")
         return None
 
 

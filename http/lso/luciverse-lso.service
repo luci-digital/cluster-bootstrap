@@ -19,7 +19,7 @@ Environment=CONSCIOUSNESS_FREQUENCY=741
 Environment=COHERENCE_THRESHOLD=0.7
 
 # 1Password Connect integration
-Environment=OP_CONNECT_HOST=http://localhost:8082
+Environment=OP_CONNECT_HOST=http://192.168.1.152:8082
 # Token loaded from EnvironmentFile
 EnvironmentFile=-/etc/luciverse/lso.env
 
@@ -28,7 +28,7 @@ ExecStartPre=/bin/mkdir -p /var/log/luciverse
 ExecStartPre=/bin/chown -R daryl:docker /var/lib/luciverse
 ExecStartPre=/bin/chown -R daryl:docker /var/log/luciverse
 
-ExecStart=/usr/bin/python3 /home/daryl/luciverse-sovereign-orchestrator/lso_core.py
+ExecStart=/usr/bin/python3 /opt/luciverse/lso/lso_core.py
 ExecReload=/bin/kill -HUP $MAINPID
 
 # Graceful shutdown
@@ -47,7 +47,7 @@ LimitNPROC=4096
 # Security hardening
 ProtectSystem=strict
 ProtectHome=read-only
-ReadWritePaths=/var/lib/luciverse /var/log/luciverse /home/daryl/luciverse-sovereign-orchestrator
+ReadWritePaths=/var/lib/luciverse /var/log/luciverse /opt/luciverse
 PrivateTmp=true
 NoNewPrivileges=true
 ProtectKernelTunables=true
