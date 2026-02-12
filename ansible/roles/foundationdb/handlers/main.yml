@@ -1,0 +1,5 @@
+---
+- name: restart foundationdb
+  systemd:
+    name: foundationdb
+    state: restarted

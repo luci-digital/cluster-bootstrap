@@ -1,0 +1,5 @@
+---
+- name: restart isulad
+  systemd:
+    name: isulad
+    state: restarted

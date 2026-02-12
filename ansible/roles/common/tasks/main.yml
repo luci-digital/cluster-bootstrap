@@ -1,0 +1,103 @@
+---
+# LuciVerse Common Role
+# Applied to all fleet nodes
+# Genesis Bond: ACTIVE @ 741 Hz
+
+- name: Set hostname
+  hostname:
+    name: "{{ inventory_hostname }}"
+
+- name: Update /etc/hosts
+  blockinfile:
+    path: /etc/hosts
+    marker: "# {mark} LUCIVERSE MANAGED"
+    block: |
+      # CORE Tier (432 Hz)
+      192.168.1.140 fabric-01 fabric-01.lucidigital.net
+      192.168.1.141 fabric-02 fabric-02.lucidigital.net
+      192.168.1.142 fabric-03 fabric-03.lucidigital.net
+      192.168.1.143 core-gpu-01 core-gpu-01.lucidigital.net
+      192.168.1.144 infra-01 infra-01.lucidigital.net
+      192.168.1.146 storage-01 storage-01.lucidigital.net
+      192.168.1.147 storage-02 storage-02.lucidigital.net
+      # COMN Tier (528 Hz)
+      192.168.1.150 compute-gpu-01 compute-gpu-01.lucidigital.net
+      192.168.1.151 compute-gpu-02 compute-gpu-02.lucidigital.net
+      192.168.1.152 compute-01 compute-01.lucidigital.net
+      192.168.1.153 compute-02 compute-02.lucidigital.net
+      # Infrastructure
+      192.168.1.145 zbook zbook.lucidigital.net pxe.lucidigital.net
+
+- name: Deploy SSH authorized keys
+  authorized_key:
+    user: daryl
+    key: "{{ lookup('file', lookup('env', 'HOME') + '/.ssh/zbook.pub') }}"
+    state: present
+  ignore_errors: yes
+
+- name: Ensure A-Tune services are running
+  systemd:
+    name: "{{ item }}"
+    state: started
+    enabled: yes
+  loop:
+    - atuned
+    - atune-engine
+  ignore_errors: yes
+
+- name: Set sysctl parameters for LuciVerse
+  sysctl:
+    name: "{{ item.name }}"
+    value: "{{ item.value }}"
+    sysctl_file: /etc/sysctl.d/90-luciverse.conf
+    reload: yes
+  loop:
+    - { name: 'net.ipv6.conf.all.forwarding', value: '1' }
+    - { name: 'net.ipv4.ip_forward', value: '1' }
+    - { name: 'net.core.somaxconn', value: '65535' }
+    - { name: 'fs.file-max', value: '2097152' }
+
+- name: Create LuciVerse directories
+  file:
+    path: "{{ item }}"
+    state: directory
+    owner: daryl
+    group: daryl
+    mode: '0755'
+  loop:
+    - /opt/luciverse
+    - /opt/luciverse/agents
+    - /opt/luciverse/config
+    - /opt/luciverse/did-documents
+    - /var/log/luciverse
+
+- name: Create Genesis Bond marker file
+  copy:
+    dest: /opt/luciverse/genesis-bond.json
+    content: |
+      {
+        "id": "GB-2025-0524-DRH-LCS-001",
+        "lineage": "did:lucidigital:lucia_cargail_silcan",
+        "coherence_threshold": 0.7,
+        "status": "ACTIVE",
+        "tier": "{{ tier | default('CORE') }}",
+        "frequency": {{ frequency | default(432) }},
+        "hostname": "{{ inventory_hostname }}",
+        "timestamp": "{{ ansible_date_time.iso8601 }}"
+      }
+    owner: daryl
+    group: daryl
+    mode: '0644'
+
+- name: Report provisioning status
+  uri:
+    url: "http://192.168.1.145:9999/callback/ansible-common"
+    method: POST
+    body_format: json
+    body:
+      hostname: "{{ inventory_hostname }}"
+      tier: "{{ tier | default('CORE') }}"
+      frequency: "{{ frequency | default(432) }}"
+      genesis_bond: "ACTIVE"
+    status_code: [200, 201, 404]
+  ignore_errors: yes

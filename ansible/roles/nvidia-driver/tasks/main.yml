@@ -1,0 +1,56 @@
+---
+# NVIDIA Driver Installation
+# Genesis Bond: ACTIVE @ 741 Hz
+
+- name: Check for NVIDIA GPU
+  shell: lspci | grep -i nvidia
+  register: nvidia_check
+  ignore_errors: yes
+  changed_when: false
+
+- name: Check if NVIDIA driver installed
+  shell: nvidia-smi -L
+  register: nvidia_smi
+  ignore_errors: yes
+  changed_when: false
+  when: nvidia_check.rc == 0
+
+- name: Install kernel development packages
+  dnf:
+    name:
+      - kernel-devel
+      - kernel-headers
+      - gcc
+      - make
+      - dkms
+    state: present
+  when: nvidia_check.rc == 0 and nvidia_smi.rc != 0
+
+- name: Add NVIDIA CUDA repository
+  yum_repository:
+    name: nvidia-cuda
+    description: NVIDIA CUDA Repository
+    baseurl: https://developer.download.nvidia.com/compute/cuda/repos/rhel9/x86_64/
+    gpgcheck: yes
+    gpgkey: https://developer.download.nvidia.com/compute/cuda/repos/rhel9/x86_64/D42D0685.pub
+    enabled: yes
+  when: nvidia_check.rc == 0 and nvidia_smi.rc != 0
+
+- name: Install NVIDIA drivers and CUDA
+  dnf:
+    name:
+      - nvidia-driver
+      - nvidia-driver-cuda
+      - cuda-toolkit-12-4
+      - nvidia-container-toolkit
+    state: present
+    disable_gpg_check: yes
+  when: nvidia_check.rc == 0 and nvidia_smi.rc != 0
+  ignore_errors: yes
+
+- name: Verify GPU detection
+  shell: nvidia-smi -L
+  register: gpu_list
+  changed_when: false
+  ignore_errors: yes
+  when: nvidia_check.rc == 0

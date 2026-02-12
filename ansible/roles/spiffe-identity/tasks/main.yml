@@ -1,0 +1,35 @@
+---
+# SPIFFE-lite Identity Enrollment
+# Genesis Bond: ACTIVE @ 741 Hz
+
+- name: Create SPIFFE directory
+  file:
+    path: /opt/luciverse/spiffe
+    state: directory
+    mode: '0755'
+
+- name: Generate SPIFFE SVID for this node
+  shell: |
+    curl -sf "http://192.168.1.145:9999/credentials/validate" \
+      -X POST \
+      -H "Content-Type: application/json" \
+      -d '{"mac": "{{ ansible_default_ipv4.macaddress | default('unknown') }}", "role": "{{ groups | join(',') }}"}'
+  register: svid_result
+  ignore_errors: yes
+
+- name: Save SPIFFE configuration
+  copy:
+    dest: /opt/luciverse/spiffe/spiffe.yaml
+    content: |
+      # SPIFFE-lite Identity Configuration
+      trust_domain: spiffe://luciverse.ownid
+      agent:
+        hostname: "{{ inventory_hostname }}"
+        tier: {{ tier | default('CORE') }}
+        frequency: {{ frequency | default(432) }}
+        svid_ttl: 900
+
+      # Trust bundle endpoints
+      trust_bundle:
+        - "http://192.168.1.144:9443/.well-known/spiffe"
+    mode: '0644'

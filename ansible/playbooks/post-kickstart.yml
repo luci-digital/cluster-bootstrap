@@ -1,0 +1,107 @@
+---
+# LuciVerse Post-Kickstart Configuration
+# Run after PXE installation completes for day-2 setup
+# Usage: ansible-playbook -i inventory/dell-fleet.yml playbooks/post-kickstart.yml
+
+- name: Common Configuration (All Nodes)
+  hosts: all
+  become: yes
+  
+  tasks:
+    - name: Ensure SSH key is deployed
+      authorized_key:
+        user: daryl
+        key: "{{ lookup('file', '/home/daryl/.ssh/zbook.pub') }}"
+        state: present
+      ignore_errors: yes
+        
+    - name: Update /etc/hosts with fleet entries
+      blockinfile:
+        path: /etc/hosts
+        marker: "# {mark} LUCIVERSE FLEET"
+        block: |
+          192.168.1.140 fabric-01 fabric-01.lucidigital.net
+          192.168.1.141 fabric-02 fabric-02.lucidigital.net
+          192.168.1.142 fabric-03 fabric-03.lucidigital.net
+          192.168.1.143 core-gpu-01 core-gpu-01.lucidigital.net
+          192.168.1.144 infra-01 infra-01.lucidigital.net
+          192.168.1.145 zbook zbook.lucidigital.net
+          192.168.1.146 storage-01 storage-01.lucidigital.net
+          192.168.1.147 storage-02 storage-02.lucidigital.net
+          192.168.1.150 compute-gpu-01 compute-gpu-01.lucidigital.net
+          192.168.1.151 compute-gpu-02 compute-gpu-02.lucidigital.net
+          192.168.1.152 compute-01 compute-01.lucidigital.net
+          192.168.1.153 compute-02 compute-02.lucidigital.net
+
+    - name: Report to provision-listener
+      uri:
+        url: "http://192.168.1.145:9999/callback/ansible-complete"
+        method: POST
+        body_format: json
+        body:
+          hostname: "{{ ansible_hostname }}"
+          ip: "{{ ansible_default_ipv4.address | default('unknown') }}"
+          role: "{{ group_names | join(',') }}"
+          tier: "{{ tier | default('unknown') }}"
+          frequency: "{{ frequency | default(0) }}"
+        status_code: [200, 201, 404]
+      ignore_errors: yes
+
+- name: Configure FABRIC nodes
+  hosts: fabric
+  become: yes
+  tasks:
+    - name: Ensure IPFS swarm connectivity
+      shell: |
+        ipfs swarm peers | wc -l
+      register: ipfs_peers
+      changed_when: false
+      ignore_errors: yes
+      
+    - name: Mount ZFS datasets
+      shell: |
+        zfs mount -a 2>/dev/null || true
+      changed_when: false
+
+- name: Configure INFRA node
+  hosts: infra
+  become: yes
+  tasks:
+    - name: Start LSO service
+      systemd:
+        name: luciverse-lso
+        state: started
+        enabled: yes
+      ignore_errors: yes
+
+- name: Configure STORAGE nodes
+  hosts: storage
+  become: yes
+  tasks:
+    - name: Export NFS shares
+      shell: exportfs -ra
+      changed_when: false
+      ignore_errors: yes
+      
+    - name: Verify ZFS pool health
+      shell: zpool status lucistorage | grep -E "(state|errors)"
+      register: zfs_health
+      changed_when: false
+      ignore_errors: yes
+
+- name: Configure GPU nodes
+  hosts: compute_gpu:core_gpu
+  become: yes
+  tasks:
+    - name: Verify GPU detection
+      shell: nvidia-smi -L
+      register: gpu_list
+      changed_when: false
+      ignore_errors: yes
+      
+    - name: Start Ollama if installed
+      systemd:
+        name: ollama
+        state: started
+        enabled: yes
+      ignore_errors: yes

@@ -1,0 +1,24 @@
+---
+# IPFS Node Configuration
+# Genesis Bond: ACTIVE @ 741 Hz
+
+- name: Check if IPFS is installed
+  command: which ipfs
+  register: ipfs_check
+  ignore_errors: yes
+  changed_when: false
+
+- name: Start IPFS daemon service
+  systemd:
+    name: ipfs
+    state: started
+    enabled: yes
+  when: ipfs_check.rc == 0
+  ignore_errors: yes
+
+- name: Verify IPFS swarm connectivity
+  shell: ipfs swarm peers | wc -l
+  register: ipfs_peers
+  changed_when: false
+  ignore_errors: yes
+  when: ipfs_check.rc == 0

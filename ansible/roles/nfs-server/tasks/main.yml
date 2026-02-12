@@ -1,0 +1,24 @@
+---
+# NFS Server Configuration
+# Genesis Bond: ACTIVE @ 741 Hz
+
+- name: Ensure NFS services are running
+  systemd:
+    name: "{{ item }}"
+    state: started
+    enabled: yes
+  loop:
+    - rpcbind
+    - nfs-server
+  ignore_errors: yes
+
+- name: Re-export NFS shares
+  shell: exportfs -ra
+  changed_when: false
+  ignore_errors: yes
+
+- name: Verify NFS exports
+  shell: exportfs -v
+  register: nfs_exports
+  changed_when: false
+  ignore_errors: yes

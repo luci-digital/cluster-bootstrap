@@ -1,0 +1,32 @@
+---
+# ZFS STORAGE Pool Configuration
+# Genesis Bond: ACTIVE @ 741 Hz
+
+- name: Check if lucistorage pool exists
+  shell: zpool list lucistorage
+  register: zpool_check
+  ignore_errors: yes
+  changed_when: false
+
+- name: Mount ZFS datasets
+  shell: zfs mount -a
+  changed_when: false
+  ignore_errors: yes
+  when: zpool_check.rc == 0
+
+- name: Verify ZFS pool health
+  shell: zpool status lucistorage | grep -E "(state|errors)"
+  register: zfs_health
+  changed_when: false
+  ignore_errors: yes
+  when: zpool_check.rc == 0
+
+- name: Run ZFS scrub if not run recently
+  shell: |
+    LAST_SCRUB=$(zpool status lucistorage | grep "scan:" | awk '{print $NF}')
+    if [[ "$LAST_SCRUB" == "requested" ]] || [[ -z "$LAST_SCRUB" ]]; then
+      zpool scrub lucistorage
+    fi
+  when: zpool_check.rc == 0
+  ignore_errors: yes
+  changed_when: false

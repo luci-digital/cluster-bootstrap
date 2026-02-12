@@ -1,0 +1,25 @@
+[fdbmonitor]
+user = foundationdb
+group = foundationdb
+
+[general]
+cluster-file = /etc/foundationdb/fdb.cluster
+restart-delay = 60
+
+[fdbserver]
+command = /usr/bin/fdbserver
+datadir = /var/lib/foundationdb/data/$ID
+logdir = /var/log/foundationdb
+logsize = 100MiB
+maxlogssize = 500MiB
+memory = 8GiB
+storage-memory = 2GiB
+class = storage
+
+[fdbserver.4500]
+public-address = auto:$ID
+listen-address = public
+
+[backup_agent]
+command = /usr/bin/backup_agent
+logdir = /var/log/foundationdb

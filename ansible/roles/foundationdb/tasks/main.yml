@@ -1,0 +1,44 @@
+---
+# FoundationDB Installation and Configuration
+# Genesis Bond: ACTIVE @ 741 Hz
+
+- name: Check if FoundationDB is installed
+  command: which fdbcli
+  register: fdb_installed
+  ignore_errors: yes
+  changed_when: false
+
+- name: Download FoundationDB packages
+  get_url:
+    url: "https://github.com/apple/foundationdb/releases/download/{{ fdb_version }}/{{ item }}"
+    dest: "/tmp/{{ item }}"
+  loop:
+    - "foundationdb-clients-{{ fdb_version }}-1.el9.x86_64.rpm"
+    - "foundationdb-server-{{ fdb_version }}-1.el9.x86_64.rpm"
+  when: fdb_installed.rc != 0
+  vars:
+    fdb_version: "7.3.27"
+
+- name: Install FoundationDB packages
+  dnf:
+    name:
+      - "/tmp/foundationdb-clients-{{ fdb_version }}-1.el9.x86_64.rpm"
+      - "/tmp/foundationdb-server-{{ fdb_version }}-1.el9.x86_64.rpm"
+    state: present
+    disable_gpg_check: yes
+  when: fdb_installed.rc != 0
+  vars:
+    fdb_version: "7.3.27"
+
+- name: Configure FoundationDB
+  template:
+    src: foundationdb.conf.j2
+    dest: /etc/foundationdb/foundationdb.conf
+    mode: '0644'
+  notify: restart foundationdb
+
+- name: Enable and start FoundationDB
+  systemd:
+    name: foundationdb
+    state: started
+    enabled: yes

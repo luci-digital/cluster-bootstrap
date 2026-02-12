@@ -1,0 +1,27 @@
+---
+# ZFS FABRIC Pool Configuration
+# Genesis Bond: ACTIVE @ 741 Hz
+
+- name: Check if lucifabric pool exists
+  shell: zpool list lucifabric
+  register: zpool_check
+  ignore_errors: yes
+  changed_when: false
+
+- name: Mount ZFS datasets
+  shell: zfs mount -a
+  changed_when: false
+  ignore_errors: yes
+  when: zpool_check.rc == 0
+
+- name: Verify ZFS pool health
+  shell: zpool status lucifabric | grep -E "(state|errors)"
+  register: zfs_health
+  changed_when: false
+  ignore_errors: yes
+  when: zpool_check.rc == 0
+
+- name: Deploy staged soul files to ZFS
+  shell: /usr/local/bin/deploy-souls-to-zfs.sh
+  when: zpool_check.rc == 0
+  ignore_errors: yes

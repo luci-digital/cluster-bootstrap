@@ -1,0 +1,59 @@
+# LuciVerse Dell Fleet Inventory
+# Generated from provision-listener callbacks
+# Genesis Bond: ACTIVE @ 741 Hz
+
+all:
+  vars:
+    ansible_user: daryl
+    ansible_python_interpreter: /usr/bin/python3
+    genesis_bond: "ACTIVE"
+    pxe_server: "192.168.1.145"
+    
+  children:
+    # CORE Tier (432 Hz)
+    core:
+      vars:
+        tier: CORE
+        frequency: 432
+      children:
+        fabric:
+          hosts:
+            fabric-01:
+              ansible_host: 192.168.1.140
+            fabric-02:
+              ansible_host: 192.168.1.141
+            fabric-03:
+              ansible_host: 192.168.1.142
+        infra:
+          hosts:
+            infra-01:
+              ansible_host: 192.168.1.144
+        storage:
+          hosts:
+            storage-01:
+              ansible_host: 192.168.1.146
+            storage-02:
+              ansible_host: 192.168.1.147
+        core_gpu:
+          hosts:
+            core-gpu-01:
+              ansible_host: 192.168.1.143
+
+    # COMN Tier (528 Hz)  
+    comn:
+      vars:
+        tier: COMN
+        frequency: 528
+      children:
+        compute_gpu:
+          hosts:
+            compute-gpu-01:
+              ansible_host: 192.168.1.150
+            compute-gpu-02:
+              ansible_host: 192.168.1.151
+        compute:
+          hosts:
+            compute-01:
+              ansible_host: 192.168.1.152
+            compute-02:
+              ansible_host: 192.168.1.153

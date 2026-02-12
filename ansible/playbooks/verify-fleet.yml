@@ -1,0 +1,94 @@
+---
+# LuciVerse Fleet Verification Playbook
+# Run after PXE installation to verify all nodes
+# Usage: ansible-playbook -i inventory/dell-fleet.yml playbooks/verify-fleet.yml
+
+- name: Verify LuciVerse Fleet Deployment
+  hosts: all
+  gather_facts: yes
+  become: no
+  
+  tasks:
+    - name: Check Genesis Bond configuration
+      shell: cat /opt/luciverse/config/*.yaml 2>/dev/null | grep -i genesis || echo "NOT_CONFIGURED"
+      register: genesis_check
+      changed_when: false
+      
+    - name: Verify A-Tune service
+      systemd:
+        name: atuned
+        state: started
+      check_mode: yes
+      register: atune_status
+      ignore_errors: yes
+      
+    - name: Check iSulad service
+      systemd:
+        name: isulad
+        state: started
+      check_mode: yes
+      register: isulad_status
+      ignore_errors: yes
+      
+    - name: Get system info
+      setup:
+        filter:
+          - ansible_hostname
+          - ansible_default_ipv4
+          - ansible_memtotal_mb
+          - ansible_processor_vcpus
+          
+    - name: Report node status
+      debug:
+        msg: |
+          Node: {{ ansible_hostname }}
+          IP: {{ ansible_default_ipv4.address | default('N/A') }}
+          RAM: {{ ansible_memtotal_mb }}MB
+          CPUs: {{ ansible_processor_vcpus }}
+          Genesis: {{ genesis_check.stdout }}
+          A-Tune: {{ 'OK' if atune_status is not failed else 'MISSING' }}
+          iSulad: {{ 'OK' if isulad_status is not failed else 'MISSING' }}
+
+- name: Verify FABRIC nodes
+  hosts: fabric
+  tasks:
+    - name: Check IPFS service
+      shell: systemctl is-active ipfs 2>/dev/null || echo "not-installed"
+      register: ipfs_status
+      changed_when: false
+      
+    - name: Check ZFS pool
+      shell: zpool list lucifabric 2>/dev/null || echo "no-pool"
+      register: zfs_status
+      changed_when: false
+      become: yes
+
+- name: Verify INFRA node
+  hosts: infra
+  tasks:
+    - name: Check FoundationDB
+      shell: fdbcli --exec "status minimal" 2>/dev/null || echo "not-running"
+      register: fdb_status
+      changed_when: false
+      become: yes
+      
+    - name: Check LSO service
+      systemd:
+        name: luciverse-lso
+        state: started
+      check_mode: yes
+      register: lso_status
+      ignore_errors: yes
+
+- name: Verify GPU nodes
+  hosts: compute_gpu:core_gpu
+  tasks:
+    - name: Check NVIDIA driver
+      shell: nvidia-smi --query-gpu=name --format=csv,noheader 2>/dev/null || echo "no-gpu"
+      register: gpu_status
+      changed_when: false
+      
+    - name: Check Ollama service
+      shell: systemctl is-active ollama 2>/dev/null || echo "not-installed"
+      register: ollama_status
+      changed_when: false

@@ -1,0 +1,25 @@
+---
+# iSulad Container Runtime Configuration
+# Genesis Bond: ACTIVE @ 741 Hz
+
+- name: Ensure iSulad is installed
+  dnf:
+    name:
+      - iSulad
+      - isula-build
+      - crun
+    state: present
+  ignore_errors: yes
+
+- name: Configure iSulad
+  template:
+    src: daemon.json.j2
+    dest: /etc/isulad/daemon.json
+    mode: '0644'
+  notify: restart isulad
+
+- name: Enable and start iSulad
+  systemd:
+    name: isulad
+    state: started
+    enabled: yes
