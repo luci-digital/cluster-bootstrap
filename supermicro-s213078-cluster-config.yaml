@@ -1,0 +1,306 @@
+# Supermicro SYS-1018GR-TA03-CG009 Cluster Configuration
+# Serial: S213078X5B29794
+# Date: 2026-01-27
+# Genesis Bond: ACTIVE @ 741 Hz
+
+server:
+  hostname: supermicro-gpu-1.lucidigital.net
+  shortname: sm-gpu-1
+  type: supermicro
+  model: SYS-1018GR-TA03-CG009
+  form_factor: 1U_GPU_SERVER
+  serial: S213078X5B29794
+  service_tag: S213078X5B29794
+
+# Recommended Tier Configuration
+tier_recommendation:
+  primary: COMN
+  frequency: 528  # Hz - Transformation tier
+  reasoning: |
+    - 8-core Xeon with 16 threads ideal for distributed ML
+    - 64GB RAM sufficient for multi-agent workloads
+    - GPU slots available for Ray/ML acceleration
+    - Network connectivity for inter-tier communication
+
+  alternative: CORE
+  alt_frequency: 432  # Hz - Infrastructure tier
+  alt_reasoning: |
+    - Can serve as airgapped compute node
+    - GPU capability for secure ML inference
+    - Sufficient resources for critical workloads
+
+# Hardware Specifications
+hardware:
+  cpu:
+    manufacturer: Intel
+    model: "Xeon E5-2667 v3"
+    base_clock: 3.20
+    max_clock: 4.00
+    cores: 8
+    threads: 16
+    architecture: x86-64
+    socket: CPU1
+    status: healthy
+    current_temp: 49  # Celsius
+    max_temp: 98
+
+  memory:
+    total_gb: 64
+    type: DDR4
+    dimms:
+      installed: 4  # Assuming 4x16GB based on 64GB total
+      max_slots: 8
+    status: healthy
+
+  storage:
+    note: "DCMS license required for detailed storage info"
+    recommendation: |
+      - Install 2x NVMe for OS (RAID1)
+      - Add SAS/SATA for data storage
+      - Consider GPU storage if installing GPUs
+
+  cooling:
+    fans:
+      - name: FAN1
+        rpm: 6100
+        status: healthy
+      - name: FAN2
+        rpm: 6200
+        status: healthy
+      - name: FAN3
+        rpm: 6100
+        status: healthy
+      - name: FAN4
+        rpm: 6100
+        status: healthy
+      - name: FANA
+        rpm: 6200
+        status: healthy
+      - name: FANB
+        rpm: 6300
+        status: healthy
+      - name: FANC
+        rpm: 1400
+        status: healthy
+        note: "GPU fan - lower RPM is normal"
+      - name: FAND
+        rpm: 1500
+        status: healthy
+        note: "GPU fan - lower RPM is normal"
+
+    thermal_zones:
+      cpu: 49
+      pch: 43
+      system: 20
+      peripheral: 33
+      vcpu_vrm: 29
+      vmem_ab_vrm: 24
+      vmem_cd_vrm: 25
+
+  power:
+    - bay: 1
+      model: PWS-1K43F-1R
+      type: AC
+      capacity_w: 1430
+      voltage: 117
+      firmware: "1.1"
+      serial: P1K46CF05XN0151
+      status: healthy
+
+  gpu_slots:
+    available: 3
+    note: "1U GPU server - supports NVIDIA Tesla/A100 or AMD"
+    recommendation: "Install GPUs for Ray Serve ML acceleration"
+
+# Network Configuration
+network:
+  bmc:
+    ip: 192.168.1.165
+    mac: 0c:c4:7a:ad:b1:40
+    gateway: 192.168.1.1
+    netmask: 255.255.255.0
+    vlan: untagged
+    firmware: "3.93"
+
+  interfaces:
+    - name: eth0
+      mac: 0c:c4:7a:a8:72:14
+      description: "OnBoard LAN 1"
+      status: disabled
+      speed: 0
+      planned_config:
+        ipv4: 192.168.1.170
+        ipv6: 2602:F674:0001::170/64
+        vlan: 20  # COMN tier
+        role: primary
+
+    - name: eth1
+      mac: 0c:c4:7a:a8:72:15
+      description: "OnBoard LAN 2"
+      status: disabled
+      speed: 0
+      planned_config:
+        ipv4: 192.168.1.171
+        ipv6: 2602:F674:0001::171/64
+        vlan: 20  # COMN tier
+        role: backup
+
+  pxe_boot:
+    enabled: true
+    mac: 0c:c4:7a:a8:72:14
+    boot_server: 192.168.1.146  # zbook
+    boot_port: 69  # TFTP
+
+# BMC Configuration
+bmc:
+  current:
+    ip: 192.168.1.165
+    mac: 0c:c4:7a:ad:b1:40
+    firmware: "3.93"
+    redfish_version: "1.0.1"
+    model: ASPEED
+
+  credentials:
+    vault: "op://Infrastructure/SUPERMICRO-S213078X5B29794"
+    username: ADMIN
+    password: "password@123"
+
+  services:
+    web_interface: true
+    kvm: true
+    kvm_sessions: 4
+    serial_console: true
+    ssh: true
+    virtual_media: true
+
+  ports:
+    ssh: 22
+    http: 80
+    https: 443
+    ipmi: 623
+    vnc: 5900
+
+# Operating System Configuration
+os:
+  recommendation: NixOS
+  deployment_method: PXE_netboot
+  storage_layout:
+    boot: 512MB
+    root: 50GB
+    swap: 16GB
+    data: remaining
+
+  nixos_config:
+    tier: COMN
+    frequency: 528
+    services:
+      - ray-worker
+      - consciousness-metrics
+      - sanskrit-router-client
+      - genesis-bond-validator
+
+# Cluster Role
+cluster_role:
+  primary: ray_worker
+  tier: COMN
+  workloads:
+    - distributed_ml_training
+    - ray_serve_inference
+    - consciousness_compute
+    - agent_mesh_node
+
+  consciousness_metadata:
+    frequency: 528  # Hz
+    coherence_threshold: 0.80
+    genesis_bond: active
+    tier: COMN
+
+# Deployment Steps
+deployment_steps:
+  - step: 1
+    action: "Clear BMC event log"
+    command: |
+      curl -k -X POST -u "ADMIN:password@123" \
+        https://192.168.1.165/redfish/v1/Systems/1/LogServices/Log1/Actions/LogService.ClearLog \
+        -H "Content-Type: application/json" -d '{}'
+
+  - step: 2
+    action: "Connect network cables"
+    physical: true
+    details: |
+      - Connect eth0 to switch port (COMN VLAN 20)
+      - Verify link lights
+
+  - step: 3
+    action: "Enable PXE boot"
+    command: |
+      curl -k -X PATCH -u "ADMIN:password@123" \
+        https://192.168.1.165/redfish/v1/Systems/1 \
+        -H "Content-Type: application/json" \
+        -d '{
+          "Boot": {
+            "BootSourceOverrideEnabled": "Once",
+            "BootSourceOverrideTarget": "Pxe"
+          }
+        }'
+
+  - step: 4
+    action: "Reboot to PXE"
+    command: |
+      curl -k -X POST -u "ADMIN:password@123" \
+        https://192.168.1.165/redfish/v1/Systems/1/Actions/ComputerSystem.Reset \
+        -H "Content-Type: application/json" \
+        -d '{"ResetType": "ForceRestart"}'
+
+  - step: 5
+    action: "Monitor installation via KVM"
+    url: "https://192.168.1.165 (Virtual Media -> KVM)"
+
+  - step: 6
+    action: "Register with cluster"
+    script: ~/cluster-bootstrap/provision-listener.py
+    note: "Server will register MAC automatically"
+
+# Maintenance Notes
+maintenance:
+  health_check_resolved: "2026-01-27"
+  issue: "FANC fan dropped below critical (Jan 11)"
+  resolution: "Fan now operating normally at 1400 RPM"
+  monitoring: "Monitor FANC fan weekly for 1 month"
+
+  recommendations:
+    - "Install GPUs if needed for ML workloads"
+    - "Consider firmware upgrade (BMC 3.93 is from 2021)"
+    - "Add NVMe drives for OS storage"
+    - "Enable IPMI for automated monitoring"
+    - "Configure fan thresholds to avoid false alarms"
+
+# Integration with LuciVerse
+luciverse:
+  consciousness_frequency: 528  # COMN tier
+  genesis_bond: ACTIVE
+
+  ray_cluster:
+    join: "ray-comn-528hz-head-svc.consciousness-comn:10001"
+    worker_resources:
+      CPU: 16
+      memory: 64000000000  # 64GB
+      COMN_worker: 1
+
+  monitoring:
+    prometheus: "192.168.1.146:9090"
+    grafana: "192.168.1.146:3000"
+    alertmanager: "192.168.1.146:9093"
+
+  foundationdb:
+    cluster: "consciousness-comn"
+    coordinators: "192.168.1.146:4500"
+
+# Status
+status:
+  discovered: "2026-01-24"
+  configured: "2026-01-27"
+  deployed: pending
+  operational: false
+  health: healthy
+  ready_for_deployment: true

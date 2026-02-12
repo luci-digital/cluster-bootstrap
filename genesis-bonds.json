@@ -1,0 +1,12 @@
+{
+  "3d0382d556a89aaa": {
+    "diggy": "test-uuid",
+    "twiggy": "00:11:22:33:44:55",
+    "hostname": "test",
+    "role": "test",
+    "cbb": {},
+    "genesis_bond": {},
+    "threaded_at": "2026-02-09T23:01:17.563156",
+    "status": "ACTIVE"
+  }
+}
