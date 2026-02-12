@@ -85,6 +85,30 @@
           "maxTLSCertDuration": "15m",
           "defaultTLSCertDuration": "15m"
         }
+      },
+      {
+        "_comment": "YubiKey PKCS#11 Provisioner for EUDI WSCD Type 4",
+        "_reference": "See provisioners/yubikey-pkcs11.json for full config",
+        "type": "K8sSA",
+        "name": "yubikey-piv-bridge",
+        "publicKeys": "${YUBIKEY_PUBLIC_KEY}",
+        "claims": {
+          "minTLSCertDuration": "5m",
+          "maxTLSCertDuration": "24h",
+          "defaultTLSCertDuration": "1h",
+          "disableRenewal": false
+        },
+        "options": {
+          "x509": {
+            "templateFile": "/etc/step-ca/templates/genesis-bond.tpl"
+          }
+        },
+        "luciverse": {
+          "wscd_type": 4,
+          "wscd_level": "HIGH",
+          "hardware_binding": true,
+          "arf_version": "2.8.0"
+        }
       }
     ],
     "template": {
