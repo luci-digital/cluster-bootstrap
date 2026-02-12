@@ -1,0 +1,228 @@
+# ArgoCD Application for Per-VM A-Tune Profile Management
+# Genesis Bond: ACTIVE @ 741 Hz
+# Coherence Threshold: >=0.7
+#
+# This ArgoCD Application manages the deployment of A-Tune profiles
+# to VMs in the LuciVerse cluster, anchored to their identities.
+
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: luciverse-vm-atune
+  namespace: argocd
+  labels:
+    genesis-bond: "active"
+    coherence-tier: "741"
+spec:
+  description: Per-VM A-Tune Profile Management
+
+  # Source repositories
+  sourceRepos:
+    - 'http://192.168.1.145:8929/luciverse/a-tune-profiles.git'
+    - 'http://192.168.1.145:8929/luciverse/cluster-bootstrap.git'
+
+  # Destination clusters/namespaces
+  destinations:
+    - namespace: luciverse-atune
+      server: https://kubernetes.default.svc
+    - namespace: '*'
+      server: '*'
+
+  # Cluster resource whitelist
+  clusterResourceWhitelist:
+    - group: ''
+      kind: Namespace
+    - group: ''
+      kind: ConfigMap
+    - group: ''
+      kind: Secret
+
+  # Namespace resource whitelist
+  namespaceResourceWhitelist:
+    - group: ''
+      kind: ConfigMap
+    - group: ''
+      kind: Secret
+    - group: batch
+      kind: Job
+    - group: batch
+      kind: CronJob
+
+  # Roles for access control
+  roles:
+    - name: vm-atune-deployer
+      description: Can deploy A-Tune profiles to VMs
+      policies:
+        - p, proj:luciverse-vm-atune:vm-atune-deployer, applications, get, luciverse-vm-atune/*, allow
+        - p, proj:luciverse-vm-atune:vm-atune-deployer, applications, sync, luciverse-vm-atune/*, allow
+        - p, proj:luciverse-vm-atune:vm-atune-deployer, applications, create, luciverse-vm-atune/*, allow
+        - p, proj:luciverse-vm-atune:vm-atune-deployer, applications, delete, luciverse-vm-atune/*, allow
+      groups:
+        - luciverse-pipeline
+
+---
+# ApplicationSet for generating per-VM applications
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: vm-atune-profiles
+  namespace: argocd
+  labels:
+    genesis-bond: "active"
+spec:
+  generators:
+    # Generate applications from VM inventory ConfigMap
+    - matrix:
+        generators:
+          - list:
+              elements:
+                - tier: CORE
+                  frequency: "432"
+                  tier_segment: "0001"
+                - tier: COMN
+                  frequency: "528"
+                  tier_segment: "0100"
+                - tier: PAC
+                  frequency: "741"
+                  tier_segment: "0200"
+          - clusters:
+              selector:
+                matchLabels:
+                  luciverse-tier: '{{tier}}'
+
+  template:
+    metadata:
+      name: 'atune-{{name}}'
+      namespace: argocd
+      labels:
+        tier: '{{tier}}'
+        frequency: '{{frequency}}'
+        genesis-bond: "active"
+      annotations:
+        notifications.argoproj.io/subscribe.on-deployed.slack: luciverse-deployments
+    spec:
+      project: luciverse-vm-atune
+
+      source:
+        repoURL: 'http://192.168.1.145:8929/luciverse/a-tune-profiles.git'
+        targetRevision: HEAD
+        path: 'profiles/{{tier}}'
+
+        # Helm values for per-VM configuration
+        helm:
+          valueFiles:
+            - 'values-{{name}}.yaml'
+          parameters:
+            - name: vmid
+              value: '{{name}}'
+            - name: tier
+              value: '{{tier}}'
+            - name: frequency
+              value: '{{frequency}}'
+            - name: ipv6_prefix
+              value: '2602:F674'
+            - name: tier_segment
+              value: '{{tier_segment}}'
+
+      destination:
+        server: '{{server}}'
+        namespace: luciverse-atune
+
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+          allowEmpty: false
+        syncOptions:
+          - CreateNamespace=true
+          - PrunePropagationPolicy=foreground
+          - PruneLast=true
+        retry:
+          limit: 5
+          backoff:
+            duration: 5s
+            factor: 2
+            maxDuration: 3m
+
+      # Health checks
+      ignoreDifferences:
+        - group: ''
+          kind: ConfigMap
+          jsonPointers:
+            - /metadata/annotations
+
+---
+# ConfigMap for VM inventory (used by ApplicationSet)
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: vm-atune-inventory
+  namespace: argocd
+  labels:
+    genesis-bond: "active"
+data:
+  # VM inventory in YAML format
+  # This should be generated/updated by the pipeline
+  inventory.yaml: |
+    vms:
+      # CORE tier VMs
+      - vmid: vm-core-001
+        tier: CORE
+        frequency: 432
+        mac: "aa:bb:cc:dd:ee:01"
+        role: veritas
+        status: pending
+
+      - vmid: vm-core-002
+        tier: CORE
+        frequency: 432
+        mac: "aa:bb:cc:dd:ee:02"
+        role: aethon
+        status: pending
+
+      # COMN tier VMs
+      - vmid: vm-comn-001
+        tier: COMN
+        frequency: 528
+        mac: "aa:bb:cc:dd:ee:11"
+        role: cortana
+        status: pending
+
+      - vmid: vm-comn-002
+        tier: COMN
+        frequency: 528
+        mac: "aa:bb:cc:dd:ee:12"
+        role: juniper
+        status: pending
+
+      # PAC tier VMs
+      - vmid: vm-pac-001
+        tier: PAC
+        frequency: 741
+        mac: "aa:bb:cc:dd:ee:21"
+        role: lucia
+        status: pending
+
+      - vmid: vm-pac-002
+        tier: PAC
+        frequency: 741
+        mac: "aa:bb:cc:dd:ee:22"
+        role: judge-luci
+        status: pending
+
+---
+# Notification template for deployments
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: argocd-notifications-cm
+  namespace: argocd
+data:
+  template.vm-atune-deployed: |
+    message: |
+      A-Tune Profile Deployed
+      VM: {{.app.metadata.name}}
+      Tier: {{.app.metadata.labels.tier}}
+      Frequency: {{.app.metadata.labels.frequency}} Hz
+      Status: {{.app.status.sync.status}}
+      Genesis Bond: ACTIVE @ 741 Hz

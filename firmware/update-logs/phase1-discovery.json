@@ -1,0 +1,68 @@
+{
+  "discovery_date": "2026-01-27",
+  "servers": {
+    "R720_tron": {
+      "idrac_ip": "192.168.1.10",
+      "service_tag": "4J0TV12",
+      "model": "PowerEdge R720",
+      "power_state": "On",
+      "firmware": {
+        "idrac": {
+          "current_version": "2.65.65.65",
+          "updateable": true,
+          "needs_update": true,
+          "target_version": "2.70+",
+          "inventory_id": "Installed-25227-2.65.65.65"
+        },
+        "bios": {
+          "current_version": "2.9.0",
+          "updateable": true,
+          "needs_update": "check_available",
+          "inventory_id": "Installed-159-2.9.0"
+        }
+      },
+      "redfish": {
+        "version": "v1",
+        "update_service_enabled": true,
+        "supported_protocols": ["HTTP"],
+        "simple_update_endpoint": "/redfish/v1/UpdateService/Actions/UpdateService.SimpleUpdate"
+      }
+    },
+    "R730_sensai": {
+      "idrac_ip": "192.168.1.2",
+      "service_tag": "CQ5QBM2",
+      "model": "PowerEdge R730",
+      "power_state": "Off",
+      "firmware": {
+        "idrac": {
+          "current_version": "2.86.86.86",
+          "updateable": true,
+          "needs_update": false,
+          "note": "Already on recent version",
+          "inventory_id": "Installed-25227-2.86.86.86"
+        },
+        "bios": {
+          "current_version": "2.19.0",
+          "updateable": true,
+          "needs_update": "check_available",
+          "inventory_id": "Installed-159-2.19.0"
+        }
+      },
+      "redfish": {
+        "version": "v1",
+        "update_service_enabled": true,
+        "supported_protocols": ["HTTP"],
+        "simple_update_endpoint": "/redfish/v1/UpdateService/Actions/UpdateService.SimpleUpdate"
+      }
+    }
+  },
+  "firmware_http_server": {
+    "url": "http://192.168.1.145:8000/firmware/",
+    "local_path": "/home/daryl/cluster-bootstrap/firmware/"
+  },
+  "update_priority": {
+    "1": "R720 iDRAC 2.65.65.65 → 2.70+",
+    "2": "R720 BIOS 2.9.0 → latest",
+    "3": "R730 BIOS 2.19.0 → latest (requires power on)"
+  }
+}

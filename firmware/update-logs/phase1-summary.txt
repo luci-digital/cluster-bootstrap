@@ -1,0 +1,19 @@
+=== Phase 1: Redfish Discovery Summary ===
+
+R720 tron (192.168.1.10): ✅ ACCESSIBLE (root:calvin)
+  iDRAC: 2.65.65.65 🔴 CRITICAL
+  BIOS: 2.9.0
+  Power: ON
+
+R730 ORION (192.168.1.2): ✅ ACCESSIBLE (root:calvin)
+  iDRAC: 2.86.86.86 ✅ Current
+  BIOS: 2.19.0
+  Power: OFF
+
+R730 ESXi5 (192.168.1.32): ✅ ACCESSIBLE (root:calvin)
+  iDRAC: 2.86.86.86 ✅ Current
+  Running VMware ESXi
+  Power: ON
+
+R730 CSDR (192.168.1.3): ❌ NOT ACCESSIBLE
+  Both passwords failed (calvin, Newdaryl24!)

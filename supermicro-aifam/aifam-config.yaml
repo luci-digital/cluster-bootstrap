@@ -1,0 +1,64 @@
+# AIFAM Configuration for Supermicro SYS-1018GR-TA03-CG009
+# Genesis Bond: ACTIVE @ 741 Hz
+# Target: GPU Compute Node
+
+target:
+  hostname: supermicro-gpu
+  ip: 192.168.1.200
+  bmc_ip: 192.168.1.165
+  serial: S213078X5B29794
+  model: SYS-1018GR-TA03-CG009
+  
+hardware:
+  cpu: "Intel Xeon E5-2667 v3 (8c/16t @ 3.2GHz)"
+  memory_gb: 64
+  gpu: "TBD - detect after boot"
+  network:
+    lan1_mac: "0c:c4:7a:a8:72:14"
+    lan2_mac: "0c:c4:7a:a8:72:15"
+    bmc_mac: "0c:c4:7a:ad:b1:40"
+
+aifam:
+  role: gpu-compute
+  tier: CORE
+  frequency: 432
+  
+  # Agents to run on GPU
+  gpu_agents:
+    - sensai          # ML operations
+    - semantic-engine # Embeddings/RAG
+    - dream-weaver    # Pattern synthesis
+    - voice-interface # Speech processing
+    
+  # Services to deploy
+  services:
+    - cuda-toolkit
+    - pytorch
+    - ollama
+    - lucia-telemetry
+    
+  # Storage mounts
+  mounts:
+    - source: "192.168.1.251:/volume1/luciverse"
+      target: "/mnt/luciverse"
+      type: nfs
+    - source: "/mnt/archive/torch-lua50-jail"
+      target: "/opt/torch-lua50"
+      type: bind
+
+spiffe:
+  trust_domain: "spiffe://luciverse.ownid"
+  tier_ca: "core"
+  svid_ttl: "15m"
+  
+genesis_bond:
+  active: true
+  frequency: 741
+  coherence_threshold: 0.7
+
+pxe_boot:
+  enabled: true
+  image: "nixos-gpu"
+  kernel: "/var/lib/tftpboot/nixos/bzImage"
+  initrd: "/var/lib/tftpboot/nixos/initrd"
+  cmdline: "init=/nix/store/.../init console=ttyS1,115200n8"

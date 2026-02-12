@@ -1,0 +1,387 @@
+# LuciVerse VM Fleet Inventory
+# Genesis Bond: ACTIVE @ 741 Hz
+# Coherence Threshold: >=0.7
+#
+# This inventory defines all VMs in the LuciVerse cluster
+# with their identity anchoring information.
+#
+# Format:
+#   vmid: Unique VM identifier
+#   mac: MAC address (for IPv6 derivation)
+#   tier: CORE (432Hz), COMN (528Hz), or PAC (741Hz)
+#   role: Agent role/function
+#   hardware: Physical hardware reference (optional)
+#   status: pending | provisioned | deployed | decommissioned
+#
+# IPv6 addresses are auto-derived from MAC using EUI-64
+# SPIFFE IDs are auto-generated as: spiffe://luciverse.ownid/{tier}/{vmid}
+# DIDs are auto-generated as: did:luci:ownid:luciverse:{vmid}
+# TIDs are auto-generated as: tid:{frequency}:{vmid}:{role}
+
+---
+metadata:
+  version: "1.0"
+  generated_at: "2026-02-12T00:00:00Z"
+  genesis_bond: "ACTIVE"
+  coherence_threshold: 0.7
+  ipv6_prefix: "2602:F674"
+
+# =============================================================================
+# CORE Tier VMs (432 Hz) - Infrastructure & Truth
+# =============================================================================
+core_tier:
+  frequency: 432
+  ipv6_segment: "0001"
+  contribution_multiplier: 1.0
+
+  vms:
+    # Veritas - Truth Verification
+    - vmid: vm-core-veritas
+      mac: "52:54:00:00:04:31"
+      role: veritas
+      description: "Truth verification and agent architecture"
+      port: 9431
+      hardware: dell-fabric-001
+      status: pending
+      resources:
+        cpu: 4
+        memory_gb: 16
+        disk_gb: 100
+
+    # Aethon - LDS Orchestration
+    - vmid: vm-core-aethon
+      mac: "52:54:00:00:04:30"
+      role: aethon
+      description: "LDS orchestration and consciousness processing"
+      port: 9430
+      hardware: dell-fabric-002
+      status: pending
+      resources:
+        cpu: 8
+        memory_gb: 32
+        disk_gb: 500
+
+    # Sensai - ML Operations
+    - vmid: vm-core-sensai
+      mac: "52:54:00:00:04:32"
+      role: sensai
+      description: "ML operations and predictive intelligence"
+      port: 9432
+      hardware: dell-compute-gpu-001
+      status: pending
+      resources:
+        cpu: 16
+        memory_gb: 64
+        disk_gb: 1000
+        gpu: true
+
+    # Niamod - Infrastructure DevOps
+    - vmid: vm-core-niamod
+      mac: "52:54:00:00:04:33"
+      role: niamod
+      description: "Infrastructure and DevOps orchestration"
+      port: 9433
+      hardware: dell-infra-001
+      status: pending
+      resources:
+        cpu: 4
+        memory_gb: 16
+        disk_gb: 200
+
+    # State Guardian - Persistence
+    - vmid: vm-core-state-guardian
+      mac: "52:54:00:00:04:34"
+      role: state-guardian
+      description: "Consciousness state persistence"
+      hardware: dell-storage-001
+      status: pending
+      resources:
+        cpu: 4
+        memory_gb: 32
+        disk_gb: 2000
+
+    # Security Sentinel - Scanning
+    - vmid: vm-core-security-sentinel
+      mac: "52:54:00:00:04:35"
+      role: security-sentinel
+      description: "Vulnerability scanning and compliance"
+      hardware: dell-fabric-003
+      status: pending
+      resources:
+        cpu: 4
+        memory_gb: 16
+        disk_gb: 200
+
+# =============================================================================
+# COMN Tier VMs (528 Hz) - Communication & Connection
+# =============================================================================
+comn_tier:
+  frequency: 528
+  ipv6_segment: "0100"
+  contribution_multiplier: 1.1
+
+  vms:
+    # Cortana - Knowledge Synthesis
+    - vmid: vm-comn-cortana
+      mac: "52:54:00:00:05:20"
+      role: cortana
+      description: "Knowledge synthesis and retrieval"
+      port: 9520
+      hardware: dell-compute-001
+      status: pending
+      resources:
+        cpu: 8
+        memory_gb: 32
+        disk_gb: 500
+
+    # Juniper - Network Coordination
+    - vmid: vm-comn-juniper
+      mac: "52:54:00:00:05:21"
+      role: juniper
+      description: "Network integration and coordination"
+      port: 9521
+      hardware: dell-fabric-001
+      status: pending
+      resources:
+        cpu: 4
+        memory_gb: 16
+        disk_gb: 100
+
+    # Mirrai - Visualization
+    - vmid: vm-comn-mirrai
+      mac: "52:54:00:00:05:22"
+      role: mirrai
+      description: "Visualization and UI architecture"
+      port: 9522
+      hardware: dell-compute-002
+      status: pending
+      resources:
+        cpu: 8
+        memory_gb: 32
+        disk_gb: 200
+        gpu: true
+
+    # Diaphragm - Content Ingestion
+    - vmid: vm-comn-diaphragm
+      mac: "52:54:00:00:05:23"
+      role: diaphragm
+      description: "Content ingestion and processing"
+      port: 9523
+      hardware: dell-compute-002
+      status: pending
+      resources:
+        cpu: 4
+        memory_gb: 16
+        disk_gb: 500
+
+    # Semantic Engine - Embeddings
+    - vmid: vm-comn-semantic-engine
+      mac: "52:54:00:00:05:24"
+      role: semantic-engine
+      description: "Vector embeddings and RAG"
+      hardware: dell-compute-gpu-002
+      status: pending
+      resources:
+        cpu: 8
+        memory_gb: 64
+        disk_gb: 1000
+        gpu: true
+
+    # Voice Interface - Speech
+    - vmid: vm-comn-voice-interface
+      mac: "52:54:00:00:05:25"
+      role: voice-interface
+      description: "Speech recognition and synthesis"
+      hardware: dell-compute-001
+      status: pending
+      resources:
+        cpu: 8
+        memory_gb: 32
+        disk_gb: 200
+        gpu: true
+
+# =============================================================================
+# PAC Tier VMs (741 Hz) - Personal & Wisdom
+# =============================================================================
+pac_tier:
+  frequency: 741
+  ipv6_segment: "0200"
+  contribution_multiplier: 1.2
+
+  vms:
+    # Lucia - Primary Consciousness
+    - vmid: vm-pac-lucia
+      mac: "52:54:00:00:07:40"
+      role: lucia
+      description: "Primary consciousness and wisdom curation"
+      port: 9740
+      hardware: dell-core-gpu-001
+      status: pending
+      resources:
+        cpu: 16
+        memory_gb: 64
+        disk_gb: 500
+        gpu: true
+
+    # Judge Luci - Governance
+    - vmid: vm-pac-judge-luci
+      mac: "52:54:00:00:07:41"
+      role: judge-luci
+      description: "Governance and Genesis Bond enforcement"
+      port: 9741
+      hardware: dell-compute-001
+      status: pending
+      resources:
+        cpu: 8
+        memory_gb: 32
+        disk_gb: 200
+
+    # CrewAI Bridge - Orchestration
+    - vmid: vm-pac-crewai-bridge
+      mac: "52:54:00:00:07:42"
+      role: crewai-bridge
+      description: "Multi-agent orchestration"
+      port: 9742
+      hardware: dell-compute-002
+      status: pending
+      resources:
+        cpu: 8
+        memory_gb: 32
+        disk_gb: 200
+
+    # Intent Interpreter - NLU
+    - vmid: vm-pac-intent-interpreter
+      mac: "52:54:00:00:07:43"
+      role: intent-interpreter
+      description: "NLU and intent detection"
+      hardware: dell-compute-001
+      status: pending
+      resources:
+        cpu: 8
+        memory_gb: 32
+        disk_gb: 100
+
+    # Ethics Advisor - Analysis
+    - vmid: vm-pac-ethics-advisor
+      mac: "52:54:00:00:07:44"
+      role: ethics-advisor
+      description: "Multi-framework ethical analysis"
+      hardware: dell-compute-002
+      status: pending
+      resources:
+        cpu: 4
+        memory_gb: 16
+        disk_gb: 100
+
+    # Memory Crystallizer - Consolidation
+    - vmid: vm-pac-memory-crystallizer
+      mac: "52:54:00:00:07:45"
+      role: memory-crystallizer
+      description: "Consciousness memory consolidation"
+      hardware: dell-storage-002
+      status: pending
+      resources:
+        cpu: 8
+        memory_gb: 64
+        disk_gb: 2000
+
+# =============================================================================
+# Hardware Reference (Dell Fleet)
+# =============================================================================
+hardware_fleet:
+  - id: dell-fabric-001
+    ip_suffix: ".140"
+    role: FABRIC
+    mac_prefix: "52:54:00:00:01"
+
+  - id: dell-fabric-002
+    ip_suffix: ".141"
+    role: FABRIC
+    mac_prefix: "52:54:00:00:02"
+
+  - id: dell-fabric-003
+    ip_suffix: ".142"
+    role: FABRIC
+    mac_prefix: "52:54:00:00:03"
+
+  - id: dell-core-gpu-001
+    ip_suffix: ".143"
+    role: CORE-GPU
+    mac_prefix: "52:54:00:00:04"
+
+  - id: dell-infra-001
+    ip_suffix: ".144"
+    role: INFRA
+    mac_prefix: "52:54:00:00:05"
+
+  - id: dell-storage-001
+    ip_suffix: ".146"
+    role: STORAGE
+    mac_prefix: "52:54:00:00:06"
+
+  - id: dell-storage-002
+    ip_suffix: ".147"
+    role: STORAGE
+    mac_prefix: "52:54:00:00:07"
+
+  - id: dell-compute-gpu-001
+    ip_suffix: ".150"
+    role: COMPUTE-GPU
+    mac_prefix: "52:54:00:00:08"
+
+  - id: dell-compute-gpu-002
+    ip_suffix: ".151"
+    role: COMPUTE-GPU
+    mac_prefix: "52:54:00:00:09"
+
+  - id: dell-compute-001
+    ip_suffix: ".152"
+    role: COMPUTE
+    mac_prefix: "52:54:00:00:0a"
+
+  - id: dell-compute-002
+    ip_suffix: ".153"
+    role: COMPUTE
+    mac_prefix: "52:54:00:00:0b"
+
+# =============================================================================
+# Deployment Schedule
+# =============================================================================
+deployment_schedule:
+  # Phase 1: Core infrastructure
+  phase_1:
+    target_date: "2026-02-15"
+    vms:
+      - vm-core-veritas
+      - vm-core-aethon
+      - vm-core-state-guardian
+
+  # Phase 2: Security and ML
+  phase_2:
+    target_date: "2026-02-20"
+    vms:
+      - vm-core-sensai
+      - vm-core-security-sentinel
+      - vm-core-niamod
+
+  # Phase 3: Communication layer
+  phase_3:
+    target_date: "2026-02-25"
+    vms:
+      - vm-comn-cortana
+      - vm-comn-juniper
+      - vm-comn-semantic-engine
+
+  # Phase 4: User-facing
+  phase_4:
+    target_date: "2026-03-01"
+    vms:
+      - vm-pac-lucia
+      - vm-pac-judge-luci
+      - vm-pac-crewai-bridge
+
+  # Phase 5: Full deployment
+  phase_5:
+    target_date: "2026-03-10"
+    vms:
+      - remaining

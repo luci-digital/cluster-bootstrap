@@ -1,0 +1,114 @@
+=== REDFISH API DISCOVERY - Tue Jan 27 05:00:21 AM MST 2026 ===
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Testing: R730_CSDR282 (192.168.1.3)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+✓ Network reachable
+Testing credentials: root:*** ... ✗ Failed (HTTP 401)
+Testing credentials: root:*** ... ✓ SUCCESS
+
+📊 Gathering firmware inventory...
+  Model: 13G Monolithic
+  iDRAC Firmware: 2.86.86.86
+  BIOS Version: UNKNOWN
+  Power State: On
+  Lifecycle Controller: UNKNOWN
+
+  Update Methods Available:
+    ✓ HTTP Push URI
+
+  Working Credentials: root:***
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Testing: R730_ORION (192.168.1.2)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+✓ Network reachable
+Testing credentials: root:*** ... ✓ SUCCESS
+
+📊 Gathering firmware inventory...
+  Model: 13G Monolithic
+  iDRAC Firmware: 2.86.86.86
+  BIOS Version: 2.19.0
+  Power State: Off
+  Lifecycle Controller: UNKNOWN
+
+  Update Methods Available:
+    ✓ HTTP Push URI
+
+  Working Credentials: root:***
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Testing: R730_ESXi5 (192.168.1.32)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+✓ Network reachable
+Testing credentials: root:*** ... ✓ SUCCESS
+
+📊 Gathering firmware inventory...
+  Model: 13G Monolithic
+  iDRAC Firmware: 2.86.86.86
+  BIOS Version: 2.19.0
+  Power State: On
+  Lifecycle Controller: UNKNOWN
+
+  Update Methods Available:
+    ✓ HTTP Push URI
+
+  Working Credentials: root:***
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Testing: R720_tron (192.168.1.10)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+✓ Network reachable
+Testing credentials: root:*** ... ✓ SUCCESS
+
+📊 Gathering firmware inventory...
+  Model: 12G Monolithic
+  iDRAC Firmware: 2.65.65.65
+  BIOS Version: 2.9.0
+  Power State: On
+  Lifecycle Controller: UNKNOWN
+
+  Update Methods Available:
+    ✓ HTTP Push URI
+
+  Working Credentials: root:***
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Testing: R730_1JF7Q22 (192.168.1.33)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+✓ Network reachable
+Testing credentials: root:*** ... ✗ Failed (HTTP 401)
+Testing credentials: root:*** ... ✓ SUCCESS
+
+📊 Gathering firmware inventory...
+  Model: 13G Monolithic
+  iDRAC Firmware: 2.86.86.86
+  BIOS Version: 2.19.0
+  Power State: Off
+  Lifecycle Controller: UNKNOWN
+
+  Update Methods Available:
+    ✓ HTTP Push URI
+
+  Working Credentials: root:***
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Testing: R730_1JF6Q22 (192.168.1.31)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+✓ Network reachable
+Testing credentials: root:*** ... ✓ SUCCESS
+
+📊 Gathering firmware inventory...
+  Model: 13G Monolithic
+  iDRAC Firmware: 2.86.86.86
+  BIOS Version: 2.19.0
+  Power State: Off
+  Lifecycle Controller: UNKNOWN
+
+  Update Methods Available:
+    ✓ HTTP Push URI
+
+  Working Credentials: root:***
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Discovery Complete - Tue Jan 27 05:01:19 AM MST 2026

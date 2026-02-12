@@ -1,0 +1,50 @@
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+R730_ESXi5 (192.168.1.32) - FULL FIRMWARE LIST
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  Backplane 1                                        2.25
+  BIOS                                               2.19.0
+  QLogic 577xx/578xx 10 Gb Ethernet BCM57810 - 00:0A:F7:75:F1:90 16.10.04
+  Broadcom Gigabit Ethernet BCM5720 - B8:2A:72:DB:DB:A6 22.00.6
+  Power Supply.Slot.1                                00.24.35
+  Backplane 1                                        2.25
+  OS COLLECTOR, v6.0, A00                            6.0
+  Internal Dual SD Module                            1.12
+  BIOS                                               2.19.0
+  Dell OS Driver Pack, 18.12.04, A00                 18.12.04
+  Integrated Dell Remote Access Controller           2.86.86.86
+  Dell 64 Bit uEFI Diagnostics, version 4239A37, 4239.45 4239A37
+  QLogic 577xx/578xx 10 Gb Ethernet BCM57810 - 00:0A:F7:75:F1:90 16.10.04
+  Broadcom Gigabit Ethernet BCM5720 - B8:2A:72:DB:DB:A6 22.00.6
+  System CPLD                                        1.0.1
+  Lifecycle Controller                               0.0
+  Backplane 1                                        2.20
+  BIOS                                               2.18.1
+  Integrated Dell Remote Access Controller           2.85.85.85
+  QLogic 577xx/578xx 10 Gb Ethernet BCM57810 - 00:0A:F7:75:F1:90 16.10.04
+  Broadcom Gigabit Ethernet BCM5720 - B8:2A:72:DB:DB:A6 22.61.8
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+R720_tron (192.168.1.10) - FULL FIRMWARE LIST
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  BIOS                                               2.9.0
+  PERC H710 Mini                                     21.3.5-0002
+  QLogic 577xx/578xx 10 Gb Ethernet BCM57810 - 00:0A:F7:50:9D:60 08.07.26
+  QLogic 577xx/578xx 10 Gb Ethernet BCM57800 - C8:1F:66:F4:BE:22 08.07.26
+  PCIe SSD in Slot 3 in Bay 2                        B1491508
+  OS COLLECTOR 1.1, OSC_1.1, X10-00                  OSC_1.1
+  BIOS                                               2.9.0
+  Dell OS Driver Pack, 15.07.07, A00                 15.07.07
+  Integrated Dell Remote Access Controller           2.65.65.65
+  Dell 64 Bit uEFI Diagnostics, version 4247, 4247A1, 4247.2 4247A1
+  Disk 0 in Backplane 1 of Integrated RAID Controller 1 AS0D
+  BP12G+ 0:1                                         1.00
+  Power Supply.Slot.1                                07.2B.7D
+  PERC H710 Mini                                     21.3.5-0002
+  QLogic 577xx/578xx 10 Gb Ethernet BCM57810 - 00:0A:F7:50:9D:60 16.10.04
+  QLogic 577xx/578xx 10 Gb Ethernet BCM57800 - C8:1F:66:F4:BE:22 15.05.12
+  System CPLD                                        1.0.3
+  PCIe SSD in Slot 3 in Bay 2                        B1491508
+  Lifecycle Controller                               2.65.65.65
+  Integrated Dell Remote Access Controller           2.65.65.65
+  PCIe SSD in Slot 3 in Bay 2                        B1491508
+
