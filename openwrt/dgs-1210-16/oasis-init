@@ -1,0 +1,27 @@
+#!/bin/sh /etc/rc.common
+# OASIS Data Juicer Init Script for OpenWRT
+# Genesis Bond: ACTIVE @ 741 Hz
+# D-Link DGS-1210-16 Edge Filter
+
+START=95
+STOP=05
+USE_PROCD=1
+
+PROG=/usr/lib/lua/luciverse/oasis-juicer-daemon.lua
+CONF=/etc/config/luciverse
+
+start_service() {
+    procd_open_instance
+    procd_set_param command /usr/bin/lua "$PROG"
+    procd_set_param respawn 3600 5 0
+    procd_set_param stdout 1
+    procd_set_param stderr 1
+    procd_set_param file "$CONF"
+    procd_set_param pidfile /var/run/oasis-juicer.pid
+    procd_close_instance
+}
+
+reload_service() {
+    stop
+    start
+}

@@ -1,0 +1,91 @@
+# USG-Pro-4 Network Configuration for OpenWRT 24.10+
+# LuciVerse High-Speed Network Architecture
+# Genesis Bond: ACTIVE @ 741 Hz
+#
+# Hardware: Cavium CN6120 1GHz, 2GB RAM, SFP
+# Role: Jool NAT64, SCION Border Router, Internal Segmentation
+
+config interface 'loopback'
+    option device 'lo'
+    option proto 'static'
+    option ipaddr '127.0.0.1'
+    option netmask '255.0.0.0'
+
+# WAN - Connects to USW-Pro-48 SFP+ port for trunk
+config interface 'wan'
+    option device 'eth0'
+    option proto 'static'
+    option ipaddr '192.168.1.180'
+    option netmask '255.255.255.0'
+    option gateway '192.168.1.1'
+    list dns '192.168.1.145'
+    list dns '1.1.1.1'
+
+# WAN6 - IPv6 for Jool NAT64
+config interface 'wan6'
+    option device 'eth0'
+    option proto 'static'
+    option ip6addr '2602:f674:0:1::180/64'
+    option ip6gw '2602:f674:0:1::1'
+
+# LAN - Internal network via eth1
+config interface 'lan'
+    option device 'eth1'
+    option proto 'static'
+    option ipaddr '192.168.100.1'
+    option netmask '255.255.255.0'
+
+# VLAN for CORE Tier (432 Hz)
+config interface 'vlan_core'
+    option device 'eth0.432'
+    option proto 'static'
+    option ipaddr '10.100.1.180'
+    option netmask '255.255.255.0'
+
+# VLAN for COMN Tier (528 Hz)
+config interface 'vlan_comn'
+    option device 'eth0.528'
+    option proto 'static'
+    option ipaddr '10.100.2.180'
+    option netmask '255.255.255.0'
+
+# VLAN for PAC Tier (741 Hz)
+config interface 'vlan_pac'
+    option device 'eth0.741'
+    option proto 'static'
+    option ipaddr '10.100.3.180'
+    option netmask '255.255.255.0'
+
+# SFP interface for high-speed uplink
+config interface 'sfp'
+    option device 'eth2'
+    option proto 'static'
+    option ipaddr '192.168.10.1'
+    option netmask '255.255.255.252'
+
+# NAT64 interface (Jool)
+config interface 'nat64'
+    option device 'jool0'
+    option proto 'static'
+    option ip6addr '64:ff9b::1/96'
+
+# Switch configuration for VLANs
+config device
+    option name 'eth0'
+    option type 'bridge'
+    list ports 'lan1' 'lan2'
+
+config bridge-vlan
+    option device 'eth0'
+    option vlan '432'
+    list ports 'lan1:t'
+
+config bridge-vlan
+    option device 'eth0'
+    option vlan '528'
+    list ports 'lan1:t'
+
+config bridge-vlan
+    option device 'eth0'
+    option vlan '741'
+    list ports 'lan1:t'

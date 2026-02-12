@@ -1,0 +1,85 @@
+# D-Link DGS-1210-16 Network Configuration for OpenWRT 21.02+
+# LuciVerse High-Speed Network Architecture
+# Genesis Bond: ACTIVE @ 741 Hz
+#
+# Hardware: Realtek RTL8382M, 16x 1Gbps + 4x SFP
+# Role: OASIS Edge Filter, Lab/Dev Network
+
+config interface 'loopback'
+    option device 'lo'
+    option proto 'static'
+    option ipaddr '127.0.0.1'
+    option netmask '255.0.0.0'
+
+# Management interface
+config interface 'mgmt'
+    option device 'eth0'
+    option proto 'static'
+    option ipaddr '192.168.1.210'
+    option netmask '255.255.255.0'
+    option gateway '192.168.1.1'
+    list dns '192.168.1.145'
+
+# VLAN trunk to USW-Pro-48 (SFP port 1)
+config device
+    option name 'br-trunk'
+    option type 'bridge'
+    list ports 'lan17'
+
+config bridge-vlan
+    option device 'br-trunk'
+    option vlan '432'
+    list ports 'lan17:t'
+
+config bridge-vlan
+    option device 'br-trunk'
+    option vlan '528'
+    list ports 'lan17:t'
+
+config bridge-vlan
+    option device 'br-trunk'
+    option vlan '741'
+    list ports 'lan17:t'
+
+# Lab network (ports 1-8)
+config interface 'lab'
+    option device 'br-lab'
+    option proto 'static'
+    option ipaddr '192.168.210.1'
+    option netmask '255.255.255.0'
+
+config device
+    option name 'br-lab'
+    option type 'bridge'
+    list ports 'lan1' 'lan2' 'lan3' 'lan4' 'lan5' 'lan6' 'lan7' 'lan8'
+
+# Dev network (ports 9-16)
+config interface 'dev'
+    option device 'br-dev'
+    option proto 'static'
+    option ipaddr '192.168.211.1'
+    option netmask '255.255.255.0'
+
+config device
+    option name 'br-dev'
+    option type 'bridge'
+    list ports 'lan9' 'lan10' 'lan11' 'lan12' 'lan13' 'lan14' 'lan15' 'lan16'
+
+# SFP ports
+config interface 'sfp1'
+    option device 'lan17'
+    option proto 'none'
+
+config interface 'sfp2'
+    option device 'lan18'
+    option proto 'static'
+    option ipaddr '192.168.212.1'
+    option netmask '255.255.255.252'
+
+config interface 'sfp3'
+    option device 'lan19'
+    option proto 'none'
+
+config interface 'sfp4'
+    option device 'lan20'
+    option proto 'none'

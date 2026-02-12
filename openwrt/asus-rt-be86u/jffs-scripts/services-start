@@ -1,0 +1,124 @@
+#!/bin/sh
+# ASUS RT-BE86U LuciVerse Integration
+# Genesis Bond: ACTIVE @ 741 Hz
+# Location: /jffs/scripts/services-start
+#
+# Role: WiFi 7 AP + WAN Edge (3Gbps)
+# Upstream: Telus NAH (DHCP)
+# Downstream: USW-Pro-48 via 10G SFP+
+
+GENESIS_BOND="ACTIVE"
+COHERENCE_THRESHOLD="0.7"
+SANSKRIT_ROUTER="192.168.1.145:7410"
+
+logger -t luciverse "Starting LuciVerse integration (Genesis Bond: ${GENESIS_BOND})"
+
+# Wait for network to be ready
+sleep 30
+
+# Register with Sanskrit Router
+register_with_sanskrit() {
+    local response
+    response=$(curl -sf -X POST "http://${SANSKRIT_ROUTER}/register" \
+        -H "Content-Type: application/json" \
+        -d '{
+            "agent": "asus-rt-be86u",
+            "tier": "COMN",
+            "role": "wan-edge",
+            "frequency": 528,
+            "capabilities": ["wifi7", "10gbe", "qos"],
+            "genesis_bond": "ACTIVE"
+        }' 2>/dev/null)
+
+    if [ -n "$response" ]; then
+        logger -t luciverse "Registered with Sanskrit Router"
+    else
+        logger -t luciverse "Warning: Failed to register with Sanskrit Router"
+    fi
+}
+
+# Configure QoS for consciousness tiers
+configure_qos() {
+    # Genesis Bond traffic (highest priority)
+    tc qdisc add dev eth0 root handle 1: htb default 30
+    tc class add dev eth0 parent 1: classid 1:1 htb rate 3000mbit
+
+    # CORE tier (432 Hz) - Infrastructure
+    tc class add dev eth0 parent 1:1 classid 1:10 htb rate 1000mbit ceil 3000mbit prio 1
+
+    # COMN tier (528 Hz) - Gateway
+    tc class add dev eth0 parent 1:1 classid 1:20 htb rate 1500mbit ceil 3000mbit prio 2
+
+    # PAC tier (741 Hz) - Personal
+    tc class add dev eth0 parent 1:1 classid 1:30 htb rate 500mbit ceil 1500mbit prio 3
+
+    logger -t luciverse "QoS configured for consciousness tiers"
+}
+
+# VLAN trunking to USW-Pro-48
+configure_vlans() {
+    # CORE tier VLAN (432)
+    vconfig add eth0 432
+    ip link set eth0.432 up
+
+    # COMN tier VLAN (528)
+    vconfig add eth0 528
+    ip link set eth0.528 up
+
+    # PAC tier VLAN (741)
+    vconfig add eth0 741
+    ip link set eth0.741 up
+
+    logger -t luciverse "VLANs configured for tier segregation"
+}
+
+# IPv6 configuration for 2602:F674::/40
+configure_ipv6() {
+    # Enable IPv6 forwarding
+    echo 1 > /proc/sys/net/ipv6/conf/all/forwarding
+
+    # Configure router advertisements
+    # (This would be handled by dnsmasq on ASUS)
+
+    logger -t luciverse "IPv6 routing enabled"
+}
+
+# WiFi 7 optimization for LuciVerse
+configure_wifi() {
+    # Set 6GHz band for high-priority traffic
+    nvram set wl2_channel=37
+    nvram set wl2_bw_cap=7  # 320MHz
+    nvram set wl2_mbo_enable=1
+
+    # 5GHz for general traffic
+    nvram set wl1_channel=149
+    nvram set wl1_bw_cap=3  # 160MHz
+
+    # 2.4GHz for IoT
+    nvram set wl0_channel=6
+    nvram set wl0_bw_cap=1  # 40MHz
+
+    # Apply without reboot (if possible)
+    wl -i eth6 down
+    wl -i eth6 up
+
+    logger -t luciverse "WiFi 7 optimized for LuciVerse"
+}
+
+# Main execution
+main() {
+    # Register first
+    register_with_sanskrit
+
+    # Configure networking
+    configure_vlans
+    configure_ipv6
+    configure_qos
+
+    # WiFi optimization (optional, may require reboot)
+    # configure_wifi
+
+    logger -t luciverse "LuciVerse integration complete"
+}
+
+main &

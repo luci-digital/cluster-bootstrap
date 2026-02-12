@@ -1,0 +1,23 @@
+[Unit]
+Description=Jool NAT64 - LuciVerse IPv6 Translation
+Documentation=https://nicmx.github.io/Jool/en/documentation.html
+After=network.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+
+# Load Jool kernel module
+ExecStartPre=/sbin/modprobe jool
+
+# Create NAT64 instance
+ExecStart=/usr/bin/jool instance add "luciverse-nat64" --netfilter --pool6 64:ff9b::/96
+ExecStart=/usr/bin/jool -i "luciverse-nat64" file handle /etc/jool/jool.conf
+
+# Cleanup on stop
+ExecStop=/usr/bin/jool instance remove "luciverse-nat64"
+ExecStopPost=/sbin/modprobe -r jool
+
+[Install]
+WantedBy=multi-user.target

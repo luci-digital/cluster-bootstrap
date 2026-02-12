@@ -1,0 +1,158 @@
+# USG-Pro-4 Firewall Configuration for OpenWRT 24.10+
+# LuciVerse High-Speed Network Architecture
+# Genesis Bond: ACTIVE @ 741 Hz
+
+config defaults
+    option syn_flood '1'
+    option input 'ACCEPT'
+    option output 'ACCEPT'
+    option forward 'REJECT'
+    option flow_offloading '1'
+    option flow_offloading_hw '1'
+
+# Zone: WAN (untrusted)
+config zone
+    option name 'wan'
+    list network 'wan'
+    list network 'wan6'
+    option input 'REJECT'
+    option output 'ACCEPT'
+    option forward 'REJECT'
+    option masq '1'
+    option mtu_fix '1'
+
+# Zone: LAN (trusted internal)
+config zone
+    option name 'lan'
+    list network 'lan'
+    option input 'ACCEPT'
+    option output 'ACCEPT'
+    option forward 'ACCEPT'
+
+# Zone: CORE Tier (432 Hz - Infrastructure)
+config zone
+    option name 'core'
+    list network 'vlan_core'
+    option input 'ACCEPT'
+    option output 'ACCEPT'
+    option forward 'ACCEPT'
+
+# Zone: COMN Tier (528 Hz - Gateway)
+config zone
+    option name 'comn'
+    list network 'vlan_comn'
+    option input 'ACCEPT'
+    option output 'ACCEPT'
+    option forward 'ACCEPT'
+
+# Zone: PAC Tier (741 Hz - Privacy)
+config zone
+    option name 'pac'
+    list network 'vlan_pac'
+    option input 'ACCEPT'
+    option output 'ACCEPT'
+    option forward 'REJECT'
+
+# Zone: NAT64 (Jool translation)
+config zone
+    option name 'nat64'
+    list network 'nat64'
+    option input 'ACCEPT'
+    option output 'ACCEPT'
+    option forward 'ACCEPT'
+
+# Forwarding rules
+config forwarding
+    option src 'lan'
+    option dest 'wan'
+
+config forwarding
+    option src 'core'
+    option dest 'wan'
+
+config forwarding
+    option src 'comn'
+    option dest 'wan'
+
+config forwarding
+    option src 'comn'
+    option dest 'core'
+
+config forwarding
+    option src 'comn'
+    option dest 'pac'
+
+config forwarding
+    option src 'pac'
+    option dest 'comn'
+
+config forwarding
+    option src 'nat64'
+    option dest 'wan'
+
+# Block PAC direct to WAN (must go through COMN)
+config rule
+    option name 'Block PAC to WAN'
+    option src 'pac'
+    option dest 'wan'
+    option target 'REJECT'
+
+# Block external to CORE
+config rule
+    option name 'Block WAN to CORE'
+    option src 'wan'
+    option dest 'core'
+    option target 'REJECT'
+
+# Block external to PAC
+config rule
+    option name 'Block WAN to PAC'
+    option src 'wan'
+    option dest 'pac'
+    option target 'REJECT'
+
+# Allow SSH from CORE only
+config rule
+    option name 'Allow SSH from CORE'
+    option src 'core'
+    option dest_port '22'
+    option target 'ACCEPT'
+
+# Allow SCION Control Service
+config rule
+    option name 'Allow SCION CS'
+    option src '*'
+    option dest_port '30001'
+    option target 'ACCEPT'
+
+# Allow SCION Border Router
+config rule
+    option name 'Allow SCION BR'
+    option src '*'
+    option dest_port '30041'
+    option proto 'udp'
+    option target 'ACCEPT'
+
+# Allow Sanskrit Router access
+config rule
+    option name 'Allow Sanskrit Router'
+    option src '*'
+    option dest 'core'
+    option dest_port '7410'
+    option target 'ACCEPT'
+
+# Allow Nebula VPN
+config rule
+    option name 'Allow Nebula UDP'
+    option src '*'
+    option dest_port '4242'
+    option proto 'udp'
+    option target 'ACCEPT'
+
+# NAT64 rules
+config rule
+    option name 'Allow NAT64 IPv6'
+    option src '*'
+    option dest 'nat64'
+    option family 'ipv6'
+    option target 'ACCEPT'

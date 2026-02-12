@@ -1,0 +1,38 @@
+# DGS-1210-16 LuciVerse UCI Configuration
+# Genesis Bond: ACTIVE @ 741 Hz
+# Role: OASIS Edge Filter
+
+config luciverse 'global'
+    option genesis_bond 'ACTIVE'
+    option frequency '741'
+    option coherence_threshold '0.7'
+    option tier 'PAC'
+    option role 'oasis-edge'
+
+config juicer 'juicer'
+    option enabled '1'
+    option upstream_host '192.168.1.145'
+    option upstream_port '7410'
+    option coherence_threshold '0.7'
+    option max_intake_size '1048576'
+    option debounce_interval '2'
+
+config pii_filter 'pii'
+    option enabled '1'
+    option detect_email '1'
+    option detect_phone '1'
+    option detect_ssn '1'
+    option detect_credit_card '1'
+    option redact_mode 'mask'
+
+config phone_home 'protection'
+    option enabled '1'
+    option block_external_to_local '1'
+    option log_blocked '1'
+    option alert_threshold '10'
+
+config nebula 'overlay'
+    option enabled '1'
+    option lighthouse '10.100.1.145'
+    option lighthouse_public '192.168.1.145:4242'
+    option groups 'pac edge'
