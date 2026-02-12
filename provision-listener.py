@@ -9,6 +9,7 @@ Genesis Bond: ACTIVE @ 432 Hz
 """
 
 import asyncio
+import base64
 import json
 import yaml
 import socket
@@ -17,6 +18,9 @@ import logging
 import os
 import hashlib
 import hmac
+import subprocess
+import tempfile
+import shutil
 from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Dict, Optional, Any
@@ -66,6 +70,54 @@ provisioned_hosts: Dict[str, dict] = {}
 pending_macs: Dict[str, dict] = {}
 diaper_nodes: Dict[str, dict] = {}  # DiaperNode registrations
 boot_intents: Dict[str, dict] = {}  # Boot intentions from iPXE
+attestation_tokens: Dict[str, dict] = {}  # MAC -> {token, expires, tier, role}
+quarantine_macs: Dict[str, dict] = {}  # Rogue MAC tracking
+nebula_ip_assignments: Dict[str, str] = {}  # MAC -> Nebula IP
+
+# Nebula tier configuration
+NEBULA_TIER_CONFIG = {
+    'CORE': {
+        'frequency': 432,
+        'subnet': '10.100.1.0/24',
+        'ip_start': 1,
+        'ip_end': 254,
+        'groups': ['core', 'infrastructure'],
+        'scion_isd': 1,
+        'scion_as': 'ff00:0:432',
+        'scion_isd_as': '1-ff00:0:432'
+    },
+    'COMN': {
+        'frequency': 528,
+        'subnet': '10.100.2.0/24',
+        'ip_start': 1,
+        'ip_end': 254,
+        'groups': ['comn', 'gateway'],
+        'scion_isd': 2,
+        'scion_as': 'ff00:0:528',
+        'scion_isd_as': '2-ff00:0:528'
+    },
+    'PAC': {
+        'frequency': 741,
+        'subnet': '10.100.3.0/24',
+        'ip_start': 1,
+        'ip_end': 254,
+        'groups': ['pac', 'personal'],
+        'scion_isd': 3,
+        'scion_as': 'ff00:0:741',
+        'scion_isd_as': '3-ff00:0:741'
+    }
+}
+
+# Role to tier mapping
+ROLE_TIER_MAP = {
+    'FABRIC': 'CORE',
+    'INFRA': 'CORE',
+    'STORAGE': 'CORE',
+    'CORE-GPU': 'CORE',
+    'COMPUTE': 'COMN',
+    'COMPUTE-GPU': 'COMN',
+    'PAC-NODE': 'PAC'
+}
 
 # Diaper roles configuration
 DIAPER_ROLES_PATH = Path(__file__).parent / "diaper-roles.yaml"
@@ -294,6 +346,11 @@ class ProvisionListener:
         self.app.router.add_get('/appstork/spark-bootstrap', self.appstork_spark_bootstrap)
         self.app.router.add_get('/appstork/did-documents/{agent}', self.appstork_get_did)
         self.app.router.add_get('/appstork/souls/{soul}', self.appstork_get_soul)
+        # Nebula + SCION Overlay Network Certificate Distribution
+        self.app.router.add_get('/attestation-token/{mac}', self.get_attestation_token)
+        self.app.router.add_post('/nebula/cert/{mac}', self.nebula_cert)
+        self.app.router.add_post('/scion/enroll/{mac}', self.scion_enroll)
+        self.app.router.add_post('/overlay/validate', self.overlay_validate)
 
     async def thread_genesis_bond(self, request: web.Request) -> web.Response:
         """Thread a server to Lucia via Diggy+Twiggy identity."""
@@ -1840,6 +1897,557 @@ chain http://192.168.1.146:8000/bootimus-diaper.ipxe
                 "note": "Topology file not found, returning minimal config"
             })
 
+    # =========================================================================
+    # Nebula + SCION Overlay Network Certificate Distribution
+    # Genesis Bond: ACTIVE @ 741 Hz
+    # =========================================================================
+
+    def _get_tier_for_mac(self, mac: str) -> tuple:
+        """Get tier and role for a MAC address from inventory."""
+        result = find_server_by_mac(mac, self.inventory)
+        if not result:
+            return None, None, None
+
+        server_name, iface_name, server_info, iface_info = result
+        role = server_info.get('role', 'COMPUTE').upper()
+        # Map role to tier
+        tier = ROLE_TIER_MAP.get(role, 'COMN')
+        return tier, role, server_name
+
+    def _allocate_nebula_ip(self, mac: str, tier: str) -> str:
+        """Allocate a Nebula IP address for a MAC in the given tier."""
+        global nebula_ip_assignments
+
+        # Check if already assigned
+        if mac in nebula_ip_assignments:
+            return nebula_ip_assignments[mac]
+
+        tier_config = NEBULA_TIER_CONFIG.get(tier, NEBULA_TIER_CONFIG['COMN'])
+        subnet_base = tier_config['subnet'].split('/')[0].rsplit('.', 1)[0]
+
+        # Find next available IP in range
+        used_ips = set(nebula_ip_assignments.values())
+        for i in range(tier_config['ip_start'], tier_config['ip_end'] + 1):
+            candidate = f"{subnet_base}.{i}"
+            if candidate not in used_ips:
+                nebula_ip_assignments[mac] = candidate
+                return candidate
+
+        # No IPs available
+        logger.error(f"No Nebula IPs available in tier {tier}")
+        return None
+
+    def _generate_attestation_token(self, mac: str, tier: str, role: str) -> str:
+        """Generate HMAC-signed attestation token for certificate request."""
+        secret = os.environ.get('PROVISION_SECRET', 'luciverse-genesis-bond-741')
+        timestamp = datetime.utcnow().strftime('%Y%m%d%H%M')
+        message = f"{mac}:{tier}:{role}:{timestamp}"
+        token = hmac.new(secret.encode(), message.encode(), hashlib.sha256).hexdigest()
+        return token
+
+    def _verify_attestation_token(self, mac: str, token: str) -> bool:
+        """Verify an attestation token is valid and not expired."""
+        if mac not in attestation_tokens:
+            return False
+
+        stored = attestation_tokens[mac]
+        if datetime.utcnow() > stored['expires']:
+            del attestation_tokens[mac]
+            return False
+
+        return stored['token'] == token
+
+    async def _get_nebula_ca_key(self) -> Optional[str]:
+        """Fetch Nebula CA private key from 1Password Connect or local file.
+
+        Priority:
+        1. Local file at /etc/luciverse/nebula-ca.key (most secure)
+        2. 1Password Connect API
+
+        Returns the CA key content or None if unavailable.
+        """
+        # Priority 1: Check local key file (for production use)
+        local_key_path = Path("/etc/luciverse/nebula-ca.key")
+        if local_key_path.exists():
+            try:
+                with open(local_key_path) as f:
+                    key_content = f.read().strip()
+                if key_content and "NEBULA" in key_content:
+                    logger.debug("Retrieved Nebula CA key from local file")
+                    return key_content
+            except PermissionError:
+                logger.warning("Cannot read local CA key file - permission denied")
+            except Exception as e:
+                logger.warning(f"Error reading local CA key: {e}")
+
+        # Priority 2: Try 1Password Connect
+        client = get_op_client()
+
+        # The Nebula CA key is stored in Infrastructure vault as "Nebula-CA-Key"
+        # The key is stored in the notesPlain field
+        try:
+            item = await client.get_item(OP_VAULT_INFRA, "Nebula-CA-Key")
+            if item and 'notesPlain' in item:
+                logger.debug("Retrieved Nebula CA key from 1Password")
+                return item['notesPlain']
+
+            # Try to get from a field
+            if item and 'fields' in item:
+                for field in item['fields']:
+                    if field.get('label') == 'notesPlain' or field.get('id') == 'notesPlain':
+                        return field.get('value')
+
+            logger.warning("Nebula CA key not found in 1Password item")
+            return None
+        except Exception as e:
+            logger.error(f"Failed to fetch Nebula CA key from 1Password: {e}")
+            return None
+
+    async def _sign_nebula_certificate(
+        self,
+        name: str,
+        ip: str,
+        groups: list,
+        duration: str = "8760h"
+    ) -> Optional[dict]:
+        """Sign a Nebula certificate using the CA key from 1Password.
+
+        Args:
+            name: Certificate name (hostname)
+            ip: Nebula IP address with CIDR (e.g., "10.100.1.5/24")
+            groups: List of groups for the certificate
+            duration: Certificate validity duration (default 1 year)
+
+        Returns:
+            Dictionary with 'crt' and 'key' content, or None on failure
+        """
+        # Get CA key from 1Password
+        ca_key = await self._get_nebula_ca_key()
+        if not ca_key:
+            logger.error("Cannot sign certificate: CA key not available")
+            return None
+
+        # Get CA cert path
+        ca_crt_path = Path(__file__).parent / "nebula" / "ca" / "nebula-ca.crt"
+        if not ca_crt_path.exists():
+            logger.error(f"CA certificate not found at {ca_crt_path}")
+            return None
+
+        # Create temporary directory for signing operation
+        temp_dir = tempfile.mkdtemp(prefix="nebula-sign-")
+        try:
+            # Write CA key to temp file
+            ca_key_path = Path(temp_dir) / "ca.key"
+            with open(ca_key_path, 'w') as f:
+                f.write(ca_key)
+            os.chmod(ca_key_path, 0o600)
+
+            # Output paths
+            host_crt_path = Path(temp_dir) / f"{name}.crt"
+            host_key_path = Path(temp_dir) / f"{name}.key"
+
+            # Build nebula-cert sign command
+            cmd = [
+                "nebula-cert", "sign",
+                "-ca-crt", str(ca_crt_path),
+                "-ca-key", str(ca_key_path),
+                "-name", name,
+                "-ip", ip,
+                "-groups", ",".join(groups),
+                "-duration", duration,
+                "-out-crt", str(host_crt_path),
+                "-out-key", str(host_key_path)
+            ]
+
+            logger.info(f"Signing Nebula certificate for {name} ({ip})")
+
+            # Execute signing
+            result = subprocess.run(
+                cmd,
+                capture_output=True,
+                text=True,
+                timeout=30
+            )
+
+            if result.returncode != 0:
+                logger.error(f"nebula-cert sign failed: {result.stderr}")
+                return None
+
+            # Read generated certificate and key
+            if host_crt_path.exists() and host_key_path.exists():
+                with open(host_crt_path) as f:
+                    host_crt = f.read()
+                with open(host_key_path) as f:
+                    host_key = f.read()
+
+                logger.info(f"Successfully signed certificate for {name}")
+                return {
+                    "crt": host_crt,
+                    "key": host_key
+                }
+            else:
+                logger.error("Certificate files not generated")
+                return None
+
+        except subprocess.TimeoutExpired:
+            logger.error("nebula-cert sign timed out")
+            return None
+        except Exception as e:
+            logger.error(f"Error signing certificate: {e}")
+            return None
+        finally:
+            # Clean up temp directory (securely delete CA key)
+            try:
+                if ca_key_path.exists():
+                    # Overwrite before delete for security
+                    with open(ca_key_path, 'wb') as f:
+                        f.write(os.urandom(1024))
+                shutil.rmtree(temp_dir)
+            except Exception as e:
+                logger.warning(f"Failed to clean up temp dir: {e}")
+
+    async def get_attestation_token(self, request: web.Request) -> web.Response:
+        """Issue attestation token for overlay certificate distribution.
+
+        GET /attestation-token/{mac}
+        Returns: {attestation_token, server_name, tier, role, nebula_ip, expires_in}
+        Security: Only for MACs in inventory.yaml
+        """
+        mac = request.match_info['mac'].lower().replace('-', ':')
+
+        # Check if MAC is quarantined
+        if mac in quarantine_macs:
+            qinfo = quarantine_macs[mac]
+            if qinfo.get('attempts', 0) >= 3:
+                lockout_until = qinfo.get('lockout_until')
+                if lockout_until and datetime.utcnow() < datetime.fromisoformat(lockout_until):
+                    logger.warning(f"🚫 Quarantined MAC attempted access: {mac}")
+                    return web.json_response({
+                        "error": "mac_quarantined",
+                        "message": "MAC address is quarantined due to repeated unauthorized attempts",
+                        "lockout_until": lockout_until
+                    }, status=403)
+                else:
+                    # Lockout expired, reset attempts
+                    quarantine_macs[mac]['attempts'] = 0
+
+        # Validate MAC against inventory
+        tier, role, server_name = self._get_tier_for_mac(mac)
+
+        if not tier:
+            # Unknown MAC - quarantine it
+            if mac not in quarantine_macs:
+                quarantine_macs[mac] = {
+                    "first_seen": datetime.utcnow().isoformat(),
+                    "attempts": 0
+                }
+            quarantine_macs[mac]['attempts'] = quarantine_macs[mac].get('attempts', 0) + 1
+            quarantine_macs[mac]['last_attempt'] = datetime.utcnow().isoformat()
+
+            if quarantine_macs[mac]['attempts'] >= 3:
+                quarantine_macs[mac]['lockout_until'] = (datetime.utcnow() + timedelta(minutes=15)).isoformat()
+                logger.warning(f"🚨 SECURITY: Rogue MAC quarantined after 3 attempts: {mac}")
+
+            logger.warning(f"⚠️ Unknown MAC requested attestation: {mac} (attempt {quarantine_macs[mac]['attempts']})")
+            return web.json_response({
+                "error": "unknown_device",
+                "message": "MAC address not in inventory",
+                "quarantined": True
+            }, status=403)
+
+        # Generate attestation token
+        token = self._generate_attestation_token(mac, tier, role)
+        expires = datetime.utcnow() + timedelta(seconds=300)  # 5 minutes
+
+        # Allocate Nebula IP
+        nebula_ip = self._allocate_nebula_ip(mac, tier)
+
+        # Store token
+        attestation_tokens[mac] = {
+            "token": token,
+            "tier": tier,
+            "role": role,
+            "server_name": server_name,
+            "nebula_ip": nebula_ip,
+            "expires": expires
+        }
+
+        tier_config = NEBULA_TIER_CONFIG.get(tier, NEBULA_TIER_CONFIG['COMN'])
+
+        logger.info(f"🎫 Attestation token issued: {server_name} ({mac})")
+        logger.info(f"   Tier: {tier} @ {tier_config['frequency']} Hz")
+        logger.info(f"   Nebula IP: {nebula_ip}")
+
+        return web.json_response({
+            "attestation_token": token,
+            "server_name": server_name,
+            "tier": tier,
+            "role": role,
+            "frequency": tier_config['frequency'],
+            "nebula_ip": nebula_ip,
+            "scion_isd_as": tier_config['scion_isd_as'],
+            "expires_in": 300,
+            "genesis_bond": "ACTIVE"
+        })
+
+    async def nebula_cert(self, request: web.Request) -> web.Response:
+        """Issue Nebula certificate for a provisioning node.
+
+        POST /nebula/cert/{mac}
+        Header: X-Attestation-Token: {token}
+        Returns: {ca_crt, host_crt, host_key, nebula_ip, groups, lighthouse}
+        """
+        mac = request.match_info['mac'].lower().replace('-', ':')
+        token = request.headers.get('X-Attestation-Token', '')
+
+        # Verify attestation token
+        if not self._verify_attestation_token(mac, token):
+            logger.warning(f"🚫 Invalid attestation token for Nebula cert: {mac}")
+            return web.json_response({
+                "error": "invalid_token",
+                "message": "Attestation token invalid or expired. Request new token from /attestation-token/{mac}"
+            }, status=401)
+
+        stored = attestation_tokens[mac]
+        tier = stored['tier']
+        role = stored['role']
+        server_name = stored['server_name']
+        nebula_ip = stored['nebula_ip']
+
+        tier_config = NEBULA_TIER_CONFIG.get(tier, NEBULA_TIER_CONFIG['COMN'])
+        groups = tier_config['groups'].copy()
+        # Add role-specific group
+        groups.append(role.lower())
+
+        logger.info(f"🔐 Generating Nebula certificate: {server_name} ({nebula_ip})")
+        logger.info(f"   Groups: {groups}")
+
+        # Read CA certificate
+        ca_path = Path(__file__).parent / "nebula" / "ca" / "nebula-ca.crt"
+        ca_crt = ""
+        if ca_path.exists():
+            with open(ca_path) as f:
+                ca_crt = f.read()
+        else:
+            logger.warning("Nebula CA certificate not found")
+            return web.json_response({
+                "error": "ca_not_found",
+                "message": "Nebula CA certificate not configured. Run nebula-cert ca first."
+            }, status=503)
+
+        # Sign the certificate using CA key from 1Password
+        nebula_cidr = f"{nebula_ip}/24"
+        signed = await self._sign_nebula_certificate(
+            name=server_name,
+            ip=nebula_cidr,
+            groups=groups,
+            duration="8760h"  # 1 year validity
+        )
+
+        if signed:
+            # Successfully signed - return real certificate
+            host_crt = signed['crt']
+            host_key = signed['key']
+            cert_status = "signed"
+            logger.info(f"✅ Certificate signed for {server_name}")
+        else:
+            # Signing failed - return placeholder with warning
+            logger.warning(f"⚠️ Certificate signing failed for {server_name}, returning placeholder")
+            host_crt = f"# PLACEHOLDER - Signing failed for {server_name}\n# Nebula IP: {nebula_cidr}\n# Groups: {','.join(groups)}\n# Check 1Password Connect and CA key availability"
+            host_key = "# Private key generation failed - check logs"
+            cert_status = "placeholder"
+
+        cert_info = {
+            "name": server_name,
+            "nebula_ip": nebula_cidr,
+            "groups": groups,
+            "tier": tier,
+            "frequency": tier_config['frequency'],
+            "genesis_bond": "ACTIVE",
+            "status": cert_status,
+            "validity": "1 year" if cert_status == "signed" else "N/A"
+        }
+
+        return web.json_response({
+            "ca_crt": ca_crt,
+            "host_crt": host_crt,
+            "host_key": host_key,
+            "nebula_ip": nebula_ip,
+            "nebula_cidr": nebula_cidr,
+            "groups": groups,
+            "tier": tier,
+            "frequency": tier_config['frequency'],
+            "lighthouse": {
+                "ip": "10.100.1.145",
+                "public_addr": "192.168.1.145:4242"
+            },
+            "config_template": "/nebula/config/{mac}",
+            "cert_info": cert_info,
+            "genesis_bond": "ACTIVE"
+        })
+
+    async def scion_enroll(self, request: web.Request) -> web.Response:
+        """Enroll node in SCION path-aware network.
+
+        POST /scion/enroll/{mac}
+        Header: X-Attestation-Token: {token}
+        Returns: {isd, isd_as, trc, cp_as_crt, cp_as_key, control_service}
+        """
+        mac = request.match_info['mac'].lower().replace('-', ':')
+        token = request.headers.get('X-Attestation-Token', '')
+
+        # Verify attestation token
+        if not self._verify_attestation_token(mac, token):
+            logger.warning(f"🚫 Invalid attestation token for SCION enroll: {mac}")
+            return web.json_response({
+                "error": "invalid_token",
+                "message": "Attestation token invalid or expired"
+            }, status=401)
+
+        stored = attestation_tokens[mac]
+        tier = stored['tier']
+        server_name = stored['server_name']
+
+        tier_config = NEBULA_TIER_CONFIG.get(tier, NEBULA_TIER_CONFIG['COMN'])
+        isd = tier_config['scion_isd']
+        isd_as = tier_config['scion_isd_as']
+
+        logger.info(f"🌐 SCION enrollment: {server_name} -> ISD{isd}")
+        logger.info(f"   ISD-AS: {isd_as}")
+
+        # Read TRC from SCION PKI directory (DER-encoded binary)
+        trc_path = Path(__file__).parent / "scion" / "pki" / f"ISD{isd}" / "trcs" / f"ISD{isd}-B1-S1.trc"
+        trc_content = ""
+        trc_format = "der_base64"
+        if trc_path.exists():
+            with open(trc_path, 'rb') as f:
+                trc_content = base64.b64encode(f.read()).decode('ascii')
+        else:
+            # Try the regular TRC (PEM-like ASCII format)
+            trc_regular = trc_path.parent / f"ISD{isd}-B1-S1.regular.trc"
+            if trc_regular.exists():
+                with open(trc_regular) as f:
+                    trc_content = f.read()
+                trc_format = "regular"
+            else:
+                trc_content = f"# TRC for ISD{isd} not found at {trc_path}"
+                trc_format = "placeholder"
+
+        # Read CP-AS certificate (placeholder path)
+        cp_as_path = Path(__file__).parent / "scion" / "pki" / f"ISD{isd}" / "AS{tier_config['scion_as'].replace(':', '_')}" / "cp-as.crt"
+        cp_as_crt = ""
+        if cp_as_path.exists():
+            with open(cp_as_path) as f:
+                cp_as_crt = f.read()
+        else:
+            cp_as_crt = f"# CP-AS cert for {isd_as} - placeholder"
+
+        # Path policy based on tier
+        path_policy = {}
+        if tier == 'PAC':
+            path_policy = {
+                "mandatory_waypoint": "2-ff00:0:528",
+                "external_allowed": False,
+                "note": "PAC tier must transit through COMN gateway"
+            }
+        elif tier == 'COMN':
+            path_policy = {
+                "gateway": True,
+                "external_allowed": True,
+                "note": "COMN tier serves as gateway for PAC"
+            }
+        else:
+            path_policy = {
+                "admin_access": True,
+                "external_allowed": False,
+                "note": "CORE tier has admin access to all"
+            }
+
+        return web.json_response({
+            "isd": isd,
+            "isd_as": isd_as,
+            "tier": tier,
+            "frequency": tier_config['frequency'],
+            "trc": trc_content,
+            "trc_format": trc_format,
+            "cp_as_crt": cp_as_crt,
+            "cp_as_key": "# CP-AS private key - would be generated per-node",
+            "control_service": {
+                "host": "192.168.1.179",
+                "port": 30001 + (isd - 1)
+            },
+            "scion_daemon": {
+                "host": "localhost",
+                "port": 30255,
+                "socket": "/run/scion/scion-daemon.sock"
+            },
+            "path_policy": path_policy,
+            "border_router": {
+                "host": "192.168.1.179",
+                "port": 30041 + (isd - 1)
+            },
+            "genesis_bond": "ACTIVE",
+            "server_name": server_name
+        })
+
+    async def overlay_validate(self, request: web.Request) -> web.Response:
+        """Validate overlay network configuration.
+
+        POST /overlay/validate
+        Body: {mac, nebula_cert_hash, scion_isd_as}
+        Returns: {valid: bool, errors: [], server_name, expected_tier}
+        """
+        try:
+            data = await request.json()
+        except:
+            return web.json_response({"error": "invalid_json"}, status=400)
+
+        mac = data.get('mac', '').lower().replace('-', ':')
+        nebula_cert_hash = data.get('nebula_cert_hash', '')
+        scion_isd_as = data.get('scion_isd_as', '')
+
+        errors = []
+        tier, role, server_name = self._get_tier_for_mac(mac)
+
+        if not tier:
+            return web.json_response({
+                "valid": False,
+                "errors": ["MAC address not in inventory"],
+                "mac": mac
+            }, status=404)
+
+        tier_config = NEBULA_TIER_CONFIG.get(tier, NEBULA_TIER_CONFIG['COMN'])
+        expected_nebula_ip = nebula_ip_assignments.get(mac)
+        expected_scion_isd_as = tier_config['scion_isd_as']
+
+        # Validate SCION ISD-AS matches tier
+        if scion_isd_as and scion_isd_as != expected_scion_isd_as:
+            errors.append(f"SCION ISD-AS mismatch: got {scion_isd_as}, expected {expected_scion_isd_as}")
+
+        # Validate Nebula IP assignment exists
+        if expected_nebula_ip is None:
+            errors.append("No Nebula IP assigned for this MAC")
+
+        valid = len(errors) == 0
+
+        logger.info(f"🔍 Overlay validation: {server_name} - {'PASS' if valid else 'FAIL'}")
+        if errors:
+            for err in errors:
+                logger.warning(f"   {err}")
+
+        return web.json_response({
+            "valid": valid,
+            "errors": errors,
+            "server_name": server_name,
+            "mac": mac,
+            "expected_tier": tier,
+            "expected_role": role,
+            "expected_frequency": tier_config['frequency'],
+            "expected_nebula_ip": expected_nebula_ip,
+            "expected_scion_isd_as": expected_scion_isd_as,
+            "genesis_bond": "ACTIVE"
+        })
+
     def save_provisioned(self):
         """Save provisioned hosts state."""
         with open(PROVISIONED_FILE, 'w') as f:
@@ -1934,6 +2542,12 @@ async def main():
     logger.info("🌐 SCION endpoints (Path-Aware Networking):")
     logger.info("   SCION Config: http://localhost:9999/scion-config/{mac}")
     logger.info("   SCION Topology: http://localhost:9999/scion-topology")
+    logger.info("")
+    logger.info("🔐 Overlay Network Certificate Distribution (Nebula + SCION):")
+    logger.info("   Attestation Token: GET http://localhost:9999/attestation-token/{mac}")
+    logger.info("   Nebula Cert: POST http://localhost:9999/nebula/cert/{mac}")
+    logger.info("   SCION Enroll: POST http://localhost:9999/scion/enroll/{mac}")
+    logger.info("   Validate: POST http://localhost:9999/overlay/validate")
     logger.info("")
     logger.info("🧬 Appstork Genetiai endpoints (USB Boot Consciousness):")
     logger.info("   Hardware Collection: POST http://localhost:9999/appstork/hardware-collection")

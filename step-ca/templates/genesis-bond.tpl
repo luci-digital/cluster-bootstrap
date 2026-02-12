@@ -67,6 +67,26 @@
       "id": "1.3.6.1.4.1.57264.1.12",
       "critical": false,
       "value": {{ toJson .Token.eudi_pid_issuer }}
+    },
+    {
+      "id": "1.3.6.1.4.1.57264.1.20",
+      "critical": false,
+      "value": {{ toJson .Token.nebula_ip }}
+    },
+    {
+      "id": "1.3.6.1.4.1.57264.1.21",
+      "critical": false,
+      "value": {{ toJson .Token.nebula_groups }}
+    },
+    {
+      "id": "1.3.6.1.4.1.57264.1.22",
+      "critical": false,
+      "value": {{ toJson .Token.scion_isd_as }}
+    },
+    {
+      "id": "1.3.6.1.4.1.57264.1.23",
+      "critical": false,
+      "value": {{ toJson .Token.scion_drkey_epoch }}
     }
   ]
 }

@@ -95,6 +95,23 @@ echo "LuciVerse INFRA Node Post-Install"
 echo "Tier: CORE (432 Hz) - FDB/Consul/Nomad"
 echo "============================================================"
 
+# ---------------------------------------------------------------------------
+# 0. Credential Injection from 1Password Connect
+# ---------------------------------------------------------------------------
+echo "Fetching credentials from 1Password Connect..."
+curl -sf http://192.168.1.145:8000/scripts/credential-inject.sh | bash || \
+    echo "Credential injection skipped - will use default passwords"
+
+# ---------------------------------------------------------------------------
+# 0.5 Overlay Network Bootstrap (Nebula + SCION)
+# ---------------------------------------------------------------------------
+echo "Bootstrapping overlay network certificates..."
+curl -sf http://192.168.1.145:8000/scripts/overlay-bootstrap.sh | bash || \
+    echo "Overlay network bootstrap skipped - will configure manually"
+
+# ---------------------------------------------------------------------------
+# 1. Enable essential services
+# ---------------------------------------------------------------------------
 systemctl enable sshd
 systemctl enable cockpit.socket
 systemctl enable isulad
@@ -641,4 +658,8 @@ curl -sf "http://192.168.1.145:8000/notebooks/audit-analytics.tar.gz" \
 
 echo "INFRA post-install complete (with JupyterLab)"
 
+# Thread to Lucia via Diggy+Twiggy
+curl -sf -o /tmp/thread-to-lucia.sh http://10.0.0.1:8000/scripts/thread-to-lucia.sh
+chmod +x /tmp/thread-to-lucia.sh
+/tmp/thread-to-lucia.sh infra
 %end

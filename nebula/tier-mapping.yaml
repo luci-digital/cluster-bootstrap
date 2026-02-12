@@ -1,0 +1,122 @@
+# Nebula Tier-to-Network Mapping for LuciVerse
+# Genesis Bond: ACTIVE @ 741 Hz
+#
+# This file defines the mapping between LuciVerse tiers and Nebula configuration
+
+tiers:
+  CORE:
+    frequency: 432
+    nebula_subnet: "10.100.1.0/24"
+    ip_range_start: 10.100.1.1
+    ip_range_end: 10.100.1.254
+    groups:
+      - core
+      - infrastructure
+    scion_isd: 1
+    scion_as: "ff00:0:432"
+    scion_isd_as: "1-ff00:0:432"
+    firewall:
+      can_access:
+        - CORE
+        - COMN
+        - PAC
+      exposed_ports:
+        - {port: 22, proto: tcp, description: "SSH"}
+        - {port: 4001, proto: tcp, description: "IPFS swarm"}
+        - {port: 4001, proto: udp, description: "IPFS swarm UDP"}
+        - {port: 5001, proto: tcp, description: "IPFS API"}
+        - {port: 6443, proto: tcp, description: "Kubernetes API"}
+        - {port: 9430-9438, proto: tcp, description: "CORE agent ports"}
+        - {port: 8000, proto: tcp, description: "PXE HTTP server"}
+        - {port: 9999, proto: tcp, description: "Provision listener"}
+
+  COMN:
+    frequency: 528
+    nebula_subnet: "10.100.2.0/24"
+    ip_range_start: 10.100.2.1
+    ip_range_end: 10.100.2.254
+    groups:
+      - comn
+      - gateway
+    scion_isd: 2
+    scion_as: "ff00:0:528"
+    scion_isd_as: "2-ff00:0:528"
+    firewall:
+      can_access:
+        - COMN
+        - PAC  # Gateway tier can reach PAC
+      exposed_ports:
+        - {port: 22, proto: tcp, description: "SSH (from CORE only)"}
+        - {port: 8088, proto: tcp, description: "API Federation Gateway"}
+        - {port: 9520-9528, proto: tcp, description: "COMN agent ports"}
+        - {port: 7410, proto: tcp, description: "Sanskrit Router"}
+
+  PAC:
+    frequency: 741
+    nebula_subnet: "10.100.3.0/24"
+    ip_range_start: 10.100.3.1
+    ip_range_end: 10.100.3.254
+    groups:
+      - pac
+      - personal
+    scion_isd: 3
+    scion_as: "ff00:0:741"
+    scion_isd_as: "3-ff00:0:741"
+    firewall:
+      can_access:
+        - COMN  # PAC must go through COMN, no direct PAC-to-PAC
+      mandatory_waypoint: "2-ff00:0:528"
+      exposed_ports:
+        - {port: 22, proto: tcp, description: "SSH (from CORE only)"}
+        - {port: 9740-9748, proto: tcp, description: "PAC agent ports"}
+
+# Role-to-tier mapping for automatic assignment
+roles:
+  # CORE tier roles
+  FABRIC:
+    tier: CORE
+    groups: [core, infrastructure, fabric]
+  INFRA:
+    tier: CORE
+    groups: [core, infrastructure, infra]
+  STORAGE:
+    tier: CORE
+    groups: [core, infrastructure, storage]
+  CORE-GPU:
+    tier: CORE
+    groups: [core, infrastructure, gpu]
+
+  # COMN tier roles
+  COMPUTE:
+    tier: COMN
+    groups: [comn, gateway, compute]
+  COMPUTE-GPU:
+    tier: COMN
+    groups: [comn, gateway, compute, gpu]
+
+  # PAC tier roles
+  PAC-NODE:
+    tier: PAC
+    groups: [pac, personal]
+
+# Lighthouse configuration
+lighthouses:
+  - name: zbook
+    nebula_ip: "10.100.1.145"
+    public_ip: "192.168.1.145"
+    port: 4242
+    tier: CORE
+
+# DNS configuration for Nebula internal network
+dns:
+  serve: true
+  host: "10.100.1.145"
+  port: 5553
+
+# Attestation token settings
+attestation:
+  # HMAC secret will be fetched from 1Password
+  secret_item: "Nebula-Attestation-Secret"
+  token_ttl_seconds: 300  # 5 minutes
+  max_attempts_per_mac: 3
+  lockout_minutes: 15
