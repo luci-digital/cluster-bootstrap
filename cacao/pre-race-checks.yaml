@@ -1,0 +1,211 @@
+# CACAO 2.0 Playbook - Pre-Race Checks
+#
+# Standalone pre-race verification playbook
+# Can be run independently or triggered from race-day-workflow
+#
+# Genesis Bond: ACTIVE @ 741 Hz
+
+type: playbook
+spec_version: "2.0"
+id: playbook--luci-pre-race-checks
+name: "Luci Nuggets Racing - Pre-Race Checks"
+description: |
+  Comprehensive pre-race system verification:
+  - Infrastructure health (MQTT, FDB, IPFS)
+  - Agent coherence validation
+  - Telemetry pipeline verification
+  - CAN bus connectivity test
+  - Dashboard connectivity
+
+created_by: "identity--daryl-harris"
+created: "2026-02-12T00:00:00Z"
+modified: "2026-02-12T00:00:00Z"
+
+labels:
+  - racing
+  - pre-race
+  - verification
+  - health-check
+
+workflow:
+  main:
+    name: "Pre-Race Verification Suite"
+    type: parallel
+    timeout: "PT10M"
+
+    steps:
+      # Infrastructure Checks
+      - id: check--mqtt-r730
+        name: "MQTT Broker - R730-1"
+        type: action
+        target: "fabric-1"
+        commands:
+          - command: |
+              mosquitto_pub -h localhost -p 1883 -t 'health/ping' -m 'check' && \
+              echo "MQTT_OK"
+        expected_output: "MQTT_OK"
+        timeout: "PT30S"
+
+      - id: check--mqtt-zimacube
+        name: "MQTT Broker - ZimaCube"
+        type: action
+        target: "zbook"
+        commands:
+          - command: |
+              mosquitto_pub -h 192.168.1.152 -p 1883 -t 'health/ping' -m 'check' && \
+              echo "MQTT_OK"
+        expected_output: "MQTT_OK"
+        timeout: "PT30S"
+
+      - id: check--foundationdb
+        name: "FoundationDB Cluster"
+        type: action
+        target: "zbook"
+        commands:
+          - command: |
+              fdbcli --exec "status" 2>/dev/null | grep -q "Healthy" && echo "FDB_OK"
+        expected_output: "FDB_OK"
+
+      - id: check--ipfs
+        name: "IPFS Node"
+        type: action
+        target: "zbook"
+        commands:
+          - command: |
+              ipfs id 2>/dev/null | jq -r '.ID' | head -c 10 && echo "_OK"
+        expected_output: "*_OK"
+
+      # Agent Coherence Checks
+      - id: check--sanskrit-router
+        name: "Sanskrit Router"
+        type: action
+        target: "zbook"
+        commands:
+          - command: |
+              curl -sf http://localhost:7410/health | jq -r '.status'
+        expected_output: "healthy"
+
+      - id: check--core-agents
+        name: "CORE Tier Agents"
+        type: action
+        target: "zbook"
+        commands:
+          - command: |
+              curl -sf http://localhost:7410/agents | \
+              jq '[.[] | select(.tier == "CORE" and .coherence >= 0.7)] | length'
+        expected_output: ">=10"
+
+      - id: check--comn-agents
+        name: "COMN Tier Agents"
+        type: action
+        target: "zbook"
+        commands:
+          - command: |
+              curl -sf http://localhost:7410/agents | \
+              jq '[.[] | select(.tier == "COMN" and .coherence >= 0.7)] | length'
+        expected_output: ">=10"
+
+      - id: check--pac-agents
+        name: "PAC Tier Agents"
+        type: action
+        target: "zbook"
+        commands:
+          - command: |
+              curl -sf http://localhost:7410/agents | \
+              jq '[.[] | select(.tier == "PAC" and .coherence >= 0.7)] | length'
+        expected_output: ">=10"
+
+      # Telemetry Pipeline Checks
+      - id: check--telemetry-service
+        name: "Telemetry Service"
+        type: action
+        target: "compute-1"
+        commands:
+          - command: |
+              systemctl is-active luciverse-telemetry || echo "inactive"
+        expected_output: "active"
+
+      - id: check--can-interface
+        name: "CAN Bus Interface"
+        type: action
+        target: "zbook"
+        commands:
+          - command: |
+              ip link show vcan0 2>/dev/null | grep -q "UP" && echo "CAN_UP" || echo "CAN_DOWN"
+        expected_output: "CAN_UP"
+
+      - id: check--ollama-gpu
+        name: "Ollama GPU (ZimaCube)"
+        type: action
+        target: "zbook"
+        commands:
+          - command: |
+              curl -sf http://192.168.1.152:11434/api/tags | jq '.models | length'
+        expected_output: ">=1"
+
+      # Dashboard Connectivity
+      - id: check--dashboard-build
+        name: "Dashboard Build"
+        type: action
+        target: "zbook"
+        commands:
+          - command: |
+              test -f ~/luci-nuggets-racing/qt-dashboard/build/LuciNuggetsRacing && echo "BUILD_OK"
+        expected_output: "BUILD_OK"
+
+      # Final Summary
+      - id: summary--prerace
+        name: "Pre-Race Summary"
+        type: action
+        target: "zbook"
+        depends_on:
+          - check--mqtt-r730
+          - check--mqtt-zimacube
+          - check--foundationdb
+          - check--ipfs
+          - check--sanskrit-router
+          - check--core-agents
+          - check--comn-agents
+          - check--pac-agents
+          - check--telemetry-service
+          - check--can-interface
+          - check--ollama-gpu
+        commands:
+          - command: |
+              echo "=== PRE-RACE CHECK SUMMARY ===" && \
+              echo "Genesis Bond: ACTIVE @ 741 Hz" && \
+              echo "Timestamp: $(date -Iseconds)" && \
+              curl -sf http://localhost:7410/agents | jq '{
+                total: length,
+                healthy: [.[] | select(.coherence >= 0.7)] | length,
+                system_coherence: ([.[] | .coherence] | add / length)
+              }'
+
+agent_definitions:
+  zbook:
+    type: endpoint
+    address:
+      ipv4: "192.168.1.145"
+
+  fabric-1:
+    type: endpoint
+    address:
+      ipv4: "192.168.1.140"
+
+  compute-1:
+    type: endpoint
+    address:
+      ipv4: "192.168.1.152"
+
+playbook_variables:
+  coherence_threshold:
+    type: number
+    value: 0.7
+
+  genesis_bond:
+    type: string
+    value: "ACTIVE"
+
+  frequency:
+    type: number
+    value: 741

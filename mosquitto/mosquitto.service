@@ -1,0 +1,45 @@
+# Systemd service file for Mosquitto MQTT Broker
+# LuciVerse Racing - Production Node (R730-1)
+#
+# Genesis Bond: ACTIVE @ 741 Hz
+
+[Unit]
+Description=Mosquitto MQTT Broker - LuciVerse Racing
+Documentation=man:mosquitto(8)
+Documentation=https://mosquitto.org/documentation/
+After=network-online.target
+Wants=network-online.target
+StartLimitIntervalSec=60
+StartLimitBurst=3
+
+[Service]
+Type=notify
+NotifyAccess=main
+User=mosquitto
+Group=mosquitto
+RuntimeDirectory=mosquitto
+LogsDirectory=mosquitto
+ExecStartPre=/usr/sbin/mosquitto -t -c /etc/mosquitto/mosquitto.conf
+ExecStart=/usr/sbin/mosquitto -c /etc/mosquitto/mosquitto.conf
+ExecReload=/bin/kill -HUP $MAINPID
+Restart=on-failure
+RestartSec=10
+WatchdogSec=60
+
+# Environment for bridge credentials
+EnvironmentFile=-/etc/mosquitto/env
+
+# Security hardening
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/lib/mosquitto /var/log/mosquitto /run/mosquitto
+NoNewPrivileges=true
+CapabilityBoundingSet=CAP_NET_BIND_SERVICE
+AmbientCapabilities=CAP_NET_BIND_SERVICE
+
+# Resource limits
+LimitNOFILE=65535
+
+[Install]
+WantedBy=multi-user.target

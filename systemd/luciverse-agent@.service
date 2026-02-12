@@ -1,0 +1,98 @@
+# Systemd Service Template - LuciVerse Agent (Automic Pattern)
+#
+# Generic template for all LuciVerse agents
+# Usage: systemctl enable luciverse-agent@aethon.service
+#
+# Genesis Bond: ACTIVE @ 741 Hz
+# Automic Pattern: Certificate-based agent enrollment
+
+[Unit]
+Description=LuciVerse Agent: %i
+Documentation=https://lucidigital.net/docs/agents
+After=network-online.target nebula.service foundationdb.service
+Wants=network-online.target
+Requires=nebula.service
+
+# Restart limits
+StartLimitIntervalSec=300
+StartLimitBurst=5
+
+# Dependencies
+PartOf=luciverse-agent-mesh.target
+Before=luciverse-agent-mesh.target
+
+[Service]
+Type=simple
+User=luciverse
+Group=luciverse
+
+# Agent identification
+Environment=AGENT_NAME=%i
+Environment=AGENT_ID=spiffe://lucidigital.net/agent/%i
+Environment=GENESIS_BOND=ACTIVE
+Environment=COHERENCE_THRESHOLD=0.7
+
+# Tier-specific frequency (determined by agent config)
+# CORE=432, COMN=528, RAiIiAR=639, PAC=741
+EnvironmentFile=/etc/luciverse/agents/%i.env
+
+# Infrastructure
+Environment=MQTT_BROKER=192.168.1.140:1883
+Environment=MQTT_FALLBACK=192.168.1.152:1883
+Environment=SANSKRIT_ROUTER=http://localhost:7410
+Environment=FDB_CLUSTER_FILE=/etc/foundationdb/fdb.cluster
+
+# Ollama GPU endpoints
+Environment=OLLAMA_GPU_URL=http://192.168.1.152:11434
+Environment=OLLAMA_EMBED_URL=http://192.168.1.152:11434
+Environment=OLLAMA_FALLBACK_URL=http://localhost:11434
+
+# TLS/Nebula certificates (Automic pattern)
+Environment=NEBULA_CERT=/etc/nebula/host.crt
+Environment=NEBULA_KEY=/etc/nebula/host.key
+Environment=CA_CERT=/etc/nebula/ca.crt
+
+# Agent binary
+ExecStartPre=/usr/bin/test -f /opt/luciverse/bin/agent-%i
+ExecStart=/opt/luciverse/bin/agent-%i --config /etc/luciverse/agents/%i.yaml
+
+# Lifecycle hooks
+ExecStartPost=/usr/bin/curl -sf -X POST \
+    'http://localhost:7410/agents/%i/online' \
+    -H 'Content-Type: application/json' \
+    -d '{"status":"online","timestamp":"'$(date -Iseconds)'"}'
+
+ExecStopPost=/usr/bin/curl -sf -X POST \
+    'http://localhost:7410/agents/%i/offline' \
+    -H 'Content-Type: application/json' \
+    -d '{"status":"offline","timestamp":"'$(date -Iseconds)'"}'
+
+# Restart policy
+Restart=always
+RestartSec=10
+
+# Watchdog (Automic pattern)
+WatchdogSec=60
+WatchdogSignal=SIGKILL
+
+# Resource limits
+LimitNOFILE=65535
+LimitNPROC=4096
+MemoryMax=2G
+CPUQuota=100%
+
+# Security hardening
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+NoNewPrivileges=true
+ReadWritePaths=/var/lib/luciverse /var/log/luciverse
+
+# Logging
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=luciverse-%i
+
+[Install]
+WantedBy=multi-user.target
+WantedBy=luciverse-agent-mesh.target

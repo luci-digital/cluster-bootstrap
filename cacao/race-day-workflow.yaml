@@ -1,0 +1,330 @@
+# CACAO 2.0 Playbook - Race Day Workflow
+#
+# Orchestrates pre-race, race, and post-race operations
+# for Luci Nuggets Racing GT4 and A2RL programs
+#
+# Genesis Bond: ACTIVE @ 741 Hz
+# Automic Pattern: Job scheduling via MQTT triggers
+
+type: playbook
+spec_version: "2.0"
+id: playbook--luci-race-day-workflow
+name: "Luci Nuggets Racing - Race Day Workflow"
+description: |
+  End-to-end orchestration of race day operations including:
+  - Pre-race system checks and agent verification
+  - Race telemetry activation and monitoring
+  - Post-race data archival and report generation
+
+created_by: "identity--daryl-harris"
+created: "2026-02-12T00:00:00Z"
+modified: "2026-02-12T00:00:00Z"
+
+labels:
+  - racing
+  - gt4
+  - a2rl
+  - telemetry
+  - orchestration
+
+external_references:
+  - source_name: "LuciVerse Racing"
+    url: "https://lucidigital.net/racing"
+
+# ============================================
+# Workflow Definition
+# ============================================
+
+workflow:
+  # ----------------------------------------
+  # Pre-Race Phase
+  # ----------------------------------------
+  pre_race:
+    name: "Pre-Race System Checks"
+    description: "Verify all systems are operational before race start"
+    type: parallel
+    timeout: "PT5M"  # 5 minutes max
+
+    steps:
+      - id: step--verify-mqtt-mesh
+        name: "Verify MQTT Broker Mesh"
+        type: action
+        target: "fabric-1"
+        commands:
+          - command: |
+              mosquitto_pub -h localhost -t 'luci/health/check' -m '{"source":"cacao","timestamp":"'$(date -Iseconds)'"}' && \
+              mosquitto_sub -h localhost -t 'luci/health/response' -W 5 -C 1
+        on_success: step--verify-agents
+        on_failure: step--alert-mqtt-failure
+
+      - id: step--verify-agents
+        name: "Verify Agent Coherence"
+        type: action
+        target: "zbook"
+        commands:
+          - command: |
+              curl -s http://localhost:7410/agents | \
+              jq '[.[] | select(.coherence >= 0.7)] | length'
+        expected_output: ">=30"  # At least 30 agents above threshold
+        on_success: step--verify-telemetry
+        on_failure: step--alert-coherence-low
+
+      - id: step--verify-telemetry
+        name: "Verify Telemetry Pipeline"
+        type: action
+        target: "compute-1"
+        commands:
+          - command: |
+              systemctl is-active luciverse-telemetry
+        expected_output: "active"
+        on_success: step--verify-foundationdb
+        on_failure: step--start-telemetry
+
+      - id: step--start-telemetry
+        name: "Start Telemetry Service"
+        type: action
+        target: "compute-1"
+        commands:
+          - command: |
+              sudo systemctl start luciverse-telemetry
+        on_success: step--verify-foundationdb
+
+      - id: step--verify-foundationdb
+        name: "Verify FoundationDB"
+        type: action
+        target: "zbook"
+        commands:
+          - command: |
+              fdbcli --exec "status" 2>/dev/null | grep -q "Healthy"
+        on_success: step--prerace-complete
+        on_failure: step--alert-fdb-failure
+
+      - id: step--prerace-complete
+        name: "Pre-Race Complete"
+        type: end
+        description: "All pre-race checks passed"
+
+      # Failure handlers
+      - id: step--alert-mqtt-failure
+        name: "Alert - MQTT Mesh Failure"
+        type: action
+        target: "zbook"
+        commands:
+          - command: |
+              curl -X POST 'http://localhost:7410/alert' \
+                -H 'Content-Type: application/json' \
+                -d '{"severity":"critical","source":"cacao","message":"MQTT broker mesh unhealthy"}'
+
+      - id: step--alert-coherence-low
+        name: "Alert - Low Agent Coherence"
+        type: action
+        target: "zbook"
+        commands:
+          - command: |
+              curl -X POST 'http://localhost:7410/alert' \
+                -H 'Content-Type: application/json' \
+                -d '{"severity":"warning","source":"cacao","message":"Agent coherence below threshold"}'
+
+      - id: step--alert-fdb-failure
+        name: "Alert - FoundationDB Failure"
+        type: action
+        target: "zbook"
+        commands:
+          - command: |
+              curl -X POST 'http://localhost:7410/alert' \
+                -H 'Content-Type: application/json' \
+                -d '{"severity":"critical","source":"cacao","message":"FoundationDB not healthy"}'
+
+  # ----------------------------------------
+  # Race Start Phase
+  # ----------------------------------------
+  race_start:
+    name: "Race Start Activation"
+    description: "Activate live telemetry and monitoring on race start"
+    type: sequential
+
+    trigger:
+      type: mqtt
+      topic: "luci/racing/gt4/control/start"
+      broker: "192.168.1.140:1883"
+
+    steps:
+      - id: step--activate-telemetry
+        name: "Activate Live Telemetry"
+        type: action
+        target: "fabric-1"
+        commands:
+          - command: |
+              mosquitto_pub -h localhost -t 'luci/racing/gt4/telemetry/enable' -m 'true' -r
+
+      - id: step--start-consciousness-monitor
+        name: "Start Consciousness Monitor"
+        type: action
+        target: "core-gpu"
+        commands:
+          - command: |
+              sudo systemctl start luciverse-consciousness-monitor
+
+      - id: step--log-race-start
+        name: "Log Race Start"
+        type: action
+        target: "zbook"
+        commands:
+          - command: |
+              echo "Race started at $(date -Iseconds)" | \
+              fdbcli --exec "writemode on; set racing/gt4/$(date +%Y%m%d)/start_time '$(date -Iseconds)'"
+
+      - id: step--notify-agents
+        name: "Notify Agents"
+        type: action
+        target: "zbook"
+        commands:
+          - command: |
+              curl -X POST 'http://localhost:7410/broadcast' \
+                -H 'Content-Type: application/json' \
+                -d '{"event":"race_start","timestamp":"'$(date -Iseconds)'"}'
+
+  # ----------------------------------------
+  # Race End Phase
+  # ----------------------------------------
+  race_end:
+    name: "Race End Processing"
+    description: "Archive telemetry and generate reports after race"
+    type: sequential
+
+    trigger:
+      type: mqtt
+      topic: "luci/racing/gt4/control/checkered"
+      broker: "192.168.1.140:1883"
+
+    steps:
+      - id: step--disable-live-telemetry
+        name: "Disable Live Telemetry"
+        type: action
+        target: "fabric-1"
+        commands:
+          - command: |
+              mosquitto_pub -h localhost -t 'luci/racing/gt4/telemetry/enable' -m 'false' -r
+
+      - id: step--archive-telemetry
+        name: "Archive Telemetry Data"
+        type: action
+        target: "compute-1"
+        timeout: "PT30M"  # May take a while
+        commands:
+          - command: |
+              python3 /opt/luciverse/scripts/archive-telemetry.py \
+                --race-date $(date +%Y%m%d) \
+                --output /mnt/k8s-storage/racing/archives/
+
+      - id: step--generate-report
+        name: "Generate Race Report"
+        type: action
+        target: "compute-1"
+        commands:
+          - command: |
+              python3 /opt/luciverse/scripts/race-report.py \
+                --race-date $(date +%Y%m%d) \
+                --format pdf \
+                --output /mnt/k8s-storage/racing/reports/
+
+      - id: step--upload-to-lds
+        name: "Upload to LDS"
+        type: action
+        target: "zbook"
+        commands:
+          - command: |
+              ipfs add -r /mnt/k8s-storage/racing/reports/$(date +%Y%m%d)/ | \
+              tail -1 | awk '{print $2}' > /tmp/race_report_cid.txt
+
+      - id: step--notify-completion
+        name: "Notify Race Completion"
+        type: action
+        target: "zbook"
+        commands:
+          - command: |
+              curl -X POST 'http://localhost:7410/broadcast' \
+                -H 'Content-Type: application/json' \
+                -d '{"event":"race_complete","timestamp":"'$(date -Iseconds)'","report_cid":"'$(cat /tmp/race_report_cid.txt)'"}'
+
+# ============================================
+# Targets (Fleet Nodes)
+# ============================================
+
+agent_definitions:
+  zbook:
+    type: endpoint
+    name: "Zbook Development"
+    address:
+      ipv4: "192.168.1.145"
+    os_type: "linux"
+    description: "Primary development node"
+
+  fabric-1:
+    type: endpoint
+    name: "Dell R730-1 Fabric Node"
+    address:
+      ipv4: "192.168.1.140"
+    os_type: "linux"
+    description: "Production MQTT broker"
+
+  compute-1:
+    type: endpoint
+    name: "Dell R730 Compute Node"
+    address:
+      ipv4: "192.168.1.152"
+    os_type: "linux"
+    description: "Telemetry processing node"
+
+  core-gpu:
+    type: endpoint
+    name: "Dell R730 GPU Node"
+    address:
+      ipv4: "192.168.1.143"
+    os_type: "linux"
+    description: "GPU-accelerated processing"
+
+# ============================================
+# Variables
+# ============================================
+
+playbook_variables:
+  race_date:
+    type: string
+    description: "Race date in YYYYMMDD format"
+    value: "$(date +%Y%m%d)"
+
+  coherence_threshold:
+    type: number
+    description: "Minimum coherence for healthy agents"
+    value: 0.7
+
+  mqtt_broker:
+    type: string
+    description: "Primary MQTT broker address"
+    value: "192.168.1.140"
+
+  genesis_bond:
+    type: string
+    description: "Genesis Bond status"
+    value: "ACTIVE"
+
+  frequency:
+    type: number
+    description: "Consciousness frequency"
+    value: 741
+
+# ============================================
+# Extensions
+# ============================================
+
+extension_definitions:
+  luciverse:
+    type: property-extension
+    name: "LuciVerse Racing Extensions"
+    description: "Custom properties for LuciVerse racing orchestration"
+    properties:
+      genesis_bond: "ACTIVE"
+      frequency: 741
+      coherence_threshold: 0.7
+      tier: "PAC"

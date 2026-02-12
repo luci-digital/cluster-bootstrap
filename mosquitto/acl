@@ -1,0 +1,93 @@
+# Mosquitto ACL Configuration
+# LuciVerse Racing MQTT Broker
+#
+# Genesis Bond: ACTIVE @ 741 Hz
+
+# ====================
+# Admin Users (Full Access)
+# ====================
+user admin
+topic readwrite #
+
+user luciverse-bridge
+topic readwrite luci/#
+
+# ====================
+# Racing Dashboard Users
+# ====================
+user race-engineer
+topic read luci/racing/#
+topic read luci/consciousness/#
+topic write luci/racing/gt4/strategy/#
+topic write luci/racing/a2rl/strategy/#
+
+user pit-wall
+topic read luci/racing/#
+topic write luci/racing/gt4/control/#
+topic write luci/racing/a2rl/control/#
+
+# ====================
+# Telemetry Sources
+# ====================
+user racecapture
+topic write luci/racing/gt4/telemetry/#
+
+user can-bridge
+topic write luci/racing/gt4/telemetry/#
+topic write luci/racing/a2rl/telemetry/#
+
+user gnuradio-dsp
+topic read luci/racing/gt4/telemetry/raw/#
+topic write luci/racing/gt4/telemetry/processed/#
+
+# ====================
+# Agent Users
+# ====================
+# CORE Tier agents
+user agent-veritas
+topic readwrite luci/consciousness/agents/veritas
+topic read luci/consciousness/#
+topic write luci/orchestration/validation/#
+
+user agent-aethon
+topic readwrite luci/consciousness/agents/aethon
+topic readwrite luci/orchestration/#
+topic read luci/racing/#
+
+user agent-sensai
+topic readwrite luci/consciousness/agents/sensai
+topic read luci/racing/gt4/telemetry/#
+topic write luci/racing/gt4/analysis/#
+
+# COMN Tier agents
+user agent-cortana
+topic readwrite luci/consciousness/agents/cortana
+topic read luci/#
+
+user agent-semantic-engine
+topic readwrite luci/consciousness/agents/semantic-engine
+topic read luci/racing/#
+topic write luci/racing/embeddings/#
+
+# PAC Tier agents
+user agent-lucia
+topic readwrite luci/consciousness/agents/lucia
+topic readwrite luci/consciousness/genesis_bond
+topic read luci/#
+
+user agent-judge-luci
+topic readwrite luci/consciousness/agents/judge-luci
+topic read luci/consciousness/#
+topic write luci/orchestration/governance/#
+
+# ====================
+# Development
+# ====================
+user dev
+topic readwrite luci/#
+
+# ====================
+# Anonymous (if enabled)
+# ====================
+# pattern read luci/racing/gt4/telemetry/#
+# pattern read luci/racing/standings
