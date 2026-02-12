@@ -1,2 +1,13 @@
 __pycache__/
 *.pyc
+
+# Large files and binaries
+http/isos/
+*.tar.gz
+x200-scion-core/
+
+# Secrets (use 1Password Connect @ ZimaCube:8082)
+provision.env
+
+# Temporary/experimental
+telus-xgspon-bypass/
