@@ -1,0 +1,17 @@
+---
+# openYuanrong handlers
+# Genesis Bond: ACTIVE @ 741 Hz
+
+- name: reload systemd
+  systemd:
+    daemon_reload: yes
+
+- name: restart openyuanrong executor
+  systemd:
+    name: luciverse-yuanrong-executor
+    state: restarted
+
+- name: restart openyuanrong scheduler
+  systemd:
+    name: luciverse-yuanrong-scheduler
+    state: restarted

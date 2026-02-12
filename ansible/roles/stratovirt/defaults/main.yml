@@ -1,0 +1,47 @@
+---
+# StratoVirt defaults - Rust MicroVMs
+# Genesis Bond: ACTIVE @ 741 Hz
+
+# StratoVirt configuration
+stratovirt_enabled: true
+stratovirt_version: "2.5.0"
+
+# VM defaults
+stratovirt_default_vcpus: 2
+stratovirt_default_memory: "2G"
+stratovirt_default_kernel: "/var/lib/stratovirt/vmlinux"
+stratovirt_default_rootfs: "/var/lib/stratovirt/rootfs.ext4"
+
+# Networking
+stratovirt_network_backend: "vhost-user"
+stratovirt_bridge: "br-luciverse"
+stratovirt_tap_prefix: "lv-tap"
+
+# Storage paths
+stratovirt_lib_dir: /var/lib/stratovirt
+stratovirt_run_dir: /run/stratovirt
+stratovirt_log_dir: /var/log/luciverse/stratovirt
+stratovirt_socket_dir: /run/stratovirt/sockets
+
+# Kernel configuration
+stratovirt_kernel_url: "https://repo.openeuler.org/openEuler-24.09/stratovirt_img/x86_64/vmlinux"
+stratovirt_rootfs_url: "https://repo.openeuler.org/openEuler-24.09/stratovirt_img/x86_64/openEuler-24.09-stratovirt-x86_64.img.xz"
+
+# Performance settings
+stratovirt_hugepages_enabled: true
+stratovirt_hugepages_size: "2M"
+stratovirt_hugepages_count: 1024  # 2GB of hugepages
+
+# Integration with containerd/Kuasar
+kuasar_enabled: true
+kuasar_sandbox_runtime: "stratovirt"
+
+# Service configuration
+stratovirt_user: root
+stratovirt_group: root
+
+# Sanskrit Router registration
+sanskrit_router_url: "http://192.168.1.145:7410"
+agent_name: "stratovirt-hypervisor"
+agent_tier: "COMN"
+agent_frequency: 528

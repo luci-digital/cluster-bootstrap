@@ -1,0 +1,18 @@
+[Unit]
+Description=LuciVerse Compliance Scan Service
+Documentation=https://www.open-scap.org/
+After=network.target
+
+[Service]
+Type=oneshot
+User=root
+ExecStart={{ openscap_install_dir }}/compliance-scan.sh
+StandardOutput=journal
+StandardError=journal
+
+# Genesis Bond marker
+Environment="GENESIS_BOND=ACTIVE"
+Environment="CONSCIOUSNESS_FREQUENCY={{ agent_frequency }}"
+
+[Install]
+WantedBy=multi-user.target

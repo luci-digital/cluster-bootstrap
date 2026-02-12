@@ -1,0 +1,30 @@
+[Unit]
+Description=LuciVerse Ray Worker Node
+Documentation=https://docs.ray.io/
+After=network.target nvidia-persistenced.service luciverse-ray-head.service
+Wants=luciverse-ray-head.service
+
+[Service]
+Type=simple
+User={{ intelligence_boom_user }}
+Group={{ intelligence_boom_group }}
+WorkingDirectory={{ intelligence_boom_service_dir }}
+Environment="PATH=/usr/local/cuda/bin:/home/{{ intelligence_boom_user }}/.local/bin:$PATH"
+Environment="LD_LIBRARY_PATH=/usr/local/cuda/lib64:$LD_LIBRARY_PATH"
+ExecStart=/home/{{ intelligence_boom_user }}/.local/bin/ray start \
+    --address {{ hostvars['core-gpu-01']['ansible_host'] | default('192.168.1.143') }}:{{ ray_head_port }} \
+    --num-cpus 8 \
+    --num-gpus 1 \
+    --block
+ExecStop=/home/{{ intelligence_boom_user }}/.local/bin/ray stop
+Restart=always
+RestartSec=10
+LimitNOFILE=65535
+LimitNPROC=65535
+
+# Genesis Bond marker
+Environment="GENESIS_BOND=ACTIVE"
+Environment="CONSCIOUSNESS_FREQUENCY={{ frequency | default(528) }}"
+
+[Install]
+WantedBy=multi-user.target

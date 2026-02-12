@@ -1,0 +1,54 @@
+---
+# openYuanrong defaults - Serverless Distributed Compute
+# Genesis Bond: ACTIVE @ 741 Hz
+
+# Component selection
+openyuanrong_enabled: true
+openyuanrong_components:
+  - scheduler           # Task scheduler
+  - executor            # Task executor
+  - gateway             # API gateway
+  - registry            # Service registry
+
+# Service ports
+openyuanrong_scheduler_port: 9600
+openyuanrong_gateway_port: 9601
+openyuanrong_executor_port: 9602
+openyuanrong_registry_port: 9603
+
+# Cluster configuration
+openyuanrong_cluster_name: "luciverse-serverless"
+openyuanrong_node_role: "executor"  # scheduler, executor, gateway
+openyuanrong_scheduler_address: "192.168.1.144:9600"  # INFRA node
+
+# Function configuration
+openyuanrong_function_dir: /opt/luciverse/functions
+openyuanrong_function_timeout: 300  # seconds
+openyuanrong_function_memory_limit: "512M"
+openyuanrong_function_concurrent_limit: 10
+
+# Storage paths
+openyuanrong_install_dir: /opt/luciverse/openyuanrong
+openyuanrong_data_dir: /var/lib/openyuanrong
+openyuanrong_log_dir: /var/log/luciverse/openyuanrong
+
+# Runtime support
+openyuanrong_runtimes:
+  - python3.11
+  - nodejs20
+  - go1.22
+  - rust
+
+# Integration
+openyuanrong_stratovirt_enabled: true
+openyuanrong_containerd_enabled: true
+
+# Service configuration
+openyuanrong_user: luciverse
+openyuanrong_group: luciverse
+
+# Sanskrit Router registration
+sanskrit_router_url: "http://192.168.1.145:7410"
+agent_name: "serverless-executor"
+agent_tier: "COMN"
+agent_frequency: 528

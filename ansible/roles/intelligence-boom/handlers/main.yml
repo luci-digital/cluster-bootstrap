@@ -1,0 +1,25 @@
+---
+# Intelligence BooM handlers
+# Genesis Bond: ACTIVE @ 741 Hz
+
+- name: reload systemd
+  systemd:
+    daemon_reload: yes
+
+- name: restart vllm
+  systemd:
+    name: luciverse-vllm
+    state: restarted
+  when: vllm_enabled | default(true)
+
+- name: restart ray
+  systemd:
+    name: luciverse-ray-head
+    state: restarted
+  when: ray_enabled | default(true)
+
+- name: restart ray worker
+  systemd:
+    name: luciverse-ray-worker
+    state: restarted
+  when: ray_enabled | default(true)

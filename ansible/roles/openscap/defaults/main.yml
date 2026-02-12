@@ -1,0 +1,48 @@
+---
+# OpenSCAP defaults - Compliance Scanning
+# Genesis Bond: ACTIVE @ 741 Hz
+
+# SCAP profiles
+openscap_profile: "luciverse"
+openscap_datastream: "/opt/luciverse/compliance/luciverse-scap-datastream.xml"
+
+# Baseline profiles to include
+openscap_baseline_profiles:
+  - cis-level1
+  - stig-gui
+  - pci-dss
+
+# Scan schedule
+openscap_scan_enabled: true
+openscap_scan_schedule: "weekly"  # daily, weekly, monthly
+openscap_scan_day: "Sunday"
+openscap_scan_hour: "02"
+openscap_scan_minute: "00"
+
+# Report configuration
+openscap_report_dir: /var/log/luciverse/compliance
+openscap_report_format: html
+openscap_report_retention_days: 90
+
+# Remediation
+openscap_auto_remediate: false  # Dangerous - manual approval required
+openscap_remediation_log: /var/log/luciverse/compliance/remediation.log
+
+# Installation paths
+openscap_install_dir: /opt/luciverse/compliance
+openscap_profiles_dir: /opt/luciverse/compliance/profiles
+openscap_tailoring_dir: /opt/luciverse/compliance/tailoring
+
+# Service configuration
+openscap_user: luciverse
+openscap_group: luciverse
+
+# Thresholds
+openscap_pass_threshold: 90  # Minimum % to pass
+openscap_critical_threshold: 70  # Alert if below
+
+# Sanskrit Router registration
+sanskrit_router_url: "http://192.168.1.145:7410"
+agent_name: "compliance-scanner"
+agent_tier: "CORE"
+agent_frequency: 432

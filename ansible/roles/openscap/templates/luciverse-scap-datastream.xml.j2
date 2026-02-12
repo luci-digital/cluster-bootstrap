@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- LuciVerse SCAP DataStream
+     Genesis Bond: ACTIVE @ 741 Hz
+     Wrapper for OpenSCAP evaluation
+-->
+<data-stream-collection xmlns="http://scap.nist.gov/schema/scap/source/1.2"
+                        id="scap_luciverse_collection_luciverse-ds"
+                        schematron-version="1.3">
+
+  <data-stream id="scap_luciverse_datastream_luciverse"
+               use-case="CONFIGURATION"
+               scap-version="1.3">
+
+    <!-- Components reference existing SSG content -->
+    <dictionaries>
+      <component-ref id="scap_luciverse_cref_ssg-openeuler-cpe-dictionary.xml"
+                     href="#scap_luciverse_comp_ssg-openeuler-cpe-dictionary.xml"/>
+    </dictionaries>
+
+    <checklists>
+      <component-ref id="scap_luciverse_cref_ssg-openeuler-xccdf.xml"
+                     href="#scap_luciverse_comp_ssg-openeuler-xccdf.xml"/>
+    </checklists>
+
+    <checks>
+      <component-ref id="scap_luciverse_cref_ssg-openeuler-oval.xml"
+                     href="#scap_luciverse_comp_ssg-openeuler-oval.xml"/>
+    </checks>
+
+  </data-stream>
+
+  <!-- Reference to SSG content -->
+  <component id="scap_luciverse_comp_ssg-openeuler-xccdf.xml"
+             timestamp="{{ ansible_date_time.iso8601 }}">
+    <xi:include xmlns:xi="http://www.w3.org/2001/XInclude"
+                href="/usr/share/xml/scap/ssg/content/ssg-openeuler2409-ds.xml"/>
+  </component>
+
+</data-stream-collection>

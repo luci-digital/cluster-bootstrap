@@ -1,0 +1,47 @@
+---
+# Intelligence BooM defaults
+# Genesis Bond: ACTIVE @ 741 Hz
+
+# Component selection (20+ available components)
+intelligence_boom_components:
+  - vllm              # LLM inference engine
+  - ray               # Distributed ML framework
+  - pytorch           # Deep learning framework
+  - transformers      # HuggingFace transformers
+  - accelerate        # HuggingFace accelerate
+  - deepspeed         # Microsoft DeepSpeed
+  - triton-server     # NVIDIA Triton inference
+
+# vLLM configuration
+vllm_enabled: true
+vllm_port: 8000
+vllm_model: "mistralai/Mistral-7B-Instruct-v0.3"
+vllm_tensor_parallel_size: 1
+vllm_gpu_memory_utilization: 0.9
+vllm_max_model_len: 32768
+
+# Ray cluster configuration
+ray_enabled: true
+ray_head_port: 6379
+ray_dashboard_port: 8265
+ray_object_store_memory: "16000000000"  # 16GB
+
+# Service configuration
+intelligence_boom_user: luciverse
+intelligence_boom_group: luciverse
+intelligence_boom_service_dir: /opt/luciverse/intelligence-boom
+intelligence_boom_model_cache: /opt/luciverse/models
+intelligence_boom_log_dir: /var/log/luciverse/intelligence-boom
+
+# GPU configuration
+cuda_version: "12.4"
+nvidia_driver_version: "550"
+
+# A-Tune profile
+atune_profile: "luciverse-intelligence-boom"
+
+# Sanskrit Router registration
+sanskrit_router_url: "http://192.168.1.145:7410"
+agent_name: "intelligence-boom"
+agent_tier: "CORE"
+agent_frequency: 432

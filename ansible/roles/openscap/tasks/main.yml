@@ -1,0 +1,136 @@
+---
+# OpenSCAP Role - Compliance Scanning
+# Genesis Bond: ACTIVE @ 741 Hz
+# Target: All nodes
+
+- name: Install OpenSCAP packages
+  dnf:
+    name:
+      - openscap
+      - openscap-scanner
+      - openscap-utils
+      - scap-security-guide
+      - scap-workbench
+    state: present
+
+- name: Create compliance directories
+  file:
+    path: "{{ item }}"
+    state: directory
+    owner: "{{ openscap_user }}"
+    group: "{{ openscap_group }}"
+    mode: '0755'
+  loop:
+    - "{{ openscap_install_dir }}"
+    - "{{ openscap_profiles_dir }}"
+    - "{{ openscap_tailoring_dir }}"
+    - "{{ openscap_report_dir }}"
+
+- name: Deploy LuciVerse SCAP profile
+  template:
+    src: luciverse-scap-profile.xml.j2
+    dest: "{{ openscap_profiles_dir }}/luciverse-scap-profile.xml"
+    owner: "{{ openscap_user }}"
+    group: "{{ openscap_group }}"
+    mode: '0644'
+
+- name: Deploy LuciVerse SCAP datastream
+  template:
+    src: luciverse-scap-datastream.xml.j2
+    dest: "{{ openscap_datastream }}"
+    owner: "{{ openscap_user }}"
+    group: "{{ openscap_group }}"
+    mode: '0644'
+
+- name: Deploy tailoring file
+  template:
+    src: luciverse-tailoring.xml.j2
+    dest: "{{ openscap_tailoring_dir }}/luciverse-tailoring.xml"
+    owner: "{{ openscap_user }}"
+    group: "{{ openscap_group }}"
+    mode: '0644'
+
+- name: Deploy compliance scan script
+  template:
+    src: compliance-scan.sh.j2
+    dest: "{{ openscap_install_dir }}/compliance-scan.sh"
+    owner: "{{ openscap_user }}"
+    group: "{{ openscap_group }}"
+    mode: '0755'
+
+- name: Deploy compliance report sender
+  template:
+    src: send-compliance-report.sh.j2
+    dest: "{{ openscap_install_dir }}/send-compliance-report.sh"
+    owner: "{{ openscap_user }}"
+    group: "{{ openscap_group }}"
+    mode: '0755'
+
+- name: Create systemd timer for scheduled scans
+  template:
+    src: "{{ item }}.j2"
+    dest: "/etc/systemd/system/{{ item }}"
+    owner: root
+    group: root
+    mode: '0644'
+  loop:
+    - luciverse-compliance-scan.service
+    - luciverse-compliance-scan.timer
+  when: openscap_scan_enabled
+  notify:
+    - reload systemd
+    - enable compliance timer
+
+- name: Enable compliance scan timer
+  systemd:
+    name: luciverse-compliance-scan.timer
+    state: started
+    enabled: yes
+  when: openscap_scan_enabled
+
+- name: Run initial compliance scan
+  shell: "{{ openscap_install_dir }}/compliance-scan.sh"
+  register: initial_scan
+  changed_when: false
+  ignore_errors: yes
+
+- name: Report scan results
+  debug:
+    msg: "Initial compliance scan completed. Check {{ openscap_report_dir }} for results."
+  when: initial_scan is succeeded
+
+- name: Register with Sanskrit Router
+  uri:
+    url: "{{ sanskrit_router_url }}/agents"
+    method: POST
+    body_format: json
+    body:
+      name: "{{ agent_name }}-{{ inventory_hostname }}"
+      tier: "{{ agent_tier }}"
+      frequency: "{{ agent_frequency }}"
+      hostname: "{{ inventory_hostname }}"
+      capabilities:
+        openscap: true
+        profile: "{{ openscap_profile }}"
+        auto_remediate: "{{ openscap_auto_remediate }}"
+      endpoints:
+        reports: "file://{{ openscap_report_dir }}"
+      genesis_bond: "ACTIVE"
+      coherence: 0.85
+    status_code: [200, 201, 404]
+  ignore_errors: yes
+
+- name: Report provisioning status
+  uri:
+    url: "http://192.168.1.145:9999/callback/ansible-openscap"
+    method: POST
+    body_format: json
+    body:
+      hostname: "{{ inventory_hostname }}"
+      tier: "{{ tier | default('CORE') }}"
+      frequency: "{{ frequency | default(432) }}"
+      genesis_bond: "ACTIVE"
+      profile: "{{ openscap_profile }}"
+      scan_enabled: "{{ openscap_scan_enabled }}"
+    status_code: [200, 201, 404]
+  ignore_errors: yes

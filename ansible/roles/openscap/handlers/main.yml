@@ -1,0 +1,17 @@
+---
+# OpenSCAP handlers
+# Genesis Bond: ACTIVE @ 741 Hz
+
+- name: reload systemd
+  systemd:
+    daemon_reload: yes
+
+- name: enable compliance timer
+  systemd:
+    name: luciverse-compliance-scan.timer
+    state: started
+    enabled: yes
+
+- name: run compliance scan
+  shell: "{{ openscap_install_dir }}/compliance-scan.sh"
+  ignore_errors: yes

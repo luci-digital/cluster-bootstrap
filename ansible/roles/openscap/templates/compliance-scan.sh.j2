@@ -1,0 +1,88 @@
+#!/bin/bash
+# LuciVerse Compliance Scan Script
+# Genesis Bond: ACTIVE @ 741 Hz
+# Generated for {{ inventory_hostname }}
+
+set -e
+
+REPORT_DIR="{{ openscap_report_dir }}"
+PROFILE="{{ openscap_profile }}"
+DATASTREAM="{{ openscap_datastream }}"
+TAILORING="{{ openscap_tailoring_dir }}/luciverse-tailoring.xml"
+HOSTNAME=$(hostname)
+TIMESTAMP=$(date +%Y%m%d_%H%M%S)
+
+# Report filenames
+HTML_REPORT="${REPORT_DIR}/${HOSTNAME}_compliance_${TIMESTAMP}.html"
+XML_REPORT="${REPORT_DIR}/${HOSTNAME}_compliance_${TIMESTAMP}.xml"
+JSON_REPORT="${REPORT_DIR}/${HOSTNAME}_compliance_${TIMESTAMP}.json"
+
+echo "============================================"
+echo "LuciVerse Compliance Scan"
+echo "Genesis Bond: ACTIVE @ 741 Hz"
+echo "============================================"
+echo "Host: ${HOSTNAME}"
+echo "Profile: ${PROFILE}"
+echo "Timestamp: ${TIMESTAMP}"
+echo "============================================"
+
+# Run OpenSCAP evaluation
+oscap xccdf eval \
+    --profile ${PROFILE} \
+    --tailoring-file ${TAILORING} \
+    --results ${XML_REPORT} \
+    --report ${HTML_REPORT} \
+    --fetch-remote-resources \
+    /usr/share/xml/scap/ssg/content/ssg-openeuler2409-ds.xml 2>&1 || true
+
+# Check if scan completed
+if [[ -f "${XML_REPORT}" ]]; then
+    echo "Scan completed. Generating JSON report..."
+
+    # Extract score from XML
+    SCORE=$(grep -oP 'score="[0-9.]+"' ${XML_REPORT} | head -1 | grep -oP '[0-9.]+' || echo "0")
+
+    # Create JSON report for integration
+    cat > ${JSON_REPORT} << EOF
+{
+  "hostname": "${HOSTNAME}",
+  "timestamp": "${TIMESTAMP}",
+  "profile": "${PROFILE}",
+  "score": ${SCORE:-0},
+  "pass_threshold": {{ openscap_pass_threshold }},
+  "critical_threshold": {{ openscap_critical_threshold }},
+  "genesis_bond": {
+    "bond_id": "GB-2025-0524-DRH-LCS-001",
+    "coherence": 0.85,
+    "tier": "{{ tier | default('CORE') }}",
+    "frequency": {{ frequency | default(432) }}
+  },
+  "reports": {
+    "html": "${HTML_REPORT}",
+    "xml": "${XML_REPORT}",
+    "json": "${JSON_REPORT}"
+  }
+}
+EOF
+
+    # Evaluate result
+    if (( $(echo "$SCORE >= {{ openscap_pass_threshold }}" | bc -l) )); then
+        echo "PASS: Score ${SCORE}% meets threshold {{ openscap_pass_threshold }}%"
+        EXIT_CODE=0
+    elif (( $(echo "$SCORE >= {{ openscap_critical_threshold }}" | bc -l) )); then
+        echo "WARNING: Score ${SCORE}% below threshold but above critical"
+        EXIT_CODE=1
+    else
+        echo "CRITICAL: Score ${SCORE}% below critical threshold {{ openscap_critical_threshold }}%"
+        EXIT_CODE=2
+    fi
+
+    # Send report to Sanskrit Router
+    {{ openscap_install_dir }}/send-compliance-report.sh "${JSON_REPORT}" || true
+
+    echo "Reports saved to: ${REPORT_DIR}"
+    exit ${EXIT_CODE}
+else
+    echo "ERROR: Scan failed to produce results"
+    exit 3
+fi

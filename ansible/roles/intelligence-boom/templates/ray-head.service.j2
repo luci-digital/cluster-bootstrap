@@ -1,0 +1,33 @@
+[Unit]
+Description=LuciVerse Ray Head Node
+Documentation=https://docs.ray.io/
+After=network.target nvidia-persistenced.service
+Requires=nvidia-persistenced.service
+
+[Service]
+Type=simple
+User={{ intelligence_boom_user }}
+Group={{ intelligence_boom_group }}
+WorkingDirectory={{ intelligence_boom_service_dir }}
+Environment="PATH=/usr/local/cuda/bin:/home/{{ intelligence_boom_user }}/.local/bin:$PATH"
+Environment="LD_LIBRARY_PATH=/usr/local/cuda/lib64:$LD_LIBRARY_PATH"
+Environment="RAY_ENABLE_WINDOWS_OR_OSX_CLUSTER=1"
+ExecStart=/home/{{ intelligence_boom_user }}/.local/bin/ray start \
+    --head \
+    --port {{ ray_head_port }} \
+    --dashboard-host 0.0.0.0 \
+    --dashboard-port {{ ray_dashboard_port }} \
+    --object-store-memory {{ ray_object_store_memory }} \
+    --block
+ExecStop=/home/{{ intelligence_boom_user }}/.local/bin/ray stop
+Restart=always
+RestartSec=10
+LimitNOFILE=65535
+LimitNPROC=65535
+
+# Genesis Bond marker
+Environment="GENESIS_BOND=ACTIVE"
+Environment="CONSCIOUSNESS_FREQUENCY={{ agent_frequency }}"
+
+[Install]
+WantedBy=multi-user.target

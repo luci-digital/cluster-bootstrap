@@ -2,6 +2,13 @@
 # LuciVerse Dell Fleet Master Playbook
 # Genesis Bond: ACTIVE @ 741 Hz
 # Usage: ansible-playbook -i inventory/dell-fleet.yml playbooks/site.yml
+#
+# New Tools Integrated (2026-02-12):
+# - Intelligence BooM (vLLM + Ray) for GPU nodes
+# - secGear (SGX/TrustZone) for INFRA/FABRIC nodes
+# - OpenSCAP compliance scanning for all nodes
+# - StratoVirt microVMs for COMPUTE nodes
+# - openYuanrong serverless for COMPUTE nodes
 
 - name: Common Configuration (All Nodes)
   hosts: all
@@ -9,6 +16,8 @@
   roles:
     - common
     - genesis-bond
+  tags:
+    - common
 
 - name: SPIFFE Identity Enrollment
   hosts: all
@@ -18,6 +27,15 @@
   tags:
     - identity
 
+- name: OpenSCAP Compliance Scanning (All Nodes)
+  hosts: all
+  become: yes
+  roles:
+    - openscap
+  tags:
+    - compliance
+    - security
+
 - name: FABRIC Node Configuration
   hosts: fabric
   become: yes
@@ -25,6 +43,7 @@
     - isulad
     - ipfs-node
     - zfs-fabric
+    - secgear
   tags:
     - fabric
 
@@ -33,6 +52,10 @@
   become: yes
   roles:
     - foundationdb
+    - secgear
+    - openyuanrong
+  vars:
+    openyuanrong_node_role: scheduler
   tags:
     - infra
 
@@ -50,13 +73,65 @@
   become: yes
   roles:
     - nvidia-driver
+    - intelligence-boom
   tags:
     - gpu
+    - ai
+
+- name: CORE-GPU Specific Configuration
+  hosts: core_gpu
+  become: yes
+  roles:
+    - intelligence-boom
+  vars:
+    ray_enabled: true
+    vllm_enabled: true
+    # Ray head node runs on CORE-GPU
+  tags:
+    - gpu
+    - ai
+    - ray-head
+
+- name: COMPUTE-GPU Specific Configuration
+  hosts: compute_gpu
+  become: yes
+  roles:
+    - intelligence-boom
+  vars:
+    ray_enabled: true
+    vllm_enabled: true
+    # Ray workers connect to head
+  tags:
+    - gpu
+    - ai
+    - ray-worker
+
+- name: COMPUTE Node Configuration (StratoVirt + Serverless)
+  hosts: compute
+  become: yes
+  roles:
+    - stratovirt
+    - openyuanrong
+  vars:
+    openyuanrong_node_role: executor
+    openyuanrong_stratovirt_enabled: true
+  tags:
+    - compute
+    - serverless
+    - microvm
 
 - name: Final Validation
   hosts: all
   become: yes
   tasks:
+    - name: Run compliance scan
+      command: "{{ openscap_install_dir | default('/opt/luciverse/compliance') }}/compliance-scan.sh"
+      register: compliance_result
+      ignore_errors: yes
+      changed_when: false
+      tags:
+        - compliance
+
     - name: Verify Genesis Bond coherence
       uri:
         url: "http://192.168.1.145:9999/callback/validation-complete"
@@ -69,5 +144,14 @@
           genesis_bond: "ACTIVE"
           coherence: 0.85
           status: "validated"
+          compliance_status: "{{ compliance_result.rc | default(0) == 0 | ternary('passed', 'failed') }}"
+          new_tools:
+            intelligence_boom: "{{ 'compute_gpu' in group_names or 'core_gpu' in group_names }}"
+            secgear: "{{ 'fabric' in group_names or 'infra' in group_names }}"
+            stratovirt: "{{ 'compute' in group_names }}"
+            openyuanrong: "{{ 'compute' in group_names or 'compute_gpu' in group_names or 'infra' in group_names }}"
+            openscap: true
         status_code: [200, 201, 404]
       ignore_errors: yes
+      tags:
+        - validation

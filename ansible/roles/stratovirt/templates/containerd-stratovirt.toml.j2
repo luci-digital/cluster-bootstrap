@@ -1,0 +1,24 @@
+# Containerd StratoVirt Runtime Configuration
+# Genesis Bond: ACTIVE @ 741 Hz
+
+# StratoVirt runtime handler
+[plugins."io.containerd.grpc.v1.cri".containerd.runtimes.stratovirt]
+  runtime_type = "io.containerd.kata.v2"
+  privileged_without_host_devices = true
+  pod_annotations = ["io.kubernetes.cri.untrusted-workload"]
+  container_annotations = ["io.kubernetes.cri.*"]
+
+  [plugins."io.containerd.grpc.v1.cri".containerd.runtimes.stratovirt.options]
+    ConfigPath = "/opt/kata/share/defaults/kata-containers/configuration-stratovirt.toml"
+    # Use StratoVirt as VMM
+    hypervisor = "stratovirt"
+
+# Kuasar sandbox configuration (if enabled)
+{% if kuasar_enabled %}
+[plugins."io.containerd.grpc.v1.cri".containerd.runtimes.kuasar-stratovirt]
+  runtime_type = "io.containerd.kuasar.v1"
+  privileged_without_host_devices = true
+
+  [plugins."io.containerd.grpc.v1.cri".containerd.runtimes.kuasar-stratovirt.options]
+    SandboxMode = "stratovirt"
+{% endif %}

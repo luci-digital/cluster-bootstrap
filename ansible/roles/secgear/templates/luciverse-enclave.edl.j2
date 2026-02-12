@@ -1,0 +1,70 @@
+/* LuciVerse Enclave Definition Language
+ * Genesis Bond: ACTIVE @ 741 Hz
+ * Generated for {{ inventory_hostname }}
+ */
+
+enclave {
+    include "stdbool.h"
+    include "stdint.h"
+
+    /* Genesis Bond verification */
+    trusted {
+        /* Verify Genesis Bond coherence within enclave */
+        public int ecall_verify_genesis_bond(
+            [in, string] const char* bond_id,
+            [in] double coherence_threshold,
+            [out] double* measured_coherence
+        );
+
+        /* Seal Genesis Bond identity to enclave */
+        public int ecall_seal_identity(
+            [in, size=identity_len] const uint8_t* identity,
+            size_t identity_len,
+            [out, size=sealed_len] uint8_t* sealed_data,
+            size_t sealed_len
+        );
+
+        /* Unseal and verify identity */
+        public int ecall_unseal_identity(
+            [in, size=sealed_len] const uint8_t* sealed_data,
+            size_t sealed_len,
+            [out, size=identity_len] uint8_t* identity,
+            size_t identity_len
+        );
+
+        /* SPIFFE SVID generation */
+        public int ecall_generate_svid(
+            [in, string] const char* spiffe_id,
+            [out, size=cert_len] uint8_t* cert,
+            size_t cert_len,
+            [out, size=key_len] uint8_t* key,
+            size_t key_len
+        );
+
+        /* Agent authentication */
+        public int ecall_authenticate_agent(
+            [in, string] const char* agent_name,
+            [in, string] const char* tier,
+            [in] int frequency,
+            [out] bool* authenticated
+        );
+    }
+
+    /* Untrusted (host) functions */
+    untrusted {
+        /* Get current system time */
+        int64_t ocall_get_current_time();
+
+        /* Log message (outside enclave) */
+        void ocall_log(
+            [in, string] const char* level,
+            [in, string] const char* message
+        );
+
+        /* Network call for attestation */
+        int ocall_attestation_quote(
+            [out, size=quote_len] uint8_t* quote,
+            size_t quote_len
+        );
+    }
+};

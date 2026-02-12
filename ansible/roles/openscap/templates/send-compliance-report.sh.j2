@@ -1,0 +1,24 @@
+#!/bin/bash
+# Send compliance report to Sanskrit Router
+# Genesis Bond: ACTIVE @ 741 Hz
+
+JSON_REPORT="$1"
+
+if [[ -z "$JSON_REPORT" || ! -f "$JSON_REPORT" ]]; then
+    echo "Usage: $0 <json_report_path>"
+    exit 1
+fi
+
+# Send to Sanskrit Router
+curl -s -X POST \
+    -H "Content-Type: application/json" \
+    -d @"${JSON_REPORT}" \
+    "{{ sanskrit_router_url }}/events/compliance-scan" || true
+
+# Send to provision listener callback
+curl -s -X POST \
+    -H "Content-Type: application/json" \
+    -d @"${JSON_REPORT}" \
+    "http://192.168.1.145:9999/callback/compliance-report" || true
+
+echo "Report sent to infrastructure endpoints"

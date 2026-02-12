@@ -1,0 +1,44 @@
+---
+# secGear defaults - Confidential Computing
+# Genesis Bond: ACTIVE @ 741 Hz
+
+# secGear components
+secgear_components:
+  - secgear          # Main framework
+  - itrustee_sdk     # TrustZone TEE (ARM)
+  - sgx-sdk          # Intel SGX SDK (x86_64)
+
+# Enable based on hardware support
+secgear_sgx_enabled: true
+secgear_trustzone_enabled: false  # ARM only
+
+# Installation paths
+secgear_install_dir: /opt/luciverse/secgear
+secgear_enclave_dir: /opt/luciverse/secgear/enclaves
+secgear_log_dir: /var/log/luciverse/secgear
+
+# SGX configuration
+sgx_aesm_service: true
+sgx_dcap_enabled: true
+sgx_remote_attestation: true
+sgx_pccs_url: "https://localhost:8081"
+
+# RA-TLS configuration (Remote Attestation TLS)
+ratls_enabled: true
+ratls_port: 8443
+ratls_cert_path: "{{ secgear_install_dir }}/certs"
+
+# SPIFFE integration
+spiffe_enabled: true
+spiffe_trust_domain: "lucidigital.net"
+spiffe_workload_api_socket: "/run/spiffe/workload.sock"
+
+# Service configuration
+secgear_user: luciverse
+secgear_group: luciverse
+
+# Sanskrit Router registration
+sanskrit_router_url: "http://192.168.1.145:7410"
+agent_name: "secgear-attestation"
+agent_tier: "CORE"
+agent_frequency: 432

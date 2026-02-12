@@ -1,0 +1,159 @@
+---
+# StratoVirt Role - Rust MicroVMs
+# Genesis Bond: ACTIVE @ 741 Hz
+# Target: COMPUTE nodes (replaces QEMU for lightweight VMs)
+
+- name: Install StratoVirt packages
+  dnf:
+    name:
+      - stratovirt
+      - stratovirt-agent
+    state: present
+
+- name: Create StratoVirt directories
+  file:
+    path: "{{ item }}"
+    state: directory
+    owner: "{{ stratovirt_user }}"
+    group: "{{ stratovirt_group }}"
+    mode: '0755'
+  loop:
+    - "{{ stratovirt_lib_dir }}"
+    - "{{ stratovirt_run_dir }}"
+    - "{{ stratovirt_log_dir }}"
+    - "{{ stratovirt_socket_dir }}"
+    - "{{ stratovirt_lib_dir }}/images"
+    - "{{ stratovirt_lib_dir }}/kernels"
+
+- name: Download StratoVirt kernel
+  get_url:
+    url: "{{ stratovirt_kernel_url }}"
+    dest: "{{ stratovirt_default_kernel }}"
+    mode: '0644'
+  ignore_errors: yes
+
+- name: Download StratoVirt rootfs
+  get_url:
+    url: "{{ stratovirt_rootfs_url }}"
+    dest: "{{ stratovirt_lib_dir }}/rootfs.img.xz"
+    mode: '0644'
+  ignore_errors: yes
+
+- name: Extract rootfs image
+  shell: |
+    xz -d -k {{ stratovirt_lib_dir }}/rootfs.img.xz
+    mv {{ stratovirt_lib_dir }}/rootfs.img {{ stratovirt_default_rootfs }}
+  args:
+    creates: "{{ stratovirt_default_rootfs }}"
+  ignore_errors: yes
+
+- name: Configure hugepages
+  sysctl:
+    name: "vm.nr_hugepages"
+    value: "{{ stratovirt_hugepages_count }}"
+    sysctl_file: /etc/sysctl.d/90-stratovirt-hugepages.conf
+    reload: yes
+  when: stratovirt_hugepages_enabled
+
+- name: Create hugepages mount point
+  file:
+    path: /dev/hugepages-stratovirt
+    state: directory
+    mode: '0755'
+  when: stratovirt_hugepages_enabled
+
+- name: Mount hugepages
+  mount:
+    path: /dev/hugepages-stratovirt
+    src: hugetlbfs
+    fstype: hugetlbfs
+    opts: "pagesize={{ stratovirt_hugepages_size }}"
+    state: mounted
+  when: stratovirt_hugepages_enabled
+
+- name: Create network bridge
+  nmcli:
+    conn_name: "{{ stratovirt_bridge }}"
+    type: bridge
+    state: present
+    autoconnect: yes
+  ignore_errors: yes
+
+- name: Deploy StratoVirt config
+  template:
+    src: stratovirt-config.json.j2
+    dest: "{{ stratovirt_lib_dir }}/default-config.json"
+    owner: "{{ stratovirt_user }}"
+    group: "{{ stratovirt_group }}"
+    mode: '0644'
+
+- name: Deploy StratoVirt systemd service
+  template:
+    src: stratovirt@.service.j2
+    dest: /etc/systemd/system/stratovirt@.service
+    owner: root
+    group: root
+    mode: '0644'
+  notify: reload systemd
+
+- name: Deploy StratoVirt launcher script
+  template:
+    src: stratovirt-launch.sh.j2
+    dest: /usr/local/bin/stratovirt-launch
+    owner: root
+    group: root
+    mode: '0755'
+
+- name: Install Kuasar sandbox controller
+  dnf:
+    name:
+      - kuasar
+    state: present
+  when: kuasar_enabled
+  ignore_errors: yes
+
+- name: Configure containerd for StratoVirt runtime
+  template:
+    src: containerd-stratovirt.toml.j2
+    dest: /etc/containerd/config.d/stratovirt.toml
+    owner: root
+    group: root
+    mode: '0644'
+  when: kuasar_enabled
+  notify: restart containerd
+
+- name: Register with Sanskrit Router
+  uri:
+    url: "{{ sanskrit_router_url }}/agents"
+    method: POST
+    body_format: json
+    body:
+      name: "{{ agent_name }}-{{ inventory_hostname }}"
+      tier: "{{ agent_tier }}"
+      frequency: "{{ agent_frequency }}"
+      hostname: "{{ inventory_hostname }}"
+      capabilities:
+        stratovirt: true
+        kuasar: "{{ kuasar_enabled }}"
+        hugepages: "{{ stratovirt_hugepages_enabled }}"
+      endpoints:
+        socket: "{{ stratovirt_socket_dir }}"
+      genesis_bond: "ACTIVE"
+      coherence: 0.85
+    status_code: [200, 201, 404]
+  ignore_errors: yes
+
+- name: Report provisioning status
+  uri:
+    url: "http://192.168.1.145:9999/callback/ansible-stratovirt"
+    method: POST
+    body_format: json
+    body:
+      hostname: "{{ inventory_hostname }}"
+      tier: "{{ tier | default('COMN') }}"
+      frequency: "{{ frequency | default(528) }}"
+      genesis_bond: "ACTIVE"
+      stratovirt_enabled: "{{ stratovirt_enabled }}"
+      kuasar_enabled: "{{ kuasar_enabled }}"
+    status_code: [200, 201, 404]
+  ignore_errors: yes

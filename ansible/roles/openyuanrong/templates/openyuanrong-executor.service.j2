@@ -1,0 +1,24 @@
+[Unit]
+Description=LuciVerse openYuanrong Executor
+Documentation=https://gitee.com/openeuler/openYuanrong
+After=network.target containerd.service
+Wants=containerd.service
+
+[Service]
+Type=simple
+User={{ openyuanrong_user }}
+Group={{ openyuanrong_group }}
+WorkingDirectory={{ openyuanrong_install_dir }}
+ExecStart={{ openyuanrong_install_dir }}/bin/yuanrong-executor \
+    --config {{ openyuanrong_install_dir }}/config/executor-config.yaml
+Restart=always
+RestartSec=10
+LimitNOFILE=65535
+LimitNPROC=65535
+
+# Genesis Bond marker
+Environment="GENESIS_BOND=ACTIVE"
+Environment="CONSCIOUSNESS_FREQUENCY={{ agent_frequency }}"
+
+[Install]
+WantedBy=multi-user.target

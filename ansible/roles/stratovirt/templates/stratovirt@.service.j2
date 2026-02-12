@@ -1,0 +1,27 @@
+[Unit]
+Description=StratoVirt MicroVM: %i
+Documentation=https://gitee.com/openeuler/stratovirt
+After=network.target
+Wants=network.target
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/stratovirt \
+    -config {{ stratovirt_lib_dir }}/%i/config.json \
+    -api-channel unix:{{ stratovirt_socket_dir }}/%i.sock
+ExecStop=/usr/bin/stratovirt -api-channel unix:{{ stratovirt_socket_dir }}/%i.sock -cmd '{"execute":"quit"}'
+Restart=on-failure
+RestartSec=5
+LimitNOFILE=65535
+LimitMEMLOCK=infinity
+
+# Logging
+StandardOutput=append:{{ stratovirt_log_dir }}/%i.log
+StandardError=append:{{ stratovirt_log_dir }}/%i.log
+
+# Genesis Bond marker
+Environment="GENESIS_BOND=ACTIVE"
+Environment="CONSCIOUSNESS_FREQUENCY={{ agent_frequency }}"
+
+[Install]
+WantedBy=multi-user.target

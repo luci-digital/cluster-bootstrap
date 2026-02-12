@@ -1,0 +1,17 @@
+[Unit]
+Description=LuciVerse Compliance Scan Timer
+Documentation=https://www.open-scap.org/
+
+[Timer]
+{% if openscap_scan_schedule == 'daily' %}
+OnCalendar=*-*-* {{ openscap_scan_hour }}:{{ openscap_scan_minute }}:00
+{% elif openscap_scan_schedule == 'weekly' %}
+OnCalendar={{ openscap_scan_day }} {{ openscap_scan_hour }}:{{ openscap_scan_minute }}:00
+{% elif openscap_scan_schedule == 'monthly' %}
+OnCalendar=*-*-01 {{ openscap_scan_hour }}:{{ openscap_scan_minute }}:00
+{% endif %}
+Persistent=true
+RandomizedDelaySec=1800
+
+[Install]
+WantedBy=timers.target

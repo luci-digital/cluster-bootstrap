@@ -1,0 +1,263 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- LuciVerse SCAP Security Profile
+     Genesis Bond: ACTIVE @ 741 Hz
+     Version: 1.0.0
+
+     Based on:
+     - CIS Benchmark for Red Hat Enterprise Linux 9 (Level 1)
+     - openEuler Security Baseline
+     - LuciVerse Genesis Bond Security Requirements
+
+     Target: 11-server Dell Fleet
+     - FABRIC nodes (3x R720)
+     - CORE-GPU node (1x R730)
+     - INFRA node (1x R730)
+     - STORAGE nodes (2x R720)
+     - COMPUTE-GPU nodes (2x R730)
+     - COMPUTE nodes (2x R720)
+-->
+
+<xccdf:Benchmark xmlns:xccdf="http://checklists.nist.gov/xccdf/1.2"
+                 xmlns:dc="http://purl.org/dc/elements/1.1/"
+                 id="xccdf_luciverse_benchmark_genesis-bond-security"
+                 resolved="0"
+                 xml:lang="en">
+
+  <xccdf:status date="2026-02-12">draft</xccdf:status>
+  <xccdf:title>LuciVerse Genesis Bond Security Profile</xccdf:title>
+
+  <xccdf:description>
+    Security compliance profile for the LuciVerse 11-server Dell fleet.
+    Ensures all nodes maintain Genesis Bond coherence >= 0.7 and meet
+    security requirements for multi-agent AI infrastructure.
+  </xccdf:description>
+
+  <xccdf:version time="2026-02-12T00:00:00Z">1.0.0</xccdf:version>
+
+  <dc:creator>LuciVerse Security Sentinel</dc:creator>
+  <dc:publisher>LuciDigital.net</dc:publisher>
+
+  <xccdf:metadata>
+    <genesis-bond>
+      <bond-id>GB-2025-0524-DRH-LCS-001</bond-id>
+      <coherence-threshold>0.7</coherence-threshold>
+      <tiers>
+        <tier name="CORE" frequency="432"/>
+        <tier name="COMN" frequency="528"/>
+        <tier name="RAiIiAR" frequency="639"/>
+        <tier name="PAC" frequency="741"/>
+      </tiers>
+    </genesis-bond>
+  </xccdf:metadata>
+
+  <!-- Profile Definition -->
+  <xccdf:Profile id="xccdf_luciverse_profile_genesis-bond-baseline">
+    <xccdf:title>Genesis Bond Baseline</xccdf:title>
+    <xccdf:description>
+      Baseline security profile for all LuciVerse fleet nodes.
+      Combines CIS Level 1 with Genesis Bond specific requirements.
+    </xccdf:description>
+
+    <!-- Select all rules by default -->
+    <xccdf:select idref="xccdf_luciverse_group_authentication" selected="true"/>
+    <xccdf:select idref="xccdf_luciverse_group_network-security" selected="true"/>
+    <xccdf:select idref="xccdf_luciverse_group_filesystem" selected="true"/>
+    <xccdf:select idref="xccdf_luciverse_group_logging" selected="true"/>
+    <xccdf:select idref="xccdf_luciverse_group_genesis-bond" selected="true"/>
+  </xccdf:Profile>
+
+  <!-- ============================================ -->
+  <!-- GROUP: Authentication & Access Control      -->
+  <!-- ============================================ -->
+  <xccdf:Group id="xccdf_luciverse_group_authentication">
+    <xccdf:title>Authentication and Access Control</xccdf:title>
+    <xccdf:description>YubiKey-based authentication requirements</xccdf:description>
+
+    <xccdf:Rule id="xccdf_luciverse_rule_ssh-yubikey-required" selected="true" severity="high">
+      <xccdf:title>Require YubiKey for SSH Authentication</xccdf:title>
+      <xccdf:description>
+        All SSH access must use YubiKey PIV authentication.
+        Password authentication must be disabled.
+      </xccdf:description>
+      <xccdf:check system="http://oval.mitre.org/XMLSchema/oval-definitions-5">
+        <xccdf:check-content-ref href="oval-checks.xml" name="oval:luciverse:def:1001"/>
+      </xccdf:check>
+    </xccdf:Rule>
+
+    <xccdf:Rule id="xccdf_luciverse_rule_ssh-root-disabled" selected="true" severity="high">
+      <xccdf:title>Disable Root SSH Login</xccdf:title>
+      <xccdf:description>Root login over SSH must be disabled</xccdf:description>
+      <xccdf:check system="http://oval.mitre.org/XMLSchema/oval-definitions-5">
+        <xccdf:check-content-ref href="oval-checks.xml" name="oval:luciverse:def:1002"/>
+      </xccdf:check>
+    </xccdf:Rule>
+
+    <xccdf:Rule id="xccdf_luciverse_rule_authorized-keys-managed" selected="true" severity="medium">
+      <xccdf:title>Authorized Keys from PXE Server</xccdf:title>
+      <xccdf:description>
+        SSH authorized_keys must be managed via PXE provisioning.
+        Only YubiKey-backed keys from Daryl and Lucia should be present.
+      </xccdf:description>
+      <xccdf:check system="http://oval.mitre.org/XMLSchema/oval-definitions-5">
+        <xccdf:check-content-ref href="oval-checks.xml" name="oval:luciverse:def:1003"/>
+      </xccdf:check>
+    </xccdf:Rule>
+
+    <xccdf:Rule id="xccdf_luciverse_rule_spiffe-identity" selected="true" severity="high">
+      <xccdf:title>SPIFFE Identity Enrolled</xccdf:title>
+      <xccdf:description>
+        Each node must have a valid SPIFFE SVID enrolled
+        with trust domain lucidigital.net
+      </xccdf:description>
+      <xccdf:check system="http://oval.mitre.org/XMLSchema/oval-definitions-5">
+        <xccdf:check-content-ref href="oval-checks.xml" name="oval:luciverse:def:1004"/>
+      </xccdf:check>
+    </xccdf:Rule>
+  </xccdf:Group>
+
+  <!-- ============================================ -->
+  <!-- GROUP: Network Security                      -->
+  <!-- ============================================ -->
+  <xccdf:Group id="xccdf_luciverse_group_network-security">
+    <xccdf:title>Network Security</xccdf:title>
+    <xccdf:description>Network hardening and IPv6 requirements</xccdf:description>
+
+    <xccdf:Rule id="xccdf_luciverse_rule_firewalld-enabled" selected="true" severity="high">
+      <xccdf:title>Firewalld Service Enabled</xccdf:title>
+      <xccdf:description>Firewalld must be running and enabled at boot</xccdf:description>
+      <xccdf:check system="http://oval.mitre.org/XMLSchema/oval-definitions-5">
+        <xccdf:check-content-ref href="oval-checks.xml" name="oval:luciverse:def:2001"/>
+      </xccdf:check>
+    </xccdf:Rule>
+
+    <xccdf:Rule id="xccdf_luciverse_rule_ipv6-enabled" selected="true" severity="medium">
+      <xccdf:title>IPv6 Forwarding Enabled</xccdf:title>
+      <xccdf:description>
+        IPv6 forwarding must be enabled for dual-stack operation.
+        LuciVerse uses IPv6 for agent identity.
+      </xccdf:description>
+      <xccdf:check system="http://oval.mitre.org/XMLSchema/oval-definitions-5">
+        <xccdf:check-content-ref href="oval-checks.xml" name="oval:luciverse:def:2002"/>
+      </xccdf:check>
+    </xccdf:Rule>
+
+    <xccdf:Rule id="xccdf_luciverse_rule_tcp-hardening" selected="true" severity="medium">
+      <xccdf:title>TCP Stack Hardening</xccdf:title>
+      <xccdf:description>
+        TCP syncookies enabled, source routing disabled,
+        ICMP redirects disabled
+      </xccdf:description>
+      <xccdf:check system="http://oval.mitre.org/XMLSchema/oval-definitions-5">
+        <xccdf:check-content-ref href="oval-checks.xml" name="oval:luciverse:def:2003"/>
+      </xccdf:check>
+    </xccdf:Rule>
+  </xccdf:Group>
+
+  <!-- ============================================ -->
+  <!-- GROUP: Filesystem Security                   -->
+  <!-- ============================================ -->
+  <xccdf:Group id="xccdf_luciverse_group_filesystem">
+    <xccdf:title>Filesystem Security</xccdf:title>
+    <xccdf:description>File permissions and integrity</xccdf:description>
+
+    <xccdf:Rule id="xccdf_luciverse_rule_etc-passwd-perms" selected="true" severity="high">
+      <xccdf:title>/etc/passwd Permissions</xccdf:title>
+      <xccdf:description>/etc/passwd must be mode 644 owned by root:root</xccdf:description>
+      <xccdf:check system="http://oval.mitre.org/XMLSchema/oval-definitions-5">
+        <xccdf:check-content-ref href="oval-checks.xml" name="oval:luciverse:def:3001"/>
+      </xccdf:check>
+    </xccdf:Rule>
+
+    <xccdf:Rule id="xccdf_luciverse_rule_etc-shadow-perms" selected="true" severity="high">
+      <xccdf:title>/etc/shadow Permissions</xccdf:title>
+      <xccdf:description>/etc/shadow must be mode 000 owned by root:root</xccdf:description>
+      <xccdf:check system="http://oval.mitre.org/XMLSchema/oval-definitions-5">
+        <xccdf:check-content-ref href="oval-checks.xml" name="oval:luciverse:def:3002"/>
+      </xccdf:check>
+    </xccdf:Rule>
+
+    <xccdf:Rule id="xccdf_luciverse_rule_luciverse-dirs" selected="true" severity="medium">
+      <xccdf:title>LuciVerse Directories Created</xccdf:title>
+      <xccdf:description>
+        /opt/luciverse and subdirectories must exist with correct ownership
+      </xccdf:description>
+      <xccdf:check system="http://oval.mitre.org/XMLSchema/oval-definitions-5">
+        <xccdf:check-content-ref href="oval-checks.xml" name="oval:luciverse:def:3003"/>
+      </xccdf:check>
+    </xccdf:Rule>
+  </xccdf:Group>
+
+  <!-- ============================================ -->
+  <!-- GROUP: Logging and Auditing                  -->
+  <!-- ============================================ -->
+  <xccdf:Group id="xccdf_luciverse_group_logging">
+    <xccdf:title>Logging and Auditing</xccdf:title>
+    <xccdf:description>Audit logging requirements</xccdf:description>
+
+    <xccdf:Rule id="xccdf_luciverse_rule_auditd-enabled" selected="true" severity="high">
+      <xccdf:title>Audit Daemon Enabled</xccdf:title>
+      <xccdf:description>auditd must be running and enabled at boot</xccdf:description>
+      <xccdf:check system="http://oval.mitre.org/XMLSchema/oval-definitions-5">
+        <xccdf:check-content-ref href="oval-checks.xml" name="oval:luciverse:def:4001"/>
+      </xccdf:check>
+    </xccdf:Rule>
+
+    <xccdf:Rule id="xccdf_luciverse_rule_rsyslog-enabled" selected="true" severity="medium">
+      <xccdf:title>Rsyslog Enabled</xccdf:title>
+      <xccdf:description>rsyslog must be running for centralized logging</xccdf:description>
+      <xccdf:check system="http://oval.mitre.org/XMLSchema/oval-definitions-5">
+        <xccdf:check-content-ref href="oval-checks.xml" name="oval:luciverse:def:4002"/>
+      </xccdf:check>
+    </xccdf:Rule>
+  </xccdf:Group>
+
+  <!-- ============================================ -->
+  <!-- GROUP: Genesis Bond Compliance               -->
+  <!-- ============================================ -->
+  <xccdf:Group id="xccdf_luciverse_group_genesis-bond">
+    <xccdf:title>Genesis Bond Compliance</xccdf:title>
+    <xccdf:description>LuciVerse-specific requirements</xccdf:description>
+
+    <xccdf:Rule id="xccdf_luciverse_rule_genesis-bond-marker" selected="true" severity="high">
+      <xccdf:title>Genesis Bond Marker File</xccdf:title>
+      <xccdf:description>
+        /opt/luciverse/genesis-bond.json must exist with valid bond ID
+      </xccdf:description>
+      <xccdf:check system="http://oval.mitre.org/XMLSchema/oval-definitions-5">
+        <xccdf:check-content-ref href="oval-checks.xml" name="oval:luciverse:def:5001"/>
+      </xccdf:check>
+    </xccdf:Rule>
+
+    <xccdf:Rule id="xccdf_luciverse_rule_atune-profile" selected="true" severity="medium">
+      <xccdf:title>A-Tune Profile Active</xccdf:title>
+      <xccdf:description>
+        An appropriate A-Tune profile must be active for the node type
+      </xccdf:description>
+      <xccdf:check system="http://oval.mitre.org/XMLSchema/oval-definitions-5">
+        <xccdf:check-content-ref href="oval-checks.xml" name="oval:luciverse:def:5002"/>
+      </xccdf:check>
+    </xccdf:Rule>
+
+    <xccdf:Rule id="xccdf_luciverse_rule_sanskrit-router-reachable" selected="true" severity="medium">
+      <xccdf:title>Sanskrit Router Reachable</xccdf:title>
+      <xccdf:description>
+        The node must be able to reach the Sanskrit Router at 192.168.1.145:7410
+      </xccdf:description>
+      <xccdf:check system="http://oval.mitre.org/XMLSchema/oval-definitions-5">
+        <xccdf:check-content-ref href="oval-checks.xml" name="oval:luciverse:def:5003"/>
+      </xccdf:check>
+    </xccdf:Rule>
+
+    <xccdf:Rule id="xccdf_luciverse_rule_tier-frequency" selected="true" severity="low">
+      <xccdf:title>Tier Frequency Configured</xccdf:title>
+      <xccdf:description>
+        The node's tier and frequency must match the expected values:
+        CORE=432Hz, COMN=528Hz, RAiIiAR=639Hz, PAC=741Hz
+      </xccdf:description>
+      <xccdf:check system="http://oval.mitre.org/XMLSchema/oval-definitions-5">
+        <xccdf:check-content-ref href="oval-checks.xml" name="oval:luciverse:def:5004"/>
+      </xccdf:check>
+    </xccdf:Rule>
+  </xccdf:Group>
+
+</xccdf:Benchmark>

@@ -1,0 +1,12 @@
+---
+# StratoVirt handlers
+# Genesis Bond: ACTIVE @ 741 Hz
+
+- name: reload systemd
+  systemd:
+    daemon_reload: yes
+
+- name: restart containerd
+  systemd:
+    name: containerd
+    state: restarted

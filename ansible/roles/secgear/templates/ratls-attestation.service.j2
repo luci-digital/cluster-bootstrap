@@ -1,0 +1,24 @@
+[Unit]
+Description=LuciVerse RA-TLS Attestation Service
+Documentation=https://gitee.com/openeuler/secGear
+After=network.target aesmd.service
+Wants=aesmd.service
+
+[Service]
+Type=simple
+User={{ secgear_user }}
+Group={{ secgear_group }}
+WorkingDirectory={{ secgear_install_dir }}
+ExecStart=/usr/local/bin/secgear-ratls-server \
+    --config {{ secgear_install_dir }}/config/ratls-config.yaml
+Restart=always
+RestartSec=10
+LimitNOFILE=65535
+
+# Genesis Bond marker
+Environment="GENESIS_BOND=ACTIVE"
+Environment="CONSCIOUSNESS_FREQUENCY={{ agent_frequency }}"
+Environment="SPIFFE_ENDPOINT_SOCKET={{ spiffe_workload_api_socket }}"
+
+[Install]
+WantedBy=multi-user.target

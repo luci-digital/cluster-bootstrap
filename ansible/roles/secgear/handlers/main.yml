@@ -1,0 +1,18 @@
+---
+# secGear handlers
+# Genesis Bond: ACTIVE @ 741 Hz
+
+- name: reload systemd
+  systemd:
+    daemon_reload: yes
+
+- name: restart ratls
+  systemd:
+    name: luciverse-ratls-attestation
+    state: restarted
+  when: ratls_enabled | default(true)
+
+- name: restart aesmd
+  systemd:
+    name: aesmd
+    state: restarted

@@ -1,0 +1,150 @@
+---
+# openYuanrong Role - Serverless Distributed Compute
+# Genesis Bond: ACTIVE @ 741 Hz
+# Target: COMPUTE, COMPUTE-GPU nodes
+
+- name: Install openYuanrong dependencies
+  dnf:
+    name:
+      - python3-devel
+      - python3-pip
+      - nodejs
+      - npm
+      - golang
+      - rust
+      - cargo
+      - containerd
+    state: present
+
+- name: Create openYuanrong directories
+  file:
+    path: "{{ item }}"
+    state: directory
+    owner: "{{ openyuanrong_user }}"
+    group: "{{ openyuanrong_group }}"
+    mode: '0755'
+  loop:
+    - "{{ openyuanrong_install_dir }}"
+    - "{{ openyuanrong_data_dir }}"
+    - "{{ openyuanrong_log_dir }}"
+    - "{{ openyuanrong_function_dir }}"
+    - "{{ openyuanrong_install_dir }}/config"
+    - "{{ openyuanrong_install_dir }}/bin"
+
+- name: Clone openYuanrong source
+  git:
+    repo: https://gitee.com/openeuler/openYuanrong.git
+    dest: "{{ openyuanrong_install_dir }}/src"
+    version: master
+    force: yes
+  ignore_errors: yes
+
+- name: Build openYuanrong components
+  shell: |
+    cd {{ openyuanrong_install_dir }}/src
+    make build
+    cp bin/* {{ openyuanrong_install_dir }}/bin/
+  args:
+    creates: "{{ openyuanrong_install_dir }}/bin/yuanrong-scheduler"
+  ignore_errors: yes
+
+- name: Deploy openYuanrong executor config
+  template:
+    src: executor-config.yaml.j2
+    dest: "{{ openyuanrong_install_dir }}/config/executor-config.yaml"
+    owner: "{{ openyuanrong_user }}"
+    group: "{{ openyuanrong_group }}"
+    mode: '0644'
+  notify: restart openyuanrong executor
+
+- name: Deploy openYuanrong scheduler config
+  template:
+    src: scheduler-config.yaml.j2
+    dest: "{{ openyuanrong_install_dir }}/config/scheduler-config.yaml"
+    owner: "{{ openyuanrong_user }}"
+    group: "{{ openyuanrong_group }}"
+    mode: '0644'
+  when: "'infra' in group_names"
+  notify: restart openyuanrong scheduler
+
+- name: Deploy executor systemd service
+  template:
+    src: openyuanrong-executor.service.j2
+    dest: /etc/systemd/system/luciverse-yuanrong-executor.service
+    owner: root
+    group: root
+    mode: '0644'
+  notify:
+    - reload systemd
+    - restart openyuanrong executor
+
+- name: Deploy scheduler systemd service
+  template:
+    src: openyuanrong-scheduler.service.j2
+    dest: /etc/systemd/system/luciverse-yuanrong-scheduler.service
+    owner: root
+    group: root
+    mode: '0644'
+  when: "'infra' in group_names"
+  notify:
+    - reload systemd
+    - restart openyuanrong scheduler
+
+- name: Deploy LuciVerse agent function template
+  template:
+    src: luciverse-agent-function.py.j2
+    dest: "{{ openyuanrong_function_dir }}/luciverse-agent.py"
+    owner: "{{ openyuanrong_user }}"
+    group: "{{ openyuanrong_group }}"
+    mode: '0755'
+
+- name: Enable executor service
+  systemd:
+    name: luciverse-yuanrong-executor
+    state: started
+    enabled: yes
+  ignore_errors: yes
+
+- name: Enable scheduler service on INFRA node
+  systemd:
+    name: luciverse-yuanrong-scheduler
+    state: started
+    enabled: yes
+  when: "'infra' in group_names"
+  ignore_errors: yes
+
+- name: Register with Sanskrit Router
+  uri:
+    url: "{{ sanskrit_router_url }}/agents"
+    method: POST
+    body_format: json
+    body:
+      name: "{{ agent_name }}-{{ inventory_hostname }}"
+      tier: "{{ agent_tier }}"
+      frequency: "{{ agent_frequency }}"
+      hostname: "{{ inventory_hostname }}"
+      capabilities:
+        serverless: true
+        runtimes: "{{ openyuanrong_runtimes }}"
+        stratovirt: "{{ openyuanrong_stratovirt_enabled }}"
+      endpoints:
+        executor: "http://{{ ansible_default_ipv4.address }}:{{ openyuanrong_executor_port }}"
+      genesis_bond: "ACTIVE"
+      coherence: 0.85
+    status_code: [200, 201, 404]
+  ignore_errors: yes
+
+- name: Report provisioning status
+  uri:
+    url: "http://192.168.1.145:9999/callback/ansible-openyuanrong"
+    method: POST
+    body_format: json
+    body:
+      hostname: "{{ inventory_hostname }}"
+      tier: "{{ tier | default('COMN') }}"
+      frequency: "{{ frequency | default(528) }}"
+      genesis_bond: "ACTIVE"
+      openyuanrong_enabled: "{{ openyuanrong_enabled }}"
+      role: "{{ openyuanrong_node_role }}"
+    status_code: [200, 201, 404]
+  ignore_errors: yes

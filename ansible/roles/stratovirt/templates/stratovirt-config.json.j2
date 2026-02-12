@@ -1,0 +1,41 @@
+{
+  "machine-config": {
+    "type": "MicroVm",
+    "vcpu_count": {{ stratovirt_default_vcpus }},
+    "mem_size": {{ stratovirt_default_memory | regex_replace('[^0-9]', '') | int * 1024 * 1024 }},
+    "mem_path": "{% if stratovirt_hugepages_enabled %}/dev/hugepages-stratovirt{% endif %}"
+  },
+  "boot-source": {
+    "kernel_path": "{{ stratovirt_default_kernel }}",
+    "boot_args": "console=ttyS0 reboot=k panic=1 pci=off root=/dev/vda rw"
+  },
+  "drive": [
+    {
+      "drive_id": "rootfs",
+      "path_on_host": "{{ stratovirt_default_rootfs }}",
+      "read_only": false,
+      "direct": true,
+      "serial_num": "luciverse-root"
+    }
+  ],
+  "net": [
+    {
+      "iface_id": "eth0",
+      "tap_name": "{{ stratovirt_tap_prefix }}0",
+      "vhost_type": "{% if stratovirt_network_backend == 'vhost-user' %}vhost-user{% else %}vhost{% endif %}"
+    }
+  ],
+  "serial": {
+    "stdio": true
+  },
+  "vsock": {
+    "guest_cid": 3,
+    "socket_path": "{{ stratovirt_socket_dir }}/vsock.sock"
+  },
+  "genesis_bond": {
+    "bond_id": "GB-2025-0524-DRH-LCS-001",
+    "tier": "{{ tier | default('COMN') }}",
+    "frequency": {{ frequency | default(528) }},
+    "coherence_threshold": 0.7
+  }
+}

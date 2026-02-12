@@ -1,0 +1,185 @@
+---
+# Intelligence BooM Role - openEuler AI Components
+# Genesis Bond: ACTIVE @ 741 Hz
+# Target: CORE-GPU, COMPUTE-GPU nodes
+
+- name: Create Intelligence BooM user
+  user:
+    name: "{{ intelligence_boom_user }}"
+    group: "{{ intelligence_boom_group }}"
+    system: yes
+    shell: /bin/bash
+    home: "/home/{{ intelligence_boom_user }}"
+    create_home: yes
+
+- name: Create service directories
+  file:
+    path: "{{ item }}"
+    state: directory
+    owner: "{{ intelligence_boom_user }}"
+    group: "{{ intelligence_boom_group }}"
+    mode: '0755'
+  loop:
+    - "{{ intelligence_boom_service_dir }}"
+    - "{{ intelligence_boom_model_cache }}"
+    - "{{ intelligence_boom_log_dir }}"
+    - "{{ intelligence_boom_service_dir }}/config"
+
+- name: Install openEuler AI packages
+  dnf:
+    name:
+      - python3-devel
+      - python3-pip
+      - gcc
+      - gcc-c++
+      - cmake
+      - ninja-build
+      - numactl
+      - numactl-devel
+      - openmpi
+      - openmpi-devel
+    state: present
+
+- name: Install CUDA toolkit (if not present)
+  dnf:
+    name:
+      - cuda-toolkit-{{ cuda_version | replace('.', '-') }}
+    state: present
+  ignore_errors: yes
+  when: "'compute_gpu' in group_names or 'core_gpu' in group_names"
+
+- name: Install Intelligence BooM Python packages
+  pip:
+    name:
+      - vllm
+      - ray[default]
+      - torch
+      - transformers
+      - accelerate
+      - deepspeed
+      - huggingface-hub
+      - sentencepiece
+      - protobuf
+    state: present
+    extra_args: "--user"
+  become_user: "{{ intelligence_boom_user }}"
+
+- name: Configure vLLM
+  template:
+    src: vllm-config.yaml.j2
+    dest: "{{ intelligence_boom_service_dir }}/config/vllm-config.yaml"
+    owner: "{{ intelligence_boom_user }}"
+    group: "{{ intelligence_boom_group }}"
+    mode: '0644'
+  when: vllm_enabled
+  notify: restart vllm
+
+- name: Configure Ray cluster
+  template:
+    src: ray-cluster.yaml.j2
+    dest: "{{ intelligence_boom_service_dir }}/config/ray-cluster.yaml"
+    owner: "{{ intelligence_boom_user }}"
+    group: "{{ intelligence_boom_group }}"
+    mode: '0644'
+  when: ray_enabled
+  notify: restart ray
+
+- name: Deploy vLLM systemd service
+  template:
+    src: vllm.service.j2
+    dest: /etc/systemd/system/luciverse-vllm.service
+    owner: root
+    group: root
+    mode: '0644'
+  when: vllm_enabled
+  notify:
+    - reload systemd
+    - restart vllm
+
+- name: Deploy Ray head systemd service
+  template:
+    src: ray-head.service.j2
+    dest: /etc/systemd/system/luciverse-ray-head.service
+    owner: root
+    group: root
+    mode: '0644'
+  when: ray_enabled and "'core_gpu' in group_names"
+  notify:
+    - reload systemd
+    - restart ray
+
+- name: Deploy Ray worker systemd service
+  template:
+    src: ray-worker.service.j2
+    dest: /etc/systemd/system/luciverse-ray-worker.service
+    owner: root
+    group: root
+    mode: '0644'
+  when: ray_enabled and "'compute_gpu' in group_names"
+  notify:
+    - reload systemd
+    - restart ray worker
+
+- name: Activate A-Tune profile
+  command: atune-adm profile {{ atune_profile }}
+  ignore_errors: yes
+
+- name: Enable and start services
+  systemd:
+    name: "{{ item }}"
+    state: started
+    enabled: yes
+  loop:
+    - luciverse-vllm
+  when: vllm_enabled
+  ignore_errors: yes
+
+- name: Enable Ray head service on CORE-GPU
+  systemd:
+    name: luciverse-ray-head
+    state: started
+    enabled: yes
+  when: ray_enabled and "'core_gpu' in group_names"
+  ignore_errors: yes
+
+- name: Enable Ray worker service on COMPUTE-GPU
+  systemd:
+    name: luciverse-ray-worker
+    state: started
+    enabled: yes
+  when: ray_enabled and "'compute_gpu' in group_names"
+  ignore_errors: yes
+
+- name: Register with Sanskrit Router
+  uri:
+    url: "{{ sanskrit_router_url }}/agents"
+    method: POST
+    body_format: json
+    body:
+      name: "{{ agent_name }}-{{ inventory_hostname }}"
+      tier: "{{ agent_tier }}"
+      frequency: "{{ agent_frequency }}"
+      hostname: "{{ inventory_hostname }}"
+      endpoints:
+        vllm: "http://{{ ansible_default_ipv4.address }}:{{ vllm_port }}"
+        ray: "http://{{ ansible_default_ipv4.address }}:{{ ray_dashboard_port }}"
+      genesis_bond: "ACTIVE"
+      coherence: 0.85
+    status_code: [200, 201, 404]
+  ignore_errors: yes
+
+- name: Report provisioning status
+  uri:
+    url: "http://192.168.1.145:9999/callback/ansible-intelligence-boom"
+    method: POST
+    body_format: json
+    body:
+      hostname: "{{ inventory_hostname }}"
+      tier: "{{ tier | default('CORE') }}"
+      frequency: "{{ frequency | default(432) }}"
+      genesis_bond: "ACTIVE"
+      components: "{{ intelligence_boom_components }}"
+      vllm_enabled: "{{ vllm_enabled }}"
+      ray_enabled: "{{ ray_enabled }}"
+    status_code: [200, 201, 404]
+  ignore_errors: yes

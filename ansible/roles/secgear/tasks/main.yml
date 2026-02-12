@@ -1,0 +1,181 @@
+---
+# secGear Role - Confidential Computing (SGX/TrustZone)
+# Genesis Bond: ACTIVE @ 741 Hz
+# Target: INFRA, FABRIC nodes
+
+- name: Create secGear directories
+  file:
+    path: "{{ item }}"
+    state: directory
+    owner: "{{ secgear_user }}"
+    group: "{{ secgear_group }}"
+    mode: '0755'
+  loop:
+    - "{{ secgear_install_dir }}"
+    - "{{ secgear_enclave_dir }}"
+    - "{{ secgear_log_dir }}"
+    - "{{ secgear_install_dir }}/certs"
+    - "{{ secgear_install_dir }}/config"
+
+- name: Check SGX hardware support
+  command: grep -q sgx /proc/cpuinfo
+  register: sgx_hardware_check
+  ignore_errors: yes
+  changed_when: false
+
+- name: Set SGX availability fact
+  set_fact:
+    sgx_available: "{{ sgx_hardware_check.rc == 0 }}"
+
+- name: Install secGear dependencies
+  dnf:
+    name:
+      - cmake
+      - gcc
+      - gcc-c++
+      - openssl-devel
+      - ocaml
+      - ocaml-dune
+      - protobuf-devel
+      - curl-devel
+      - git
+    state: present
+
+- name: Install SGX SDK packages (openEuler)
+  dnf:
+    name:
+      - intel-sgx-sdk
+      - sgx-aesm-service
+      - sgx-dcap-libs
+      - sgx-dcap-default-qpl
+    state: present
+  when: secgear_sgx_enabled and sgx_available | default(false)
+  ignore_errors: yes
+
+- name: Install secGear from openEuler repos
+  dnf:
+    name:
+      - secGear
+      - secGear-devel
+    state: present
+  ignore_errors: yes
+
+- name: Clone secGear source (fallback)
+  git:
+    repo: https://gitee.com/openeuler/secGear.git
+    dest: "{{ secgear_install_dir }}/src"
+    version: master
+    force: yes
+  when: "'secGear' not in ansible_facts.packages | default({})"
+
+- name: Build secGear from source (if needed)
+  shell: |
+    cd {{ secgear_install_dir }}/src
+    mkdir -p build && cd build
+    cmake .. -DENCLAVE=SGX
+    make -j$(nproc)
+    make install
+  args:
+    creates: /usr/local/lib/libsecgear.so
+  when: "'secGear' not in ansible_facts.packages | default({})"
+
+- name: Enable SGX AESM service
+  systemd:
+    name: aesmd
+    state: started
+    enabled: yes
+  when: secgear_sgx_enabled and sgx_aesm_service and sgx_available | default(false)
+  ignore_errors: yes
+
+- name: Configure RA-TLS certificates
+  template:
+    src: ratls-config.yaml.j2
+    dest: "{{ secgear_install_dir }}/config/ratls-config.yaml"
+    owner: "{{ secgear_user }}"
+    group: "{{ secgear_group }}"
+    mode: '0644'
+  when: ratls_enabled
+  notify: restart ratls
+
+- name: Generate RA-TLS self-signed certificate
+  command: |
+    openssl req -x509 -nodes -days 365 \
+      -newkey ec -pkeyopt ec_paramgen_curve:P-384 \
+      -keyout {{ secgear_install_dir }}/certs/ratls.key \
+      -out {{ secgear_install_dir }}/certs/ratls.crt \
+      -subj "/CN={{ inventory_hostname }}/O=LuciVerse/OU=SecGear-RA-TLS"
+  args:
+    creates: "{{ secgear_install_dir }}/certs/ratls.crt"
+
+- name: Deploy LuciVerse enclave code
+  template:
+    src: luciverse-enclave.edl.j2
+    dest: "{{ secgear_enclave_dir }}/luciverse-enclave.edl"
+    owner: "{{ secgear_user }}"
+    group: "{{ secgear_group }}"
+    mode: '0644'
+
+- name: Deploy RA-TLS attestation service
+  template:
+    src: ratls-attestation.service.j2
+    dest: /etc/systemd/system/luciverse-ratls-attestation.service
+    owner: root
+    group: root
+    mode: '0644'
+  when: ratls_enabled
+  notify:
+    - reload systemd
+    - restart ratls
+
+- name: Enable RA-TLS attestation service
+  systemd:
+    name: luciverse-ratls-attestation
+    state: started
+    enabled: yes
+  when: ratls_enabled
+  ignore_errors: yes
+
+- name: Configure SPIFFE workload identity
+  template:
+    src: spiffe-workload.yaml.j2
+    dest: "{{ secgear_install_dir }}/config/spiffe-workload.yaml"
+    owner: "{{ secgear_user }}"
+    group: "{{ secgear_group }}"
+    mode: '0644'
+  when: spiffe_enabled
+
+- name: Register with Sanskrit Router
+  uri:
+    url: "{{ sanskrit_router_url }}/agents"
+    method: POST
+    body_format: json
+    body:
+      name: "{{ agent_name }}-{{ inventory_hostname }}"
+      tier: "{{ agent_tier }}"
+      frequency: "{{ agent_frequency }}"
+      hostname: "{{ inventory_hostname }}"
+      capabilities:
+        sgx: "{{ sgx_available | default(false) }}"
+        ratls: "{{ ratls_enabled }}"
+        spiffe: "{{ spiffe_enabled }}"
+      endpoints:
+        ratls: "https://{{ ansible_default_ipv4.address }}:{{ ratls_port }}"
+      genesis_bond: "ACTIVE"
+      coherence: 0.85
+    status_code: [200, 201, 404]
+  ignore_errors: yes
+
+- name: Report provisioning status
+  uri:
+    url: "http://192.168.1.145:9999/callback/ansible-secgear"
+    method: POST
+    body_format: json
+    body:
+      hostname: "{{ inventory_hostname }}"
+      tier: "{{ tier | default('CORE') }}"
+      frequency: "{{ frequency | default(432) }}"
+      genesis_bond: "ACTIVE"
+      sgx_available: "{{ sgx_available | default(false) }}"
+      ratls_enabled: "{{ ratls_enabled }}"
+    status_code: [200, 201, 404]
+  ignore_errors: yes

@@ -1,0 +1,22 @@
+[Unit]
+Description=LuciVerse openYuanrong Scheduler
+Documentation=https://gitee.com/openeuler/openYuanrong
+After=network.target
+
+[Service]
+Type=simple
+User={{ openyuanrong_user }}
+Group={{ openyuanrong_group }}
+WorkingDirectory={{ openyuanrong_install_dir }}
+ExecStart={{ openyuanrong_install_dir }}/bin/yuanrong-scheduler \
+    --config {{ openyuanrong_install_dir }}/config/scheduler-config.yaml
+Restart=always
+RestartSec=10
+LimitNOFILE=65535
+
+# Genesis Bond marker
+Environment="GENESIS_BOND=ACTIVE"
+Environment="CONSCIOUSNESS_FREQUENCY=432"
+
+[Install]
+WantedBy=multi-user.target
