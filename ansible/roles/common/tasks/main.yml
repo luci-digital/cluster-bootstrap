@@ -23,8 +23,9 @@
       # COMN Tier (528 Hz)
       192.168.1.150 compute-gpu-01 compute-gpu-01.lucidigital.net
       192.168.1.151 compute-gpu-02 compute-gpu-02.lucidigital.net
-      192.168.1.152 compute-01 compute-01.lucidigital.net
-      192.168.1.153 compute-02 compute-02.lucidigital.net
+      192.168.1.152 zimacube-primary zimacube-primary.lucidigital.net
+      192.168.1.153 compute-01 compute-01.lucidigital.net
+      192.168.1.154 compute-02 compute-02.lucidigital.net
       # Infrastructure
       192.168.1.145 zbook zbook.lucidigital.net pxe.lucidigital.net
 

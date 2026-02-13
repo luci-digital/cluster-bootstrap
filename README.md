@@ -27,7 +27,7 @@ curl http://localhost:9999/status
 |------|-------|----------|------------|------|-----------|
 | **FABRIC** | 3 | Dell R730 | .140-.142 | CORE | 432 Hz |
 | **COMPUTE-GPU** | 2 | Dell R630 + Tesla | .150-.151 | COMN | 528 Hz |
-| **COMPUTE** | 2 | Dell R630 | .152-.153 | COMN | 528 Hz |
+| **COMPUTE** | 2 | Dell R630 | .153-.154 | COMN | 528 Hz |
 | **INFRA** | 1 | Dell R630 | .144 | CORE | 432 Hz |
 | **CORE-GPU** | 1 | Dell R730 | .143 | CORE | 432 Hz |
 | **STORAGE** | 2 | Dell R730 | .146-.147 | CORE | 432 Hz |

@@ -52,8 +52,9 @@ all:
             compute-gpu-02:
               ansible_host: 192.168.1.151
         compute:
+          # NOTE: .152 is ZimaOS - do NOT assign to Dell fleet
           hosts:
             compute-01:
-              ansible_host: 192.168.1.152
-            compute-02:
               ansible_host: 192.168.1.153
+            compute-02:
+              ansible_host: 192.168.1.154

@@ -334,13 +334,14 @@ hardware_fleet:
     role: COMPUTE-GPU
     mac_prefix: "52:54:00:00:09"
 
+  # NOTE: .152 is ZimaOS - do NOT assign to Dell fleet
   - id: dell-compute-001
-    ip_suffix: ".152"
+    ip_suffix: ".153"
     role: COMPUTE
     mac_prefix: "52:54:00:00:0a"
 
   - id: dell-compute-002
-    ip_suffix: ".153"
+    ip_suffix: ".154"
     role: COMPUTE
     mac_prefix: "52:54:00:00:0b"
 

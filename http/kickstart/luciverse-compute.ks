@@ -4,7 +4,7 @@
 # Target: Dell R630 servers (128GB RAM, 40 threads)
 # Role: StratoVirt VM runtime, general compute
 # Tier: COMN (528 Hz)
-# Count: 2 nodes (.152-.153)
+# Count: 2 nodes (.153-.154) - NOTE: .152 reserved for ZimaOS
 # ============================================================================
 
 install
@@ -17,8 +17,9 @@ timezone America/Edmonton --utc
 
 network --bootproto=dhcp --device=link --activate --hostname=compute-node.lucidigital.net
 
-rootpw --plaintext TempInstall741!
-user --name=daryl --groups=wheel --password=TempInstall741! --plaintext
+# Temporary passwords (will be replaced by credential-inject.sh from 1Password)
+rootpw --iscrypted $6$fsHzeeGVTXZT5rPp$rCJbssf8Tr5LJkp1stID0hj3qcnL.eAf8W6Mth6RBZzn10lVlpC7THV8x2N3ghArmVyVOA8Err1B0WBMxB3fb1
+user --name=daryl --groups=wheel --iscrypted --password=$6$fsHzeeGVTXZT5rPp$rCJbssf8Tr5LJkp1stID0hj3qcnL.eAf8W6Mth6RBZzn10lVlpC7THV8x2N3ghArmVyVOA8Err1B0WBMxB3fb1
 
 firewall --enabled --ssh --port=6443:tcp,10250:tcp,2379:tcp,2380:tcp,9520:tcp,9523:tcp,9999:tcp
 selinux --permissive
@@ -99,6 +100,18 @@ echo "============================================================"
 echo "Fetching credentials from 1Password Connect..."
 curl -sf http://192.168.1.145:8000/scripts/credential-inject.sh | bash || \
     echo "Credential injection skipped - will use default passwords"
+
+# ---------------------------------------------------------------------------
+# 0.1 Dynamic Hostname Assignment based on IP
+# ---------------------------------------------------------------------------
+echo "Setting hostname based on assigned IP..."
+MY_IP=$(ip addr show | grep 'inet 192.168.1' | awk '{print $2}' | cut -d/ -f1 | head -1)
+case $MY_IP in
+    192.168.1.153) hostnamectl set-hostname compute-1.lucidigital.net ;;
+    192.168.1.154) hostnamectl set-hostname compute-2.lucidigital.net ;;
+    *) echo "Unknown IP $MY_IP - keeping default hostname" ;;
+esac
+echo "Hostname set to: $(hostname)"
 
 # ---------------------------------------------------------------------------
 # 0.5 Overlay Network Bootstrap (Nebula + SCION)

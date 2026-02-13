@@ -18,7 +18,7 @@ Deploy complete PXE netboot infrastructure on zbook to provision the 11-server D
 |------|-------|----------|------------|------|-----------|---------|
 | **FABRIC** | 3 | Dell R730 | .140-.142 | CORE | 432 Hz | iSulad, IPFS, ZFS fabric |
 | **COMPUTE-GPU** | 2 | Dell R630 + Tesla | .150-.151 | COMN | 528 Hz | GPU inference, CUDA |
-| **COMPUTE** | 2 | Dell R630 | .152-.153 | COMN | 528 Hz | StratoVirt containers |
+| **COMPUTE** | 2 | Dell R630 | .153-.154 | COMN | 528 Hz | StratoVirt containers |
 | **INFRA** | 1 | Dell R630 | .144 | CORE | 432 Hz | FoundationDB, Consul, Nomad |
 | **CORE-GPU** | 1 | Dell R730 | .143 | CORE | 432 Hz | Core GPU processing |
 | **STORAGE** | 2 | Dell R730 | .146-.147 | CORE | 432 Hz | ZFS RAID-Z2, NFS |

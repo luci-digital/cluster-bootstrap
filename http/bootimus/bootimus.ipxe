@@ -7,8 +7,9 @@
 # OS: openEuler 25.09 LTS
 # ==============================================================================
 
-# Configuration
-set pxe-server 192.168.1.145
+# Configuration - Auto-detect PXE server from DHCP
+isset ${next-server} && set pxe-server ${next-server} || set pxe-server ${dhcp-server}
+isset ${pxe-server} || set pxe-server 192.168.1.145
 set http-port 8000
 set callback-port 9999
 set http-root http://${pxe-server}:${http-port}
@@ -46,7 +47,7 @@ item core-gpu             [CORE-GPU]   Core GPU Processing (1x R730 .143)
 item storage              [STORAGE]    ZFS RAID-Z2 + NFS (2x R730 .146-.147)
 item --gap --             ======== COMN Tier (528 Hz) ========
 item compute-gpu          [COMPUTE-GPU] GPU Inference (2x R630+Tesla .150-.151)
-item compute              [COMPUTE]    StratoVirt + K8s Worker (2x R630 .152-.153)
+item compute              [COMPUTE]    StratoVirt + K8s Worker (2x R630 .153-.154)
 item --gap --             ======== Utilities ========
 item shell                [SHELL]      Drop to iPXE shell
 item reboot               [REBOOT]     Reboot system
@@ -93,7 +94,7 @@ initrd ${initrd-url}
 boot || goto failed
 
 # ==============================================================================
-# COMPUTE Node Installation (.152-.153)
+# COMPUTE Node Installation (.153-.154) - NOTE: .152 is ZimaOS
 # ==============================================================================
 :compute
 echo
@@ -101,7 +102,7 @@ echo =====================================================
 echo   COMPUTE Node Installation
 echo   Tier: COMN (528 Hz)
 echo   Role: StratoVirt VMs, K8s Worker
-echo   Target: Dell R630 (.152, .153)
+echo   Target: Dell R630 (.153, .154)
 echo =====================================================
 echo
 kernel ${kernel-url} inst.repo=${openeuler-mirror} inst.ks=${kickstart-root}/luciverse-compute.ks ip=dhcp console=tty0 console=ttyS0,115200n8

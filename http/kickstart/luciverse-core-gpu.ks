@@ -17,8 +17,9 @@ timezone America/Edmonton --utc
 
 network --bootproto=dhcp --device=link --activate --hostname=core-gpu.lucidigital.net
 
-rootpw --plaintext TempInstall741!
-user --name=daryl --groups=wheel --password=TempInstall741! --plaintext
+# Temporary passwords (will be replaced by credential-inject.sh from 1Password)
+rootpw --iscrypted $6$fsHzeeGVTXZT5rPp$rCJbssf8Tr5LJkp1stID0hj3qcnL.eAf8W6Mth6RBZzn10lVlpC7THV8x2N3ghArmVyVOA8Err1B0WBMxB3fb1
+user --name=daryl --groups=wheel --iscrypted --password=$6$fsHzeeGVTXZT5rPp$rCJbssf8Tr5LJkp1stID0hj3qcnL.eAf8W6Mth6RBZzn10lVlpC7THV8x2N3ghArmVyVOA8Err1B0WBMxB3fb1
 
 firewall --enabled --ssh --port=8080:tcp,11434:tcp,9432:tcp,9433:tcp,9434:tcp,9999:tcp
 selinux --permissive
@@ -95,6 +96,17 @@ echo "============================================================"
 echo "Fetching credentials from 1Password Connect..."
 curl -sf http://192.168.1.145:8000/scripts/credential-inject.sh | bash || \
     echo "Credential injection skipped - will use default passwords"
+
+# ---------------------------------------------------------------------------
+# 0.1 Dynamic Hostname Assignment based on IP
+# ---------------------------------------------------------------------------
+echo "Setting hostname based on assigned IP..."
+MY_IP=$(ip addr show | grep 'inet 192.168.1' | awk '{print $2}' | cut -d/ -f1 | head -1)
+case $MY_IP in
+    192.168.1.143) hostnamectl set-hostname core-gpu-1.lucidigital.net ;;
+    *) echo "Unknown IP $MY_IP - keeping default hostname" ;;
+esac
+echo "Hostname set to: $(hostname)"
 
 # ---------------------------------------------------------------------------
 # 0.5 Overlay Network Bootstrap (Nebula + SCION)
