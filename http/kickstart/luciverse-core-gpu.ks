@@ -109,6 +109,37 @@ esac
 echo "Hostname set to: $(hostname)"
 
 # ---------------------------------------------------------------------------
+# 0.2 Static IPv6 Address Configuration (per-host /64)
+# ---------------------------------------------------------------------------
+echo "Configuring static IPv6 address..."
+case $MY_IP in
+    192.168.1.143) MY_IPV6="2602:F674:0001:0143::1/64" ;;
+    *) MY_IPV6="" ;;
+esac
+
+if [ -n "$MY_IPV6" ]; then
+    ACTIVE_NIC=$(ip -o addr show | grep "$MY_IP" | awk '{print $2}' | head -1)
+    ACTIVE_CONN=$(nmcli -t -f NAME,DEVICE con show --active | grep "$ACTIVE_NIC" | cut -d: -f1 | head -1)
+
+    if [ -n "$ACTIVE_CONN" ]; then
+        nmcli con mod "$ACTIVE_CONN" ipv6.method manual \
+            ipv6.addresses "$MY_IPV6" \
+            ipv6.dns "2602:F674:0001::145" \
+            ipv6.route-metric 100
+        nmcli con mod "$ACTIVE_CONN" +ipv6.routes "64:ff9b::/96"
+        nmcli con up "$ACTIVE_CONN" 2>/dev/null || true
+
+        echo "IPv6 configured: $MY_IPV6 on $ACTIVE_NIC"
+        echo "NAT64 route: 64:ff9b::/96 (Jool prefix)"
+        ip -6 addr show dev "$ACTIVE_NIC" | grep -v fe80 || true
+    else
+        echo "WARNING: Could not find active NetworkManager connection for $ACTIVE_NIC"
+    fi
+else
+    echo "WARNING: No IPv6 mapping for IP $MY_IP"
+fi
+
+# ---------------------------------------------------------------------------
 # 0.5 Overlay Network Bootstrap (Nebula + SCION)
 # ---------------------------------------------------------------------------
 echo "Bootstrapping overlay network certificates..."
