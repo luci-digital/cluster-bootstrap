@@ -43,7 +43,7 @@
 **Status**: ✓ UP TO DATE (BIOS unknown)
 - Current iDRAC: 2.86.86.86 ✓
 - BIOS: Not reported
-- Credentials: root/Newdaryl24! ✓
+- Credentials: root/[CREDENTIAL-IN-1PASSWORD] ✓
 - Priority: LOW
 
 ### R730 1JF6Q22 (192.168.1.31)
@@ -59,7 +59,7 @@
 - Current iDRAC: 2.86.86.86 ✓
 - Current BIOS: 2.19.0
 - Power State: OFF
-- Credentials: root/Newdaryl24! ✓
+- Credentials: root/[CREDENTIAL-IN-1PASSWORD] ✓
 - Priority: MEDIUM
 
 ## Firmware Download Links

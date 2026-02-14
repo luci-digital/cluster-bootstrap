@@ -66,19 +66,20 @@ for server in "${!SERVERS[@]}"; do
         fi
 
     elif [ "$password" = "unknown" ]; then
-        # Try Newdaryl24! for unknown passwords
-        if timeout 10 curl -k -u root:Newdaryl24! \
+        # Try fleet password from 1Password for unknown servers
+        FLEET_PASS="${IDRAC_FLEET_PASS:-$(op read 'op://Infrastructure/Dell-Fleet-Root/password' 2>/dev/null)}"
+        if [ -n "$FLEET_PASS" ] && timeout 10 curl -k -u "root:${FLEET_PASS}" \
             "https://$ip/redfish/v1/Managers/iDRAC.Embedded.1" \
             -o "$LOG_DIR/${server}-manager.json" \
             --connect-timeout 5 \
             --max-time 10 \
             -s -f 2>/dev/null; then
 
-            echo "  ✓ Access successful (Newdaryl24!)"
+            echo "  ✓ Access successful (fleet password)"
             FW_VER=$(jq -r '.FirmwareVersion // "unknown"' "$LOG_DIR/${server}-manager.json")
             echo "    iDRAC FW: $FW_VER"
         else
-            echo "  ✗ Access denied (tried calvin and Newdaryl24!)"
+            echo "  ✗ Access denied (tried all known credentials)"
         fi
     else
         echo "  ✗ Access denied or timeout"

@@ -10,7 +10,7 @@ Successfully connected to **4 of 6 servers** via Redfish API. Two servers (.3, .
 ### Critical Findings
 1. **R730 ESXi5 Lifecycle Controller FAILURE**: Version reports "0.0" (Updateable: false)
 2. **R720 tron**: Ancient firmware (iDRAC 2.65.65.65) - CRITICAL UPDATE NEEDED
-3. **Auth Issue**: Servers .3 and .33 reject `Newdaryl24!` password for Systems endpoint
+3. **Auth Issue**: Servers .3 and .33 reject `[CREDENTIAL-IN-1PASSWORD]` password for Systems endpoint
 
 ---
 
@@ -111,13 +111,13 @@ Successfully connected to **4 of 6 servers** via Redfish API. Two servers (.3, .
 | **Service Tag** | CSDR282 |
 | **Model** | PowerEdge R730 (13G Monolithic) |
 | **Power State** | Unknown (auth failed) |
-| **Credentials** | root:calvin ❌ / root:Newdaryl24! ⚠️ Partial |
+| **Credentials** | root:calvin ❌ / root:[CREDENTIAL-IN-1PASSWORD] ⚠️ Partial |
 | **iDRAC Version** | 2.86.86.86 (from Manager endpoint) |
 | **BIOS Version** | Unknown (Systems endpoint auth failed) |
 | **Redfish Endpoint** | /redfish/v1/Managers working, /redfish/v1/Systems 401 |
 
 **Auth Issue**:
-- `/redfish/v1/Managers/iDRAC.Embedded.1` works with `Newdaryl24!`
+- `/redfish/v1/Managers/iDRAC.Embedded.1` works with `[CREDENTIAL-IN-1PASSWORD]`
 - `/redfish/v1/Systems/System.Embedded.1` returns 401 Unauthorized
 - Possible RBAC misconfiguration or privilege escalation needed
 
@@ -157,7 +157,7 @@ Successfully connected to **4 of 6 servers** via Redfish API. Two servers (.3, .
 | **Service Tag** | 1JF7Q22 |
 | **Model** | PowerEdge R730 (13G Monolithic) |
 | **Power State** | Unknown (auth failed) |
-| **Credentials** | root:calvin ❌ / root:Newdaryl24! ⚠️ Partial |
+| **Credentials** | root:calvin ❌ / root:[CREDENTIAL-IN-1PASSWORD] ⚠️ Partial |
 | **iDRAC Version** | 2.86.86.86 (from Manager endpoint) |
 | **BIOS Version** | Unknown (Systems endpoint auth failed) |
 | **Redfish Endpoint** | /redfish/v1/Managers working, /redfish/v1/Systems 401 |
@@ -170,7 +170,7 @@ Successfully connected to **4 of 6 servers** via Redfish API. Two servers (.3, .
 
 ## Credential Matrix
 
-| Server | IP | root:calvin | root:Newdaryl24! | Notes |
+| Server | IP | root:calvin | root:[CREDENTIAL-IN-1PASSWORD] | Notes |
 |--------|-----|-------------|------------------|-------|
 | R720 tron | 192.168.1.10 | ✓ Full | Not tested | Default creds working |
 | R730 ORION | 192.168.1.2 | ✓ Full | Not tested | Default creds working |

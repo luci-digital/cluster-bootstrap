@@ -96,10 +96,11 @@ main() {
         fi
     fi
 
-    # Remove plaintext password from kickstart log
-    if [ -f /root/*-postinstall.log ]; then
-        sed -i 's/Newdaryl24!/[REDACTED]/g' /root/*-postinstall.log 2>/dev/null || true
-    fi
+    # Scrub any lingering plaintext passwords from kickstart logs
+    for logfile in /root/*-postinstall.log; do
+        [ -f "$logfile" ] || continue
+        sed -i -E 's/(password|passwd|PASS)=[^ "]+/\1=[REDACTED]/g' "$logfile" 2>/dev/null || true
+    done
 
     echo "[CREDENTIAL-INJECT] Credential injection complete"
 }

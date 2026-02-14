@@ -20,11 +20,12 @@ timezone America/Edmonton --utc
 # Network - use first available NIC for install, full config in %post
 network --bootproto=dhcp --device=link --activate --hostname=luciswitch.lucidigital.net
 
-# Root password (change after first boot)
-rootpw --plaintext Newdaryl24!
+# Root password (temporary - will be updated from 1Password in %post)
+# Real credentials fetched from provision-listener's 1Password Connect API
+rootpw --iscrypted $6$fsHzeeGVTXZT5rPp$rCJbssf8Tr5LJkp1stID0hj3qcnL.eAf8W6Mth6RBZzn10lVlpC7THV8x2N3ghArmVyVOA8Err1B0WBMxB3fb1
 
 # User
-user --name=daryl --groups=wheel --password=Newdaryl24! --plaintext
+user --name=daryl --groups=wheel --iscrypted --password=$6$fsHzeeGVTXZT5rPp$rCJbssf8Tr5LJkp1stID0hj3qcnL.eAf8W6Mth6RBZzn10lVlpC7THV8x2N3ghArmVyVOA8Err1B0WBMxB3fb1
 
 # Security
 firewall --enabled --ssh --port=9540:tcp,9541:tcp,9999:tcp,8000:tcp,69:udp,67:udp,68:udp

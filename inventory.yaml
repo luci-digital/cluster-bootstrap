@@ -141,7 +141,7 @@ r630_jmrzdb2:
   redfish_version: "1.0.2"
   status: "discovered"
   credentials: "UNKNOWN - needs verification"
-  notes: "root:calvin, root:Newdaryl24! failed"
+  notes: "root:calvin, root:[CREDENTIAL-IN-1PASSWORD] failed"
 
 # Supermicro BMC - Discovered 2026-01-24
 supermicro_165:
@@ -186,7 +186,7 @@ supermicro-s213078x5b29794:
     credentials:
       vault: "op://Infrastructure/SUPERMICRO-S213078X5B29794"
       username: ADMIN
-      password: "password@123"
+      password: "[CREDENTIAL-IN-1PASSWORD]"
     services:
       web: true
       kvm: true

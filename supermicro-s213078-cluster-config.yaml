@@ -163,7 +163,7 @@ bmc:
   credentials:
     vault: "op://Infrastructure/SUPERMICRO-S213078X5B29794"
     username: ADMIN
-    password: "password@123"
+    password: "[CREDENTIAL-IN-1PASSWORD]"
 
   services:
     web_interface: true
@@ -220,7 +220,7 @@ deployment_steps:
   - step: 1
     action: "Clear BMC event log"
     command: |
-      curl -k -X POST -u "ADMIN:password@123" \
+      curl -k -X POST -u "ADMIN:[CREDENTIAL-IN-1PASSWORD]" \
         https://192.168.1.165/redfish/v1/Systems/1/LogServices/Log1/Actions/LogService.ClearLog \
         -H "Content-Type: application/json" -d '{}'
 
@@ -234,7 +234,7 @@ deployment_steps:
   - step: 3
     action: "Enable PXE boot"
     command: |
-      curl -k -X PATCH -u "ADMIN:password@123" \
+      curl -k -X PATCH -u "ADMIN:[CREDENTIAL-IN-1PASSWORD]" \
         https://192.168.1.165/redfish/v1/Systems/1 \
         -H "Content-Type: application/json" \
         -d '{
@@ -247,7 +247,7 @@ deployment_steps:
   - step: 4
     action: "Reboot to PXE"
     command: |
-      curl -k -X POST -u "ADMIN:password@123" \
+      curl -k -X POST -u "ADMIN:[CREDENTIAL-IN-1PASSWORD]" \
         https://192.168.1.165/redfish/v1/Systems/1/Actions/ComputerSystem.Reset \
         -H "Content-Type: application/json" \
         -d '{"ResetType": "ForceRestart"}'

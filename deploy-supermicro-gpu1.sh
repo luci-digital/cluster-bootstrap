@@ -21,7 +21,11 @@ log_error() { echo -e "${RED}[✗]${NC} $1"; }
 # Configuration
 BMC_IP="192.168.1.165"
 BMC_USER="ADMIN"
-BMC_PASS="password@123"
+BMC_PASS=$(op read "op://Infrastructure/Supermicro-BMC/password" 2>/dev/null || echo "")
+if [ -z "$BMC_PASS" ]; then
+    echo "ERROR: Cannot read BMC credentials from 1Password. Run 'op signin' first." >&2
+    exit 1
+fi
 PLANNED_IP="192.168.1.170"
 PLANNED_IP6="2602:F674:0001::170/64"
 TIER="COMN"

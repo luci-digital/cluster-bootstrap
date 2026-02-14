@@ -7,7 +7,11 @@ set -euo pipefail
 # Configuration
 ZIMAOS_HOST="${ZIMAOS_HOST:-192.168.1.152}"
 ZIMAOS_USER="${ZIMAOS_USER:-daryl}"
-ZIMAOS_PASS="${ZIMAOS_PASS:-Newdaryl24!}"
+ZIMAOS_PASS="${ZIMAOS_PASS:-$(op read 'op://Infrastructure/ZimaCube Primary/password' 2>/dev/null)}"
+if [ -z "$ZIMAOS_PASS" ]; then
+    echo "ERROR: Set ZIMAOS_PASS or sign into 1Password (op signin)" >&2
+    exit 1
+fi
 PXE_ROOT="/DATA/luciverse/pxe-server"
 PXE_HTTP_PORT=8742
 TALOS_VERSION="${TALOS_VERSION:-v1.9.0}"

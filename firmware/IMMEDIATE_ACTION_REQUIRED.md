@@ -190,7 +190,7 @@ Once R720 is done, you can optionally update R730 BIOS firmware (low priority):
    ```bash
    ipmitool -I lanplus -H 192.168.1.2 -U root -P 'calvin' power on   # ORION
    ipmitool -I lanplus -H 192.168.1.31 -U root -P 'calvin' power on  # 1JF6Q22
-   ipmitool -I lanplus -H 192.168.1.33 -U root -P 'Newdaryl24!' power on  # 1JF7Q22
+   ipmitool -I lanplus -H 192.168.1.33 -U root -P '[CREDENTIAL-IN-1PASSWORD]' power on  # 1JF7Q22
    ```
 5. Run update script (edit to include R730 BIOS)
 

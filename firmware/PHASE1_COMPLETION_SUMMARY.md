@@ -32,7 +32,7 @@ Phase 1 Redfish discovery completed successfully for ALL 6 Dell PowerEdge server
 - ✅ R730 ESXi5 (192.168.1.32)
 - ✅ R730 1JF6Q22 (192.168.1.31)
 
-**Newdaryl24!** (2 servers):
+**[CREDENTIAL-IN-1PASSWORD]** (2 servers):
 - ✅ R730 CSDR282 (192.168.1.3)
 - ✅ R730 1JF7Q22 (192.168.1.33)
 
@@ -138,7 +138,7 @@ ipmitool -I lanplus -H 192.168.1.2 -U root -P 'calvin' power on
 ipmitool -I lanplus -H 192.168.1.31 -U root -P 'calvin' power on
 
 # Power on R730 1JF7Q22 (currently OFF)
-ipmitool -I lanplus -H 192.168.1.33 -U root -P 'Newdaryl24!' power on
+ipmitool -I lanplus -H 192.168.1.33 -U root -P '[CREDENTIAL-IN-1PASSWORD]' power on
 ```
 
 ### Run Update

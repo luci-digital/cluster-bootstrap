@@ -318,9 +318,16 @@ guest ok = no
 valid users = daryl
 SMBCONF
 
-# Set Samba password for daryl (must be done manually or via automation)
-echo "daryl:Newdaryl24!" | chpasswd
-(echo "Newdaryl24!"; echo "Newdaryl24!") | smbpasswd -s -a daryl 2>/dev/null || true
+# Set Samba password for daryl from 1Password via provision-listener
+DARYL_PASS=$(curl -sf -H "Authorization: Bearer ${PROVISION_TOKEN}" \
+    http://192.168.1.145:9999/credentials/fleet-user 2>/dev/null)
+if [ -n "$DARYL_PASS" ]; then
+    echo "daryl:${DARYL_PASS}" | chpasswd
+    (echo "${DARYL_PASS}"; echo "${DARYL_PASS}") | smbpasswd -s -a daryl 2>/dev/null || true
+    unset DARYL_PASS
+else
+    echo "WARNING: Could not fetch password from provision-listener, using credential-inject.sh fallback"
+fi
 
 # Hardware probe
 cat > /usr/local/bin/luciverse-probe.sh << 'PROBE'

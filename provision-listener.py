@@ -1422,7 +1422,7 @@ exit 1
             "status": "connected",
             "host": OP_CONNECT_HOST,
             "vault": OP_VAULT_INFRA,
-            "available_credentials": list(OP_ITEMS.keys()),
+            "credential_count": len(OP_ITEMS),
             "endpoints": {
                 "get_credential": "/credentials/{item}",
                 "get_field": "/credentials/{item}/{field}",
@@ -1444,7 +1444,7 @@ exit 1
             return web.json_response({
                 "status": "not_configured",
                 "message": "OP_CONNECT_TOKEN environment variable not set",
-                "available_credentials": list(OP_ITEMS.keys()),
+                "credential_count": len(OP_ITEMS),
                 "configured": False
             })
 
@@ -1456,14 +1456,14 @@ exit 1
                     "status": "configured",
                     "host": OP_CONNECT_HOST,
                     "vault": OP_VAULT_INFRA,
-                    "available_credentials": list(OP_ITEMS.keys()),
+                    "credential_count": len(OP_ITEMS),
                     "configured": True
                 })
             else:
                 return web.json_response({
                     "status": "connection_failed",
                     "message": f"Cannot connect to 1Password at {OP_CONNECT_HOST}",
-                    "available_credentials": list(OP_ITEMS.keys()),
+                    "credential_count": len(OP_ITEMS),
                     "configured": False
                 })
         except Exception as e:
@@ -1471,9 +1471,26 @@ exit 1
             return web.json_response({
                 "status": "error",
                 "message": str(e),
-                "available_credentials": list(OP_ITEMS.keys()),
+                "credential_count": len(OP_ITEMS),
                 "configured": False
             })
+
+    def _validate_bearer_token(self, request: web.Request) -> bool:
+        """Validate Bearer token from Authorization header.
+
+        Token must match PROVISION_SECRET env var. No hardcoded fallback.
+        """
+        secret = os.environ.get('PROVISION_SECRET', '')
+        if not secret:
+            logger.error("PROVISION_SECRET not set - credential endpoints disabled")
+            return False
+
+        auth_header = request.headers.get('Authorization', '')
+        if not auth_header.startswith('Bearer '):
+            return False
+
+        token = auth_header[7:]  # Strip 'Bearer '
+        return hmac.compare_digest(token, secret)
 
     async def get_credential(self, request: web.Request) -> web.Response:
         """Fetch credential from 1Password Connect.
@@ -1481,9 +1498,9 @@ exit 1
         GET /credentials/{item}
         Returns the default field (password) for the item.
 
-        Validates request based on:
-        - X-Forwarded-For header (must be from known subnet)
-        - X-Request-MAC header (optional, for additional validation)
+        Requires:
+        - Authorization: Bearer <PROVISION_SECRET> header
+        - Request from trusted network
         """
         item = request.match_info.get('item')
 
@@ -1491,11 +1508,19 @@ exit 1
         if item not in OP_ITEMS:
             return web.json_response({
                 "error": "unknown_credential",
-                "message": f"Unknown credential: {item}",
-                "available": list(OP_ITEMS.keys())
+                "message": f"Unknown credential: {item}"
             }, status=404)
 
-        # Basic network validation - only allow from local network
+        # Require bearer token authentication
+        if not self._validate_bearer_token(request):
+            client_ip = request.headers.get('X-Forwarded-For', request.remote)
+            logger.warning(f"Credential request without valid token from: {client_ip}")
+            return web.json_response({
+                "error": "unauthorized",
+                "message": "Valid Authorization: Bearer <token> header required"
+            }, status=401)
+
+        # Network validation - only allow from local network
         client_ip = request.headers.get('X-Forwarded-For', request.remote)
         if client_ip and not self._is_trusted_network(client_ip):
             logger.warning(f"Credential request from untrusted IP: {client_ip}")
@@ -1509,7 +1534,7 @@ exit 1
         value = await client.get_credential(item)
 
         if value:
-            logger.info(f"Credential '{item}' served to {client_ip}")
+            logger.info(f"Credential '{item}' served to {client_ip} (authenticated)")
             return web.Response(text=value, content_type='text/plain')
         else:
             return web.json_response({
@@ -1521,15 +1546,24 @@ exit 1
         """Fetch specific field from credential.
 
         GET /credentials/{item}/{field}
+        Requires Authorization: Bearer <PROVISION_SECRET> header.
         """
         item = request.match_info.get('item')
         field = request.match_info.get('field')
 
         if item not in OP_ITEMS:
             return web.json_response({
-                "error": "unknown_credential",
-                "available": list(OP_ITEMS.keys())
+                "error": "unknown_credential"
             }, status=404)
+
+        # Require bearer token authentication
+        if not self._validate_bearer_token(request):
+            client_ip = request.headers.get('X-Forwarded-For', request.remote)
+            logger.warning(f"Credential field request without valid token from: {client_ip}")
+            return web.json_response({
+                "error": "unauthorized",
+                "message": "Valid Authorization: Bearer <token> header required"
+            }, status=401)
 
         # Network validation
         client_ip = request.headers.get('X-Forwarded-For', request.remote)
@@ -1575,8 +1609,11 @@ exit 1
 
         server_name, _, server_info, _ = result
 
-        # Generate validation token (simple HMAC for now)
-        secret = os.environ.get('PROVISION_SECRET', 'luciverse-genesis-bond')
+        # Generate validation token (HMAC-signed)
+        secret = os.environ.get('PROVISION_SECRET', '')
+        if not secret:
+            logger.error("PROVISION_SECRET not set - cannot generate validation tokens")
+            return web.json_response({"error": "server_misconfigured"}, status=503)
         message = f"{mac}:{role}:{item}:{datetime.utcnow().strftime('%Y%m%d%H')}"
         token = hmac.new(secret.encode(), message.encode(), hashlib.sha256).hexdigest()[:32]
 
@@ -1590,24 +1627,29 @@ exit 1
         })
 
     def _is_trusted_network(self, ip: str) -> bool:
-        """Check if IP is from trusted network."""
+        """Check if IP is from trusted network.
+
+        Only allows: localhost, LuciVerse production LAN (192.168.1.0/24),
+        OOB PXE network (10.0.0.0/24), and LuciVerse IPv6 prefix.
+        """
         if not ip:
-            return True  # Local request
+            logger.warning("Empty IP in trust check - denying")
+            return False
 
         # Allow localhost
         if ip.startswith('127.') or ip == '::1':
             return True
 
-        # Allow 192.168.1.0/24 (LuciVerse network)
+        # Allow 192.168.1.0/24 (LuciVerse production network)
         if ip.startswith('192.168.1.'):
             return True
 
-        # Allow 192.168.0.0/24 (alternate network)
-        if ip.startswith('192.168.0.'):
+        # Allow 10.0.0.0/24 (OOB PXE provisioning network)
+        if ip.startswith('10.0.0.'):
             return True
 
-        # Allow IPv6 ULA
-        if ip.startswith('fd00:') or ip.startswith('2602:f674:'):
+        # Allow LuciVerse IPv6 prefix only
+        if ip.startswith('2602:f674:'):
             return True
 
         return False
@@ -1984,7 +2026,10 @@ chain http://192.168.1.146:8000/bootimus-diaper.ipxe
 
     def _generate_attestation_token(self, mac: str, tier: str, role: str) -> str:
         """Generate HMAC-signed attestation token for certificate request."""
-        secret = os.environ.get('PROVISION_SECRET', 'luciverse-genesis-bond-741')
+        secret = os.environ.get('PROVISION_SECRET', '')
+        if not secret:
+            logger.error("PROVISION_SECRET not set - cannot generate attestation tokens")
+            return ''
         timestamp = datetime.utcnow().strftime('%Y%m%d%H%M')
         message = f"{mac}:{tier}:{role}:{timestamp}"
         token = hmac.new(secret.encode(), message.encode(), hashlib.sha256).hexdigest()

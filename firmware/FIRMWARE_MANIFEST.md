@@ -108,7 +108,7 @@ This manifest lists all firmware files required for updating the 6-server Dell c
 
 **Steps**:
 1. Access web UI: https://192.168.1.3
-2. Test root:calvin and root:Newdaryl24!
+2. Test root:calvin and root:[CREDENTIAL-IN-1PASSWORD]
 3. Check iDRAC user privileges
 4. Create new Administrator account if needed
 5. Test Redfish Systems endpoint

@@ -80,7 +80,7 @@ Recommendation: Install NVIDIA Tesla or AMD GPUs for Ray ML acceleration
 ```
 URL: https://192.168.1.165
 Username: ADMIN
-Password: password@123
+Password: [CREDENTIAL-IN-1PASSWORD]
 1Password: op://Infrastructure/SUPERMICRO-S213078X5B29794
 ```
 
@@ -135,14 +135,14 @@ If you prefer manual deployment:
 
 **Step 2: Clear Event Log**
 ```bash
-curl -k -X POST -u "ADMIN:password@123" \
+curl -k -X POST -u "ADMIN:[CREDENTIAL-IN-1PASSWORD]" \
   https://192.168.1.165/redfish/v1/Systems/1/LogServices/Log1/Actions/LogService.ClearLog \
   -H "Content-Type: application/json" -d '{}'
 ```
 
 **Step 3: Enable PXE Boot**
 ```bash
-curl -k -X PATCH -u "ADMIN:password@123" \
+curl -k -X PATCH -u "ADMIN:[CREDENTIAL-IN-1PASSWORD]" \
   https://192.168.1.165/redfish/v1/Systems/1 \
   -H "Content-Type: application/json" \
   -d '{
@@ -155,7 +155,7 @@ curl -k -X PATCH -u "ADMIN:password@123" \
 
 **Step 4: Restart to PXE**
 ```bash
-curl -k -X POST -u "ADMIN:password@123" \
+curl -k -X POST -u "ADMIN:[CREDENTIAL-IN-1PASSWORD]" \
   https://192.168.1.165/redfish/v1/Systems/1/Actions/ComputerSystem.Reset \
   -H "Content-Type: application/json" \
   -d '{"ResetType": "ForceRestart"}'
@@ -308,7 +308,7 @@ After NixOS installation completes:
 ### Network Not Coming Up
 ```bash
 # Check cable connection
-curl -k -u "ADMIN:password@123" https://192.168.1.165/redfish/v1/Systems/1/EthernetInterfaces/1 | jq '.Status'
+curl -k -u "ADMIN:[CREDENTIAL-IN-1PASSWORD]" https://192.168.1.165/redfish/v1/Systems/1/EthernetInterfaces/1 | jq '.Status'
 
 # Should show "State": "Enabled" when cable connected
 ```
@@ -328,7 +328,7 @@ journalctl -u luciverse-provision -f
 curl -k https://192.168.1.165/redfish/v1/
 
 # Check KVM sessions
-curl -k -u "ADMIN:password@123" https://192.168.1.165/redfish/v1/Managers/1 | jq '.GraphicalConsole'
+curl -k -u "ADMIN:[CREDENTIAL-IN-1PASSWORD]" https://192.168.1.165/redfish/v1/Managers/1 | jq '.GraphicalConsole'
 ```
 
 ---

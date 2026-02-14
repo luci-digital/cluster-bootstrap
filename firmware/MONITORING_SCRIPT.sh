@@ -14,13 +14,18 @@ BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
 # Server configurations
+IDRAC_PASS=$(op read "op://Infrastructure/Dell-Fleet-Root/password" 2>/dev/null || echo "")
+if [ -z "$IDRAC_PASS" ]; then
+    echo "ERROR: Cannot read iDRAC credentials from 1Password. Run 'op signin' first." >&2
+    exit 1
+fi
 declare -A SERVERS=(
-    ["R720-tron"]="192.168.1.10:root:calvin"
-    ["R730-ORION"]="192.168.1.2:root:calvin"
-    ["R730-ESXi5"]="192.168.1.32:root:calvin"
-    ["R730-CSDR282"]="192.168.1.3:root:Newdaryl24!"
-    ["R730-1JF6Q22"]="192.168.1.31:root:calvin"
-    ["R730-1JF7Q22"]="192.168.1.33:root:Newdaryl24!"
+    ["R720-tron"]="192.168.1.10:root:${IDRAC_PASS}"
+    ["R730-ORION"]="192.168.1.2:root:${IDRAC_PASS}"
+    ["R730-ESXi5"]="192.168.1.32:root:${IDRAC_PASS}"
+    ["R730-CSDR282"]="192.168.1.3:root:${IDRAC_PASS}"
+    ["R730-1JF6Q22"]="192.168.1.31:root:${IDRAC_PASS}"
+    ["R730-1JF7Q22"]="192.168.1.33:root:${IDRAC_PASS}"
 )
 
 # Expected firmware versions after update

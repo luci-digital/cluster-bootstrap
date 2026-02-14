@@ -23,7 +23,7 @@
 
 ### ✅ Phase 1: Discovery (COMPLETE)
 - All 6 servers discovered via Redfish API
-- Credentials verified (calvin + Newdaryl24!)
+- Credentials verified (calvin + [CREDENTIAL-IN-1PASSWORD])
 - Firmware versions inventoried
 - Update capabilities confirmed
 
@@ -88,9 +88,9 @@ curl -k -u root:calvin https://192.168.1.10/redfish/v1/Managers/iDRAC.Embedded.1
 | R720 tron | 192.168.1.10 | 2.65.65.65 🔴 | 2.9.0 | calvin | **CRITICAL** |
 | R730 ORION | 192.168.1.2 | 2.86.86.86 ✅ | 2.19.0 | calvin | Medium |
 | R730 ESXi5 | 192.168.1.32 | 2.86.86.86 ✅ | 2.19.0 | calvin | Medium |
-| R730 CSDR282 | 192.168.1.3 | 2.86.86.86 ✅ | unknown | Newdaryl24! | Low |
+| R730 CSDR282 | 192.168.1.3 | 2.86.86.86 ✅ | unknown | [CREDENTIAL-IN-1PASSWORD] | Low |
 | R730 1JF6Q22 | 192.168.1.31 | 2.86.86.86 ✅ | 2.19.0 | calvin | Medium |
-| R730 1JF7Q22 | 192.168.1.33 | 2.86.86.86 ✅ | 2.19.0 | Newdaryl24! | Medium |
+| R730 1JF7Q22 | 192.168.1.33 | 2.86.86.86 ✅ | 2.19.0 | [CREDENTIAL-IN-1PASSWORD] | Medium |
 
 ### Update Priority
 

@@ -12,7 +12,8 @@ SERVERS=(
     ["R730_1JF7Q22"]="192.168.1.33"
 )
 
-CREDS=("root:calvin" "root:Newdaryl24!")
+IDRAC_PASS=$(op read "op://Infrastructure/Dell-Fleet-Root/password" 2>/dev/null || echo "")
+CREDS=("root:calvin" ${IDRAC_PASS:+"root:${IDRAC_PASS}"})
 
 echo "=== REDFISH API DISCOVERY - $(date) ==="
 echo ""

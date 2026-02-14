@@ -465,7 +465,7 @@ watch -n 10 "curl -k -u root:calvin https://192.168.1.31/redfish/v1/Systems/Syst
 ```bash
 # Test web UI access
 curl -k -u root:calvin https://192.168.1.3 -I
-curl -k -u root:Newdaryl24! https://192.168.1.3 -I
+curl -k -u root:[CREDENTIAL-IN-1PASSWORD] https://192.168.1.3 -I
 
 # If web UI accessible, create new admin user:
 # 1. Login to web UI: https://192.168.1.3

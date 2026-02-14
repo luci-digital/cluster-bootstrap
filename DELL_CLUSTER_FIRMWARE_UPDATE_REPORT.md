@@ -13,7 +13,7 @@
 ⏸️ **Phase 2 Ready**: Manual firmware download required (Dell blocks automation)
 🔴 **Critical Finding**: R720 "tron" iDRAC severely outdated (2.65.65.65 - 8+ years old)
 🛠️ **Phase 3 Ready**: Automated update script prepared for firmware deployment
-🔑 **Credentials Verified**: calvin works on 4 servers, Newdaryl24! works on 2 servers
+🔑 **Credentials Verified**: calvin works on 4 servers, [CREDENTIAL-IN-1PASSWORD] works on 2 servers
 
 ---
 
@@ -26,9 +26,9 @@
 | **R720 tron** | 192.168.1.10 | PowerEdge R720 | 4J0TV12 | 2.65.65.65 🔴 | 2.9.0 | ON | calvin ✅ | **UPDATE CRITICAL** |
 | **R730 ORION** | 192.168.1.2 | PowerEdge R730 | CQ5QBM2 | 2.86.86.86 ✅ | 2.19.0 | OFF | calvin ✅ | BIOS update recommended |
 | **R730 ESXi5** | 192.168.1.32 | PowerEdge R730 | 1JD8Q22 | 2.86.86.86 ✅ | 2.19.0 | ON | calvin ✅ | Running VMware ESXi |
-| **R730 CSDR282** | 192.168.1.3 | PowerEdge R730 | CSDR282 | 2.86.86.86 ✅ | unknown | ON | Newdaryl24! ✅ | iDRAC current |
+| **R730 CSDR282** | 192.168.1.3 | PowerEdge R730 | CSDR282 | 2.86.86.86 ✅ | unknown | ON | [CREDENTIAL-IN-1PASSWORD] ✅ | iDRAC current |
 | **R730 1JF6Q22** | 192.168.1.31 | PowerEdge R730 | 1JF6Q22 | 2.86.86.86 ✅ | 2.19.0 | OFF | calvin ✅ | BIOS update recommended |
-| **R730 1JF7Q22** | 192.168.1.33 | PowerEdge R730 | 1JF7Q22 | 2.86.86.86 ✅ | 2.19.0 | OFF | Newdaryl24! ✅ | BIOS update recommended |
+| **R730 1JF7Q22** | 192.168.1.33 | PowerEdge R730 | 1JF7Q22 | 2.86.86.86 ✅ | 2.19.0 | OFF | [CREDENTIAL-IN-1PASSWORD] ✅ | BIOS update recommended |
 
 ### 🔑 Credential Discovery
 
@@ -38,7 +38,7 @@
 - R730 ESXi5 (192.168.1.32)
 - R730 1JF6Q22 (192.168.1.31)
 
-**Newdaryl24! password works on 2 servers**:
+**[CREDENTIAL-IN-1PASSWORD] password works on 2 servers**:
 - R730 CSDR282 (192.168.1.3)
 - R730 1JF7Q22 (192.168.1.33)
 
@@ -79,7 +79,7 @@ Both R730 ORION and R730 ESXi5 are running iDRAC8 version **2.86.86.86**, which 
 
 #### ❌ R730 CSDR Not Accessible
 
-**Issue**: Both `root:calvin` and `root:Newdaryl24!` authentication failed
+**Issue**: Both `root:calvin` and `root:[CREDENTIAL-IN-1PASSWORD]` authentication failed
 **Impact**: Cannot manage or update firmware remotely via Redfish
 
 **Troubleshooting Options**:
@@ -362,7 +362,7 @@ curl -k -u root:calvin https://192.168.1.10/redfish/v1/Managers/iDRAC.Embedded.1
 - **BIOS**: Unknown
 - **Power**: ON
 - **Status**: NOT ACCESSIBLE ❌
-- **Access**: Both passwords failed (calvin, Newdaryl24!)
+- **Access**: Both passwords failed (calvin, [CREDENTIAL-IN-1PASSWORD])
 - **Action Required**: iDRAC password reset or physical access
 
 ---

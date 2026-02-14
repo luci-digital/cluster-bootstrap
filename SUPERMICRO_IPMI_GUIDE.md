@@ -22,7 +22,7 @@ ping 192.168.1.200
 ping 192.168.1.201
 
 # Test IPMI access (try default credentials)
-ipmitool -I lanplus -H 192.168.1.200 -U ADMIN -P ADMIN chassis power status
+ipmitool -I lanplus -H 192.168.1.200 -U ADMIN -P [CREDENTIAL-IN-1PASSWORD] chassis power status
 ```
 
 ### Default Supermicro Credentials
@@ -39,67 +39,67 @@ ipmitool -I lanplus -H 192.168.1.200 -U ADMIN -P ADMIN chassis power status
 ### Power Control
 ```bash
 # Power status
-ipmitool -I lanplus -H 192.168.1.200 -U ADMIN -P ADMIN chassis power status
+ipmitool -I lanplus -H 192.168.1.200 -U ADMIN -P [CREDENTIAL-IN-1PASSWORD] chassis power status
 
 # Power on
-ipmitool -I lanplus -H 192.168.1.200 -U ADMIN -P ADMIN chassis power on
+ipmitool -I lanplus -H 192.168.1.200 -U ADMIN -P [CREDENTIAL-IN-1PASSWORD] chassis power on
 
 # Power off (graceful)
-ipmitool -I lanplus -H 192.168.1.200 -U ADMIN -P ADMIN chassis power soft
+ipmitool -I lanplus -H 192.168.1.200 -U ADMIN -P [CREDENTIAL-IN-1PASSWORD] chassis power soft
 
 # Power off (hard)
-ipmitool -I lanplus -H 192.168.1.200 -U ADMIN -P ADMIN chassis power off
+ipmitool -I lanplus -H 192.168.1.200 -U ADMIN -P [CREDENTIAL-IN-1PASSWORD] chassis power off
 
 # Power cycle
-ipmitool -I lanplus -H 192.168.1.200 -U ADMIN -P ADMIN chassis power cycle
+ipmitool -I lanplus -H 192.168.1.200 -U ADMIN -P [CREDENTIAL-IN-1PASSWORD] chassis power cycle
 
 # Reset
-ipmitool -I lanplus -H 192.168.1.200 -U ADMIN -P ADMIN chassis power reset
+ipmitool -I lanplus -H 192.168.1.200 -U ADMIN -P [CREDENTIAL-IN-1PASSWORD] chassis power reset
 ```
 
 ### Boot Device Selection
 ```bash
 # Boot from PXE (network)
-ipmitool -I lanplus -H 192.168.1.200 -U ADMIN -P ADMIN chassis bootdev pxe
+ipmitool -I lanplus -H 192.168.1.200 -U ADMIN -P [CREDENTIAL-IN-1PASSWORD] chassis bootdev pxe
 
 # Boot from disk
-ipmitool -I lanplus -H 192.168.1.200 -U ADMIN -P ADMIN chassis bootdev disk
+ipmitool -I lanplus -H 192.168.1.200 -U ADMIN -P [CREDENTIAL-IN-1PASSWORD] chassis bootdev disk
 
 # Boot from CDROM (virtual media)
-ipmitool -I lanplus -H 192.168.1.200 -U ADMIN -P ADMIN chassis bootdev cdrom
+ipmitool -I lanplus -H 192.168.1.200 -U ADMIN -P [CREDENTIAL-IN-1PASSWORD] chassis bootdev cdrom
 
 # Boot from BIOS
-ipmitool -I lanplus -H 192.168.1.200 -U ADMIN -P ADMIN chassis bootdev bios
+ipmitool -I lanplus -H 192.168.1.200 -U ADMIN -P [CREDENTIAL-IN-1PASSWORD] chassis bootdev bios
 ```
 
 ### Serial Over LAN (SOL)
 ```bash
 # Activate serial console
-ipmitool -I lanplus -H 192.168.1.200 -U ADMIN -P ADMIN sol activate
+ipmitool -I lanplus -H 192.168.1.200 -U ADMIN -P [CREDENTIAL-IN-1PASSWORD] sol activate
 
 # Deactivate (Ctrl-] or Ctrl-\ to exit)
-ipmitool -I lanplus -H 192.168.1.200 -U ADMIN -P ADMIN sol deactivate
+ipmitool -I lanplus -H 192.168.1.200 -U ADMIN -P [CREDENTIAL-IN-1PASSWORD] sol deactivate
 
 # Enable SOL first (if not working)
-ipmitool -I lanplus -H 192.168.1.200 -U ADMIN -P ADMIN sol set enabled true 1
+ipmitool -I lanplus -H 192.168.1.200 -U ADMIN -P [CREDENTIAL-IN-1PASSWORD] sol set enabled true 1
 ```
 
 ### System Information
 ```bash
 # Get BMC info
-ipmitool -I lanplus -H 192.168.1.200 -U ADMIN -P ADMIN bmc info
+ipmitool -I lanplus -H 192.168.1.200 -U ADMIN -P [CREDENTIAL-IN-1PASSWORD] bmc info
 
 # Get FRU (Field Replaceable Unit) info
-ipmitool -I lanplus -H 192.168.1.200 -U ADMIN -P ADMIN fru
+ipmitool -I lanplus -H 192.168.1.200 -U ADMIN -P [CREDENTIAL-IN-1PASSWORD] fru
 
 # Sensor readings
-ipmitool -I lanplus -H 192.168.1.200 -U ADMIN -P ADMIN sdr list
+ipmitool -I lanplus -H 192.168.1.200 -U ADMIN -P [CREDENTIAL-IN-1PASSWORD] sdr list
 
 # Fan speeds
-ipmitool -I lanplus -H 192.168.1.200 -U ADMIN -P ADMIN sensor get "FAN1"
+ipmitool -I lanplus -H 192.168.1.200 -U ADMIN -P [CREDENTIAL-IN-1PASSWORD] sensor get "FAN1"
 
 # Temperatures
-ipmitool -I lanplus -H 192.168.1.200 -U ADMIN -P ADMIN sensor get "CPU Temp"
+ipmitool -I lanplus -H 192.168.1.200 -U ADMIN -P [CREDENTIAL-IN-1PASSWORD] sensor get "CPU Temp"
 ```
 
 ---
@@ -140,13 +140,13 @@ Supermicro virtual media works via:
 ### Option 2: PXE Boot (Pure IPMI - RECOMMENDED)
 ```bash
 # Set boot to PXE
-ipmitool -I lanplus -H 192.168.1.200 -U ADMIN -P ADMIN chassis bootdev pxe
+ipmitool -I lanplus -H 192.168.1.200 -U ADMIN -P [CREDENTIAL-IN-1PASSWORD] chassis bootdev pxe
 
 # Power cycle
-ipmitool -I lanplus -H 192.168.1.200 -U ADMIN -P ADMIN chassis power cycle
+ipmitool -I lanplus -H 192.168.1.200 -U ADMIN -P [CREDENTIAL-IN-1PASSWORD] chassis power cycle
 
 # Watch via serial console
-ipmitool -I lanplus -H 192.168.1.200 -U ADMIN -P ADMIN sol activate
+ipmitool -I lanplus -H 192.168.1.200 -U ADMIN -P [CREDENTIAL-IN-1PASSWORD] sol activate
 ```
 
 ### Option 3: IPMIView (Java Tool)
@@ -246,14 +246,14 @@ ping supermicro1.local
 
 1. **Test IPMI access**:
 ```bash
-ipmitool -I lanplus -H 192.168.1.200 -U ADMIN -P ADMIN chassis power status
+ipmitool -I lanplus -H 192.168.1.200 -U ADMIN -P [CREDENTIAL-IN-1PASSWORD] chassis power status
 ```
 
 2. **Boot via PXE** (pure IPMI):
 ```bash
-ipmitool -I lanplus -H 192.168.1.200 -U ADMIN -P ADMIN chassis bootdev pxe
-ipmitool -I lanplus -H 192.168.1.200 -U ADMIN -P ADMIN chassis power cycle
-ipmitool -I lanplus -H 192.168.1.200 -U ADMIN -P ADMIN sol activate
+ipmitool -I lanplus -H 192.168.1.200 -U ADMIN -P [CREDENTIAL-IN-1PASSWORD] chassis bootdev pxe
+ipmitool -I lanplus -H 192.168.1.200 -U ADMIN -P [CREDENTIAL-IN-1PASSWORD] chassis power cycle
+ipmitool -I lanplus -H 192.168.1.200 -U ADMIN -P [CREDENTIAL-IN-1PASSWORD] sol activate
 ```
 
 3. **Select from PXE menu**:
@@ -271,7 +271,7 @@ ipmitool -I lanplus -H 192.168.1.200 -U ADMIN -P ADMIN sol activate
 ping 192.168.1.200
 
 # Try different credentials
-ipmitool -I lanplus -H 192.168.1.200 -U ADMIN -P ADMIN chassis power status
+ipmitool -I lanplus -H 192.168.1.200 -U ADMIN -P [CREDENTIAL-IN-1PASSWORD] chassis power status
 ipmitool -I lanplus -H 192.168.1.200 -U admin -P admin chassis power status
 ipmitool -I lanplus -H 192.168.1.200 -U root -P superuser chassis power status
 ```
@@ -279,11 +279,11 @@ ipmitool -I lanplus -H 192.168.1.200 -U root -P superuser chassis power status
 ### SOL Not Working
 ```bash
 # Enable SOL
-ipmitool -I lanplus -H 192.168.1.200 -U ADMIN -P ADMIN sol set enabled true 1
-ipmitool -I lanplus -H 192.168.1.200 -U ADMIN -P ADMIN sol set privilege-level admin 1
+ipmitool -I lanplus -H 192.168.1.200 -U ADMIN -P [CREDENTIAL-IN-1PASSWORD] sol set enabled true 1
+ipmitool -I lanplus -H 192.168.1.200 -U ADMIN -P [CREDENTIAL-IN-1PASSWORD] sol set privilege-level admin 1
 
 # Try again
-ipmitool -I lanplus -H 192.168.1.200 -U ADMIN -P ADMIN sol activate
+ipmitool -I lanplus -H 192.168.1.200 -U ADMIN -P [CREDENTIAL-IN-1PASSWORD] sol activate
 ```
 
 ### Web Interface Not Loading
@@ -303,14 +303,14 @@ ipmitool -I lanplus -H 192.168.1.200 -U ADMIN -P ADMIN sol activate
 **Quick Commands**:
 ```bash
 # Power status
-ipmitool -I lanplus -H 192.168.1.200 -U ADMIN -P ADMIN chassis power status
+ipmitool -I lanplus -H 192.168.1.200 -U ADMIN -P [CREDENTIAL-IN-1PASSWORD] chassis power status
 
 # PXE boot
-ipmitool -I lanplus -H 192.168.1.200 -U ADMIN -P ADMIN chassis bootdev pxe
-ipmitool -I lanplus -H 192.168.1.200 -U ADMIN -P ADMIN chassis power cycle
+ipmitool -I lanplus -H 192.168.1.200 -U ADMIN -P [CREDENTIAL-IN-1PASSWORD] chassis bootdev pxe
+ipmitool -I lanplus -H 192.168.1.200 -U ADMIN -P [CREDENTIAL-IN-1PASSWORD] chassis power cycle
 
 # Serial console
-ipmitool -I lanplus -H 192.168.1.200 -U ADMIN -P ADMIN sol activate
+ipmitool -I lanplus -H 192.168.1.200 -U ADMIN -P [CREDENTIAL-IN-1PASSWORD] sol activate
 ```
 
 **Web UI**: https://192.168.1.200 (ADMIN/ADMIN)
