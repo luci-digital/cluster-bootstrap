@@ -22,9 +22,9 @@
 
 # Set variables
 set menu-timeout 30000
-set provision-server http://192.168.1.146:9999
-set http-server http://192.168.1.146:8000
-set tftp-server tftp://192.168.1.146
+set provision-server http://192.168.1.145:9999
+set http-server http://192.168.1.145:8000
+set tftp-server tftp://192.168.1.145
 
 # Genesis Bond metadata
 set genesis-bond ACTIVE

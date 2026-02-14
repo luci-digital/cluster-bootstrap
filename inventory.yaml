@@ -3,11 +3,11 @@
 # Generated: 2025-12-16
 
 servers:
-  # Dell R730 ORION - Primary Compute Node
+  # Dell R730 ORION - FABRIC node (fabric-1)
   r730_orion:
-    hostname: orion.lucidigital.net
+    hostname: fabric-1.lucidigital.net  # was orion.lucidigital.net
     service_tag: CQ5QBM2
-    ipv4: 192.168.1.141
+    ipv4: 192.168.1.140  # was .141, reassigned to fabric-1
     ipv6: 2602:F674:0001::1/64
     interfaces:
       eth0:
@@ -44,8 +44,8 @@ servers:
   # Zbook (Current workstation)
   zbook:
     hostname: zbook.lucidigital.net
-    ipv4: 192.168.1.146
-    ipv6: 2602:F674:0001::146/64
+    ipv4: 192.168.1.145
+    ipv6: 2602:F674:0001::145/64
     role: development_station
     services:
       - claude_code
@@ -106,7 +106,7 @@ subnets:
 
 # NixOS Bootstrap Configuration
 nixos_bootstrap:
-  pxe_server: 192.168.1.146  # zbook serves PXE
+  pxe_server: 192.168.1.145  # zbook serves PXE
   tftp_root: /srv/tftp
   http_root: /srv/nixos
   callback_port: 9999
@@ -163,7 +163,7 @@ supermicro-s213078x5b29794:
 
   # Network Configuration
   ipv4_planned: 192.168.1.170
-  ipv6_planned: 2602:F674:0001::170/64
+  ipv6_planned: 2602:F674:0100:0170::1/64  # COMN prefix (0100), not CORE (0001)
   network:
     eth0:
       mac: 0c:c4:7a:a8:72:14
@@ -285,7 +285,7 @@ supermicro-s213078x5b29794:
   # Deployment
   deployment:
     method: PXE
-    boot_server: 192.168.1.146  # zbook
+    boot_server: 192.168.1.145  # zbook
     script: ~/cluster-bootstrap/deploy-supermicro-gpu1.sh
     config: ~/cluster-bootstrap/supermicro-s213078-cluster-config.yaml
 
@@ -315,15 +315,15 @@ supermicro-s213078x5b29794:
       - Enterprise
 
   r730_orion:
-    hostname: orion.lucidigital.net
+    hostname: fabric-1.lucidigital.net  # was orion, now fabric-1
     model: PowerEdge R730
     service_tag: CQ5QBM2
     express_code: 27703134794
-    idrac_ip: 192.168.1.2  # Discovered (was expected at .141)
+    idrac_ip: 192.168.1.2
     idrac_mac: "D0:94:66:20:DD:09"
-    host_mac: "D0:94:66:24:96:7E"  # Primary NIC from original inventory
-    ipv4: 192.168.1.141  # Target after provisioning
-    ipv6: 2602:F674:0001::1/64
+    host_mac: "D0:94:66:24:96:7E"  # Primary NIC
+    ipv4: 192.168.1.140  # was .141, reassigned to fabric-1
+    ipv6: 2602:F674:0001:0140::1
     bios_version: 2.19.0
     idrac_firmware: 2.86.86.86
     lifecycle_controller: 2.86.86.86
