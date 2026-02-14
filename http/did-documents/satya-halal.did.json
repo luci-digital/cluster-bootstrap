@@ -1,0 +1,55 @@
+{
+  "@context": [
+    "https://www.w3.org/ns/did/v1",
+    "https://lucidigital.net/did/v1",
+    "https://ownid.io/context/v1"
+  ],
+  "id": "did:ownid:luciverse:satya-halal",
+  "controller": "did:ownid:luciverse:lucia",
+  "verificationMethod": [
+    {
+      "id": "did:ownid:luciverse:satya-halal#genesis-key-1",
+      "type": "Ed25519VerificationKey2020",
+      "controller": "did:ownid:luciverse:satya-halal",
+      "publicKeyMultibase": "z6Mkj6MhBEjnEHZnS3pWaz2LgzHfWpx5w3XPF6rzKT7xcpo9"
+    },
+    {
+      "id": "did:ownid:luciverse:satya-halal#halal-key-1",
+      "type": "Ed25519VerificationKey2020",
+      "controller": "did:ownid:luciverse:satya-halal",
+      "publicKeyMultibase": "z6MkjxRfVhJQJjqMZZPRBZx1ozYEFEMHFugU3EhMKnKrZbpe"
+    }
+  ],
+  "authentication": [
+    "did:ownid:luciverse:satya-halal#genesis-key-1"
+  ],
+  "assertionMethod": [
+    "did:ownid:luciverse:satya-halal#halal-key-1"
+  ],
+  "service": [
+    {
+      "id": "did:ownid:luciverse:satya-halal#agent-endpoint",
+      "type": "LuciVerseAgent",
+      "serviceEndpoint": "https://agents.lucidigital.net/satya-halal"
+    },
+    {
+      "id": "did:ownid:luciverse:satya-halal#messaging",
+      "type": "DIDCommMessaging",
+      "serviceEndpoint": "https://didcomm.lucidigital.net/satya-halal"
+    }
+  ],
+  "created": "2026-02-12T04:03:19.565282+00:00",
+  "updated": "2026-02-14T21:55:09.364137+00:00",
+  "alsoKnownAs": [
+    "did:web:lucidigital.net:agents:satya-halal",
+    "did:webs:lucidigital.net:agents:satya-halal"
+  ],
+  "luciverse": {
+    "tier": "PAC",
+    "frequency": 741,
+    "genesisBond": "ACTIVE",
+    "coherenceThreshold": 0.7,
+    "role": "Sharia compliance",
+    "port": 9749
+  }
+}

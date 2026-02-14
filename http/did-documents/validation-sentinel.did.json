@@ -1,0 +1,55 @@
+{
+  "@context": [
+    "https://www.w3.org/ns/did/v1",
+    "https://lucidigital.net/did/v1",
+    "https://ownid.io/context/v1"
+  ],
+  "id": "did:ownid:luciverse:validation-sentinel",
+  "controller": "did:ownid:luciverse:lucia",
+  "verificationMethod": [
+    {
+      "id": "did:ownid:luciverse:validation-sentinel#genesis-key-1",
+      "type": "Ed25519VerificationKey2020",
+      "controller": "did:ownid:luciverse:validation-sentinel",
+      "publicKeyMultibase": "z6MkwFRu17a3nkUaD2mdCb9s3pGJzDUsAmNTvgZTWT6rMfrU"
+    },
+    {
+      "id": "did:ownid:luciverse:validation-sentinel#validation-key-1",
+      "type": "Ed25519VerificationKey2020",
+      "controller": "did:ownid:luciverse:validation-sentinel",
+      "publicKeyMultibase": "z6Mkpnm1e8PQvvVx6pQDNSP2Y1pM9cvP7ToFYUY2RvwWvHrU"
+    }
+  ],
+  "authentication": [
+    "did:ownid:luciverse:validation-sentinel#genesis-key-1"
+  ],
+  "assertionMethod": [
+    "did:ownid:luciverse:validation-sentinel#validation-key-1"
+  ],
+  "service": [
+    {
+      "id": "did:ownid:luciverse:validation-sentinel#agent-endpoint",
+      "type": "LuciVerseAgent",
+      "serviceEndpoint": "https://agents.lucidigital.net/validation-sentinel"
+    },
+    {
+      "id": "did:ownid:luciverse:validation-sentinel#messaging",
+      "type": "DIDCommMessaging",
+      "serviceEndpoint": "https://didcomm.lucidigital.net/validation-sentinel"
+    }
+  ],
+  "created": "2026-02-12T04:03:19.558320+00:00",
+  "updated": "2026-02-14T21:55:09.364137+00:00",
+  "alsoKnownAs": [
+    "did:web:lucidigital.net:agents:validation-sentinel",
+    "did:webs:lucidigital.net:agents:validation-sentinel"
+  ],
+  "luciverse": {
+    "tier": "CORE",
+    "frequency": 432,
+    "genesisBond": "ACTIVE",
+    "coherenceThreshold": 0.7,
+    "role": "Test orchestration",
+    "port": 9438
+  }
+}

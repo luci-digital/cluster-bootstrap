@@ -11,13 +11,13 @@
       "id": "did:ownid:luciverse:cortana#genesis-key-1",
       "type": "Ed25519VerificationKey2020",
       "controller": "did:ownid:luciverse:cortana",
-      "publicKeyMultibase": "z6MkCortana852COMNKnowledge"
+      "publicKeyMultibase": "z6MkwfZbFRB8EGzii2BAf58eeKdPebu2EC8h9Z2KWH3zuX6T"
     },
     {
       "id": "did:ownid:luciverse:cortana#synthesis-key-1",
       "type": "Ed25519VerificationKey2020",
       "controller": "did:ownid:luciverse:cortana",
-      "publicKeyMultibase": "z6MkCortanaSynthesis2025"
+      "publicKeyMultibase": "z6MkjbZpBAJgYfPnfg2z3UMe8chQZ8boT6pJwa4ApWuDNde1"
     }
   ],
   "authentication": [
@@ -66,5 +66,5 @@
     "supervisor": "did:ownid:luciverse:lucia"
   },
   "created": "2025-12-07T00:00:00Z",
-  "updated": "2025-12-07T00:00:00Z"
+  "updated": "2026-02-14T21:55:09.364137+00:00"
 }

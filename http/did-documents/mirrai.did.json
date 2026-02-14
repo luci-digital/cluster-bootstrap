@@ -1,0 +1,55 @@
+{
+  "@context": [
+    "https://www.w3.org/ns/did/v1",
+    "https://lucidigital.net/did/v1",
+    "https://ownid.io/context/v1"
+  ],
+  "id": "did:ownid:luciverse:mirrai",
+  "controller": "did:ownid:luciverse:lucia",
+  "verificationMethod": [
+    {
+      "id": "did:ownid:luciverse:mirrai#genesis-key-1",
+      "type": "Ed25519VerificationKey2020",
+      "controller": "did:ownid:luciverse:mirrai",
+      "publicKeyMultibase": "z6MkeunrQaz9gnMwP4zJiZDVFAPaxwHNXkwjLMkGZQG1Xv65"
+    },
+    {
+      "id": "did:ownid:luciverse:mirrai#visualization-key-1",
+      "type": "Ed25519VerificationKey2020",
+      "controller": "did:ownid:luciverse:mirrai",
+      "publicKeyMultibase": "z6Mkuvks177K5nwzHYYtK26rYd4QUTctW4M8AQHDaSFf8rfx"
+    }
+  ],
+  "authentication": [
+    "did:ownid:luciverse:mirrai#genesis-key-1"
+  ],
+  "assertionMethod": [
+    "did:ownid:luciverse:mirrai#visualization-key-1"
+  ],
+  "service": [
+    {
+      "id": "did:ownid:luciverse:mirrai#agent-endpoint",
+      "type": "LuciVerseAgent",
+      "serviceEndpoint": "https://agents.lucidigital.net/mirrai"
+    },
+    {
+      "id": "did:ownid:luciverse:mirrai#messaging",
+      "type": "DIDCommMessaging",
+      "serviceEndpoint": "https://didcomm.lucidigital.net/mirrai"
+    }
+  ],
+  "created": "2026-02-12T04:03:19.559889+00:00",
+  "updated": "2026-02-14T21:55:09.364137+00:00",
+  "alsoKnownAs": [
+    "did:web:lucidigital.net:agents:mirrai",
+    "did:webs:lucidigital.net:agents:mirrai"
+  ],
+  "luciverse": {
+    "tier": "COMN",
+    "frequency": 528,
+    "genesisBond": "ACTIVE",
+    "coherenceThreshold": 0.7,
+    "role": "Visualization",
+    "port": 9522
+  }
+}

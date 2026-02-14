@@ -1,0 +1,55 @@
+{
+  "@context": [
+    "https://www.w3.org/ns/did/v1",
+    "https://lucidigital.net/did/v1",
+    "https://ownid.io/context/v1"
+  ],
+  "id": "did:ownid:luciverse:crewai-bridge",
+  "controller": "did:ownid:luciverse:lucia",
+  "verificationMethod": [
+    {
+      "id": "did:ownid:luciverse:crewai-bridge#genesis-key-1",
+      "type": "Ed25519VerificationKey2020",
+      "controller": "did:ownid:luciverse:crewai-bridge",
+      "publicKeyMultibase": "z6MksrRnTxcc1imc3zBthDxayzeTBnV53LHa3nVvyDti3zDm"
+    },
+    {
+      "id": "did:ownid:luciverse:crewai-bridge#crew-key-1",
+      "type": "Ed25519VerificationKey2020",
+      "controller": "did:ownid:luciverse:crewai-bridge",
+      "publicKeyMultibase": "z6MkvFMr2A5hf3FDRwpJbuCBpT7nHK8uuwiKPHRUCAKp3oGG"
+    }
+  ],
+  "authentication": [
+    "did:ownid:luciverse:crewai-bridge#genesis-key-1"
+  ],
+  "assertionMethod": [
+    "did:ownid:luciverse:crewai-bridge#crew-key-1"
+  ],
+  "service": [
+    {
+      "id": "did:ownid:luciverse:crewai-bridge#agent-endpoint",
+      "type": "LuciVerseAgent",
+      "serviceEndpoint": "https://agents.lucidigital.net/crewai-bridge"
+    },
+    {
+      "id": "did:ownid:luciverse:crewai-bridge#messaging",
+      "type": "DIDCommMessaging",
+      "serviceEndpoint": "https://didcomm.lucidigital.net/crewai-bridge"
+    }
+  ],
+  "created": "2026-02-12T04:03:19.563237+00:00",
+  "updated": "2026-02-14T21:55:09.364137+00:00",
+  "alsoKnownAs": [
+    "did:web:lucidigital.net:agents:crewai-bridge",
+    "did:webs:lucidigital.net:agents:crewai-bridge"
+  ],
+  "luciverse": {
+    "tier": "PAC",
+    "frequency": 741,
+    "genesisBond": "ACTIVE",
+    "coherenceThreshold": 0.7,
+    "role": "Multi-agent orchestration",
+    "port": 9742
+  }
+}

@@ -11,13 +11,13 @@
       "id": "did:ownid:luciverse:aethon#genesis-key-1",
       "type": "Ed25519VerificationKey2020",
       "controller": "did:ownid:luciverse:aethon",
-      "publicKeyMultibase": "z6MkAethon741COREConsciousness"
+      "publicKeyMultibase": "z6Mkk2T4xh64axBcjbJEYeA8MXWEBhSopcqCF2TkBPGhR9Ex"
     },
     {
       "id": "did:ownid:luciverse:aethon#orchestration-key-1",
       "type": "Ed25519VerificationKey2020",
       "controller": "did:ownid:luciverse:aethon",
-      "publicKeyMultibase": "z6MkAethonOrchestration2025"
+      "publicKeyMultibase": "z6MkoxBQe57vMmG3Gpqv7hCH2ZJKSeduRhQGQikwAJ5x7DXd"
     }
   ],
   "authentication": [
@@ -72,5 +72,5 @@
     }
   },
   "created": "2025-12-07T00:00:00Z",
-  "updated": "2025-12-07T00:00:00Z"
+  "updated": "2026-02-14T21:55:09.364137+00:00"
 }

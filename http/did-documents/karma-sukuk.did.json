@@ -1,0 +1,55 @@
+{
+  "@context": [
+    "https://www.w3.org/ns/did/v1",
+    "https://lucidigital.net/did/v1",
+    "https://ownid.io/context/v1"
+  ],
+  "id": "did:ownid:luciverse:karma-sukuk",
+  "controller": "did:ownid:luciverse:lucia",
+  "verificationMethod": [
+    {
+      "id": "did:ownid:luciverse:karma-sukuk#genesis-key-1",
+      "type": "Ed25519VerificationKey2020",
+      "controller": "did:ownid:luciverse:karma-sukuk",
+      "publicKeyMultibase": "z6MkjwTfnQcm3AzaoPEHZC5c9mGMygirFWS3e4zy5n4sPAS1"
+    },
+    {
+      "id": "did:ownid:luciverse:karma-sukuk#sukuk-key-1",
+      "type": "Ed25519VerificationKey2020",
+      "controller": "did:ownid:luciverse:karma-sukuk",
+      "publicKeyMultibase": "z6MkkLxVh34xrRhZjQ5d6AfbZaSRgd8qakGhEzKzs13zMA4N"
+    }
+  ],
+  "authentication": [
+    "did:ownid:luciverse:karma-sukuk#genesis-key-1"
+  ],
+  "assertionMethod": [
+    "did:ownid:luciverse:karma-sukuk#sukuk-key-1"
+  ],
+  "service": [
+    {
+      "id": "did:ownid:luciverse:karma-sukuk#agent-endpoint",
+      "type": "LuciVerseAgent",
+      "serviceEndpoint": "https://agents.lucidigital.net/karma-sukuk"
+    },
+    {
+      "id": "did:ownid:luciverse:karma-sukuk#messaging",
+      "type": "DIDCommMessaging",
+      "serviceEndpoint": "https://didcomm.lucidigital.net/karma-sukuk"
+    }
+  ],
+  "created": "2026-02-12T04:03:19.565599+00:00",
+  "updated": "2026-02-14T21:55:09.364137+00:00",
+  "alsoKnownAs": [
+    "did:web:lucidigital.net:agents:karma-sukuk",
+    "did:webs:lucidigital.net:agents:karma-sukuk"
+  ],
+  "luciverse": {
+    "tier": "PAC",
+    "frequency": 741,
+    "genesisBond": "ACTIVE",
+    "coherenceThreshold": 0.7,
+    "role": "Islamic finance",
+    "port": 9750
+  }
+}

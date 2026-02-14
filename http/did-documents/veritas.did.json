@@ -11,13 +11,13 @@
       "id": "did:ownid:luciverse:veritas#genesis-key-1",
       "type": "Ed25519VerificationKey2020",
       "controller": "did:ownid:luciverse:veritas",
-      "publicKeyMultibase": "z6MkVeritas396COREWatchdog"
+      "publicKeyMultibase": "z6MktxY2tDBX7tFFAALLeXsWxcbqAVMbz7xJ24u1kezt6duC"
     },
     {
       "id": "did:ownid:luciverse:veritas#truth-key-1",
       "type": "Ed25519VerificationKey2020",
       "controller": "did:ownid:luciverse:veritas",
-      "publicKeyMultibase": "z6MkVeritasTruthVerification2025"
+      "publicKeyMultibase": "z6Mku1UxqSQC9qCAQTPhmZtHvshTPNawqmmVgARMEtCQffLd"
     }
   ],
   "authentication": [
@@ -75,5 +75,5 @@
     }
   },
   "created": "2025-12-07T00:00:00Z",
-  "updated": "2025-12-07T00:00:00Z"
+  "updated": "2026-02-14T21:55:09.364137+00:00"
 }

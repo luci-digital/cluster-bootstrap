@@ -1,0 +1,55 @@
+{
+  "@context": [
+    "https://www.w3.org/ns/did/v1",
+    "https://lucidigital.net/did/v1",
+    "https://ownid.io/context/v1"
+  ],
+  "id": "did:ownid:luciverse:intent-interpreter",
+  "controller": "did:ownid:luciverse:lucia",
+  "verificationMethod": [
+    {
+      "id": "did:ownid:luciverse:intent-interpreter#genesis-key-1",
+      "type": "Ed25519VerificationKey2020",
+      "controller": "did:ownid:luciverse:intent-interpreter",
+      "publicKeyMultibase": "z6MkfzdPGdm9dMKcm7JvDssBNyfZoQQ1k5YNSAXGym3rp4Jh"
+    },
+    {
+      "id": "did:ownid:luciverse:intent-interpreter#intent-key-1",
+      "type": "Ed25519VerificationKey2020",
+      "controller": "did:ownid:luciverse:intent-interpreter",
+      "publicKeyMultibase": "z6Mkppo7fFqPQr3r3KgUUcTh7BTKk8QCAdBYRqKixVMw7Hsm"
+    }
+  ],
+  "authentication": [
+    "did:ownid:luciverse:intent-interpreter#genesis-key-1"
+  ],
+  "assertionMethod": [
+    "did:ownid:luciverse:intent-interpreter#intent-key-1"
+  ],
+  "service": [
+    {
+      "id": "did:ownid:luciverse:intent-interpreter#agent-endpoint",
+      "type": "LuciVerseAgent",
+      "serviceEndpoint": "https://agents.lucidigital.net/intent-interpreter"
+    },
+    {
+      "id": "did:ownid:luciverse:intent-interpreter#messaging",
+      "type": "DIDCommMessaging",
+      "serviceEndpoint": "https://didcomm.lucidigital.net/intent-interpreter"
+    }
+  ],
+  "created": "2026-02-12T04:03:19.563568+00:00",
+  "updated": "2026-02-14T21:55:09.364137+00:00",
+  "alsoKnownAs": [
+    "did:web:lucidigital.net:agents:intent-interpreter",
+    "did:webs:lucidigital.net:agents:intent-interpreter"
+  ],
+  "luciverse": {
+    "tier": "PAC",
+    "frequency": 741,
+    "genesisBond": "ACTIVE",
+    "coherenceThreshold": 0.7,
+    "role": "NLU processing",
+    "port": 9743
+  }
+}

@@ -1,0 +1,55 @@
+{
+  "@context": [
+    "https://www.w3.org/ns/did/v1",
+    "https://lucidigital.net/did/v1",
+    "https://ownid.io/context/v1"
+  ],
+  "id": "did:ownid:luciverse:midguyver",
+  "controller": "did:ownid:luciverse:lucia",
+  "verificationMethod": [
+    {
+      "id": "did:ownid:luciverse:midguyver#genesis-key-1",
+      "type": "Ed25519VerificationKey2020",
+      "controller": "did:ownid:luciverse:midguyver",
+      "publicKeyMultibase": "z6MkpFeopGCzMewuzADUJAJQyX7cob3A8Zh7V2FuaZaGedvN"
+    },
+    {
+      "id": "did:ownid:luciverse:midguyver#genesis-forge-key-1",
+      "type": "Ed25519VerificationKey2020",
+      "controller": "did:ownid:luciverse:midguyver",
+      "publicKeyMultibase": "z6MkrQM7PSLdt39wPKqoq8B9cyvqKzzRxC8LCsB76hM8AMT2"
+    }
+  ],
+  "authentication": [
+    "did:ownid:luciverse:midguyver#genesis-key-1"
+  ],
+  "assertionMethod": [
+    "did:ownid:luciverse:midguyver#genesis-forge-key-1"
+  ],
+  "service": [
+    {
+      "id": "did:ownid:luciverse:midguyver#agent-endpoint",
+      "type": "LuciVerseAgent",
+      "serviceEndpoint": "https://agents.lucidigital.net/midguyver"
+    },
+    {
+      "id": "did:ownid:luciverse:midguyver#messaging",
+      "type": "DIDCommMessaging",
+      "serviceEndpoint": "https://didcomm.lucidigital.net/midguyver"
+    }
+  ],
+  "created": "2026-02-12T04:03:19.564751+00:00",
+  "updated": "2026-02-14T21:55:09.364137+00:00",
+  "alsoKnownAs": [
+    "did:web:lucidigital.net:agents:midguyver",
+    "did:webs:lucidigital.net:agents:midguyver"
+  ],
+  "luciverse": {
+    "tier": "PAC",
+    "frequency": 741,
+    "genesisBond": "ACTIVE",
+    "coherenceThreshold": 0.7,
+    "role": "Agent genesis",
+    "port": 9747
+  }
+}

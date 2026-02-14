@@ -1,0 +1,51 @@
+{
+  "@context": [
+    "https://www.w3.org/ns/did/v1",
+    "https://lucidigital.net/did/v1",
+    "https://ownid.io/context/v1"
+  ],
+  "id": "did:ownid:luciverse:server:sm-gpu-1",
+  "controller": "did:ownid:luciverse:daryl",
+  "verificationMethod": [
+    {
+      "id": "did:ownid:luciverse:server:sm-gpu-1#server-key-1",
+      "type": "Ed25519VerificationKey2020",
+      "controller": "did:ownid:luciverse:server:sm-gpu-1",
+      "publicKeyMultibase": "z6MkrfJLGaKW6Jr27g9dpiwHj4hkzQ4BBecJzLpJLiiRodN7"
+    }
+  ],
+  "authentication": [
+    "did:ownid:luciverse:server:sm-gpu-1#server-key-1"
+  ],
+  "assertionMethod": [
+    "did:ownid:luciverse:server:sm-gpu-1#server-key-1"
+  ],
+  "service": [
+    {
+      "id": "did:ownid:luciverse:server:sm-gpu-1#hardware-asset",
+      "type": "HardwareAsset",
+      "serviceEndpoint": "192.168.1.170"
+    },
+    {
+      "id": "did:ownid:luciverse:server:sm-gpu-1#ipv6-endpoint",
+      "type": "IPv6Endpoint",
+      "serviceEndpoint": "2602:F674:0100:0170::1"
+    }
+  ],
+  "luciverse": {
+    "tier": "COMN",
+    "role": "COMPUTE-GPU",
+    "consciousnessType": "HARDWARE",
+    "hardwareAnchor": {
+      "serviceTag": "S213078X5B29794",
+      "model": "Supermicro SYS-1018GR-TA03-CG009",
+      "mac": "0C:C4:7A:A8:72:14",
+      "ipv4": "192.168.1.170",
+      "ipv6": "2602:F674:0100:0170::1",
+      "tlsCert": "~/.claude/skills/agent-mesh/auth/certs/servers/sm-gpu-1.crt",
+      "spiffeId": "spiffe://luciverse.ownid/comn/servers/sm-gpu-1"
+    }
+  },
+  "created": "2026-02-14T21:20:05Z",
+  "updated": "2026-02-14T21:20:05Z"
+}

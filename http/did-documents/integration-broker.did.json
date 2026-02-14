@@ -1,0 +1,55 @@
+{
+  "@context": [
+    "https://www.w3.org/ns/did/v1",
+    "https://lucidigital.net/did/v1",
+    "https://ownid.io/context/v1"
+  ],
+  "id": "did:ownid:luciverse:integration-broker",
+  "controller": "did:ownid:luciverse:lucia",
+  "verificationMethod": [
+    {
+      "id": "did:ownid:luciverse:integration-broker#genesis-key-1",
+      "type": "Ed25519VerificationKey2020",
+      "controller": "did:ownid:luciverse:integration-broker",
+      "publicKeyMultibase": "z6MkpNcohPRxmT8Ysjo4euZM6Wi571gWqH4fUFSYa1MjGvKv"
+    },
+    {
+      "id": "did:ownid:luciverse:integration-broker#integration-key-1",
+      "type": "Ed25519VerificationKey2020",
+      "controller": "did:ownid:luciverse:integration-broker",
+      "publicKeyMultibase": "z6MkwE8f8WsdgebV7b5pAtVWsxY4YJoQZvm6DPCRdUf2nXXc"
+    }
+  ],
+  "authentication": [
+    "did:ownid:luciverse:integration-broker#genesis-key-1"
+  ],
+  "assertionMethod": [
+    "did:ownid:luciverse:integration-broker#integration-key-1"
+  ],
+  "service": [
+    {
+      "id": "did:ownid:luciverse:integration-broker#agent-endpoint",
+      "type": "LuciVerseAgent",
+      "serviceEndpoint": "https://agents.lucidigital.net/integration-broker"
+    },
+    {
+      "id": "did:ownid:luciverse:integration-broker#messaging",
+      "type": "DIDCommMessaging",
+      "serviceEndpoint": "https://didcomm.lucidigital.net/integration-broker"
+    }
+  ],
+  "created": "2026-02-12T04:03:19.560743+00:00",
+  "updated": "2026-02-14T21:55:09.364137+00:00",
+  "alsoKnownAs": [
+    "did:web:lucidigital.net:agents:integration-broker",
+    "did:webs:lucidigital.net:agents:integration-broker"
+  ],
+  "luciverse": {
+    "tier": "COMN",
+    "frequency": 528,
+    "genesisBond": "ACTIVE",
+    "coherenceThreshold": 0.7,
+    "role": "Event orchestration",
+    "port": 9525
+  }
+}

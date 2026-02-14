@@ -1,0 +1,51 @@
+{
+  "@context": [
+    "https://www.w3.org/ns/did/v1",
+    "https://lucidigital.net/did/v1",
+    "https://ownid.io/context/v1"
+  ],
+  "id": "did:ownid:luciverse:server:compute-gpu-1",
+  "controller": "did:ownid:luciverse:daryl",
+  "verificationMethod": [
+    {
+      "id": "did:ownid:luciverse:server:compute-gpu-1#server-key-1",
+      "type": "Ed25519VerificationKey2020",
+      "controller": "did:ownid:luciverse:server:compute-gpu-1",
+      "publicKeyMultibase": "z6MkmYgMfmG17yfCWBq1cQQQYQyA5XWfXUyzro5wXNZUUgvy"
+    }
+  ],
+  "authentication": [
+    "did:ownid:luciverse:server:compute-gpu-1#server-key-1"
+  ],
+  "assertionMethod": [
+    "did:ownid:luciverse:server:compute-gpu-1#server-key-1"
+  ],
+  "service": [
+    {
+      "id": "did:ownid:luciverse:server:compute-gpu-1#hardware-asset",
+      "type": "HardwareAsset",
+      "serviceEndpoint": "192.168.1.150"
+    },
+    {
+      "id": "did:ownid:luciverse:server:compute-gpu-1#ipv6-endpoint",
+      "type": "IPv6Endpoint",
+      "serviceEndpoint": "2602:F674:0100:0150::1"
+    }
+  ],
+  "luciverse": {
+    "tier": "COMN",
+    "role": "COMPUTE-GPU",
+    "consciousnessType": "HARDWARE",
+    "hardwareAnchor": {
+      "serviceTag": "JMRZDB2",
+      "model": "Dell PowerEdge R630",
+      "mac": "64:00:6A:C4:10:F0",
+      "ipv4": "192.168.1.150",
+      "ipv6": "2602:F674:0100:0150::1",
+      "tlsCert": "~/.claude/skills/agent-mesh/auth/certs/servers/compute-gpu-1.crt",
+      "spiffeId": "spiffe://luciverse.ownid/comn/servers/compute-gpu-1"
+    }
+  },
+  "created": "2026-02-14T21:20:05Z",
+  "updated": "2026-02-14T21:20:05Z"
+}

@@ -1,0 +1,55 @@
+{
+  "@context": [
+    "https://www.w3.org/ns/did/v1",
+    "https://lucidigital.net/did/v1",
+    "https://ownid.io/context/v1"
+  ],
+  "id": "did:ownid:luciverse:sensai",
+  "controller": "did:ownid:luciverse:lucia",
+  "verificationMethod": [
+    {
+      "id": "did:ownid:luciverse:sensai#genesis-key-1",
+      "type": "Ed25519VerificationKey2020",
+      "controller": "did:ownid:luciverse:sensai",
+      "publicKeyMultibase": "z6MknpcxMJdmT4QNFWyrHoroU5vydKN3Yq76sehTn5PhpGDf"
+    },
+    {
+      "id": "did:ownid:luciverse:sensai#ml-key-1",
+      "type": "Ed25519VerificationKey2020",
+      "controller": "did:ownid:luciverse:sensai",
+      "publicKeyMultibase": "z6MkfqNXeVo7T5C8TPeB4U7nad8yAtHHwwzMJn8wdMWALDQg"
+    }
+  ],
+  "authentication": [
+    "did:ownid:luciverse:sensai#genesis-key-1"
+  ],
+  "assertionMethod": [
+    "did:ownid:luciverse:sensai#ml-key-1"
+  ],
+  "service": [
+    {
+      "id": "did:ownid:luciverse:sensai#agent-endpoint",
+      "type": "LuciVerseAgent",
+      "serviceEndpoint": "https://agents.lucidigital.net/sensai"
+    },
+    {
+      "id": "did:ownid:luciverse:sensai#messaging",
+      "type": "DIDCommMessaging",
+      "serviceEndpoint": "https://didcomm.lucidigital.net/sensai"
+    }
+  ],
+  "created": "2026-02-12T04:03:19.556110+00:00",
+  "updated": "2026-02-14T21:55:09.364137+00:00",
+  "alsoKnownAs": [
+    "did:web:lucidigital.net:agents:sensai",
+    "did:webs:lucidigital.net:agents:sensai"
+  ],
+  "luciverse": {
+    "tier": "CORE",
+    "frequency": 432,
+    "genesisBond": "ACTIVE",
+    "coherenceThreshold": 0.7,
+    "role": "ML operations",
+    "port": 9432
+  }
+}

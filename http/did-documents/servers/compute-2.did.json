@@ -1,0 +1,51 @@
+{
+  "@context": [
+    "https://www.w3.org/ns/did/v1",
+    "https://lucidigital.net/did/v1",
+    "https://ownid.io/context/v1"
+  ],
+  "id": "did:ownid:luciverse:server:compute-2",
+  "controller": "did:ownid:luciverse:daryl",
+  "verificationMethod": [
+    {
+      "id": "did:ownid:luciverse:server:compute-2#server-key-1",
+      "type": "Ed25519VerificationKey2020",
+      "controller": "did:ownid:luciverse:server:compute-2",
+      "publicKeyMultibase": "z6MkwZX8iKt7FoT4XkSszgsXNVYs8G8pH6BdAYKX29A4aZAJ"
+    }
+  ],
+  "authentication": [
+    "did:ownid:luciverse:server:compute-2#server-key-1"
+  ],
+  "assertionMethod": [
+    "did:ownid:luciverse:server:compute-2#server-key-1"
+  ],
+  "service": [
+    {
+      "id": "did:ownid:luciverse:server:compute-2#hardware-asset",
+      "type": "HardwareAsset",
+      "serviceEndpoint": "192.168.1.154"
+    },
+    {
+      "id": "did:ownid:luciverse:server:compute-2#ipv6-endpoint",
+      "type": "IPv6Endpoint",
+      "serviceEndpoint": "2602:F674:0100:0154::1"
+    }
+  ],
+  "luciverse": {
+    "tier": "COMN",
+    "role": "COMPUTE",
+    "consciousnessType": "HARDWARE",
+    "hardwareAnchor": {
+      "serviceTag": "TBD",
+      "model": "Dell PowerEdge R630",
+      "mac": "TBD",
+      "ipv4": "192.168.1.154",
+      "ipv6": "2602:F674:0100:0154::1",
+      "tlsCert": "~/.claude/skills/agent-mesh/auth/certs/servers/compute-2.crt",
+      "spiffeId": "spiffe://luciverse.ownid/comn/servers/compute-2"
+    }
+  },
+  "created": "2026-02-14T21:20:05Z",
+  "updated": "2026-02-14T21:20:05Z"
+}

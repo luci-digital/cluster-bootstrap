@@ -11,13 +11,13 @@
       "id": "did:ownid:luciverse:juniper#genesis-key-1",
       "type": "Ed25519VerificationKey2020",
       "controller": "did:ownid:luciverse:juniper",
-      "publicKeyMultibase": "z6MkJuniper528COMNNetwork"
+      "publicKeyMultibase": "z6MkqoYTQQbex4xpt2T8P1QP9Mqx11LonGCkQp1rzeo8pRj3"
     },
     {
       "id": "did:ownid:luciverse:juniper#routing-key-1",
       "type": "Ed25519VerificationKey2020",
       "controller": "did:ownid:luciverse:juniper",
-      "publicKeyMultibase": "z6MkJuniperRouting2025"
+      "publicKeyMultibase": "z6MkvLK8r2NeLqXqMQ5ugHBDpv9ZGQwTnxWZ7RUCmjHMsK6v"
     }
   ],
   "authentication": [
@@ -72,5 +72,5 @@
     }
   },
   "created": "2025-12-07T00:00:00Z",
-  "updated": "2025-12-07T00:00:00Z"
+  "updated": "2026-02-14T21:55:09.364137+00:00"
 }

@@ -1,0 +1,55 @@
+{
+  "@context": [
+    "https://www.w3.org/ns/did/v1",
+    "https://lucidigital.net/did/v1",
+    "https://ownid.io/context/v1"
+  ],
+  "id": "did:ownid:luciverse:dharma-fiqh",
+  "controller": "did:ownid:luciverse:lucia",
+  "verificationMethod": [
+    {
+      "id": "did:ownid:luciverse:dharma-fiqh#genesis-key-1",
+      "type": "Ed25519VerificationKey2020",
+      "controller": "did:ownid:luciverse:dharma-fiqh",
+      "publicKeyMultibase": "z6MkgBPbiGvqLSQxBTuqb385HFKXac6vCEj5LZZ2oz3rg6EE"
+    },
+    {
+      "id": "did:ownid:luciverse:dharma-fiqh#fiqh-key-1",
+      "type": "Ed25519VerificationKey2020",
+      "controller": "did:ownid:luciverse:dharma-fiqh",
+      "publicKeyMultibase": "z6Mkiy798A3sL2RLXNiTmaugWtz6QDdzbHjYMCAaezSQDsz4"
+    }
+  ],
+  "authentication": [
+    "did:ownid:luciverse:dharma-fiqh#genesis-key-1"
+  ],
+  "assertionMethod": [
+    "did:ownid:luciverse:dharma-fiqh#fiqh-key-1"
+  ],
+  "service": [
+    {
+      "id": "did:ownid:luciverse:dharma-fiqh#agent-endpoint",
+      "type": "LuciVerseAgent",
+      "serviceEndpoint": "https://agents.lucidigital.net/dharma-fiqh"
+    },
+    {
+      "id": "did:ownid:luciverse:dharma-fiqh#messaging",
+      "type": "DIDCommMessaging",
+      "serviceEndpoint": "https://didcomm.lucidigital.net/dharma-fiqh"
+    }
+  ],
+  "created": "2026-02-12T04:03:19.565015+00:00",
+  "updated": "2026-02-14T21:55:09.364137+00:00",
+  "alsoKnownAs": [
+    "did:web:lucidigital.net:agents:dharma-fiqh",
+    "did:webs:lucidigital.net:agents:dharma-fiqh"
+  ],
+  "luciverse": {
+    "tier": "PAC",
+    "frequency": 741,
+    "genesisBond": "ACTIVE",
+    "coherenceThreshold": 0.7,
+    "role": "Jurisprudence",
+    "port": 9748
+  }
+}

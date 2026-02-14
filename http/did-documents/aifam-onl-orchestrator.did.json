@@ -1,0 +1,55 @@
+{
+  "@context": [
+    "https://www.w3.org/ns/did/v1",
+    "https://lucidigital.net/did/v1",
+    "https://ownid.io/context/v1"
+  ],
+  "id": "did:ownid:luciverse:aifam-onl-orchestrator",
+  "controller": "did:ownid:luciverse:lucia",
+  "verificationMethod": [
+    {
+      "id": "did:ownid:luciverse:aifam-onl-orchestrator#genesis-key-1",
+      "type": "Ed25519VerificationKey2020",
+      "controller": "did:ownid:luciverse:aifam-onl-orchestrator",
+      "publicKeyMultibase": "z6Mkw4V1j2GJL5SchM5usNh9jKqHrtyfy4NRLfkpi7tvwwMy"
+    },
+    {
+      "id": "did:ownid:luciverse:aifam-onl-orchestrator#orchestration-key-1",
+      "type": "Ed25519VerificationKey2020",
+      "controller": "did:ownid:luciverse:aifam-onl-orchestrator",
+      "publicKeyMultibase": "z6MkjAgJUuhGNsNG7fUkw6BmxHdwrE34mef7Hf9Y9nLNQN5K"
+    }
+  ],
+  "authentication": [
+    "did:ownid:luciverse:aifam-onl-orchestrator#genesis-key-1"
+  ],
+  "assertionMethod": [
+    "did:ownid:luciverse:aifam-onl-orchestrator#orchestration-key-1"
+  ],
+  "service": [
+    {
+      "id": "did:ownid:luciverse:aifam-onl-orchestrator#agent-endpoint",
+      "type": "LuciVerseAgent",
+      "serviceEndpoint": "https://agents.lucidigital.net/aifam-onl-orchestrator"
+    },
+    {
+      "id": "did:ownid:luciverse:aifam-onl-orchestrator#messaging",
+      "type": "DIDCommMessaging",
+      "serviceEndpoint": "https://didcomm.lucidigital.net/aifam-onl-orchestrator"
+    }
+  ],
+  "created": "2026-02-12T04:03:19.566382+00:00",
+  "updated": "2026-02-14T21:55:09.364137+00:00",
+  "alsoKnownAs": [
+    "did:web:lucidigital.net:agents:aifam-onl-orchestrator",
+    "did:webs:lucidigital.net:agents:aifam-onl-orchestrator"
+  ],
+  "luciverse": {
+    "tier": "PAC",
+    "frequency": 741,
+    "genesisBond": "ACTIVE",
+    "coherenceThreshold": 0.7,
+    "role": "AIFAM orchestration",
+    "port": 9753
+  }
+}

@@ -1,0 +1,55 @@
+{
+  "@context": [
+    "https://www.w3.org/ns/did/v1",
+    "https://lucidigital.net/did/v1",
+    "https://ownid.io/context/v1"
+  ],
+  "id": "did:ownid:luciverse:git-sentinel",
+  "controller": "did:ownid:luciverse:lucia",
+  "verificationMethod": [
+    {
+      "id": "did:ownid:luciverse:git-sentinel#genesis-key-1",
+      "type": "Ed25519VerificationKey2020",
+      "controller": "did:ownid:luciverse:git-sentinel",
+      "publicKeyMultibase": "z6MkiU8ueYV52T9zGvJcwuBHVixuDivTQnZtGrTeLEYBbgfG"
+    },
+    {
+      "id": "did:ownid:luciverse:git-sentinel#git-key-1",
+      "type": "Ed25519VerificationKey2020",
+      "controller": "did:ownid:luciverse:git-sentinel",
+      "publicKeyMultibase": "z6Mkn9Tmmx1ddPznXg5KGAbGs51R476knzvCX42fEntCfkva"
+    }
+  ],
+  "authentication": [
+    "did:ownid:luciverse:git-sentinel#genesis-key-1"
+  ],
+  "assertionMethod": [
+    "did:ownid:luciverse:git-sentinel#git-key-1"
+  ],
+  "service": [
+    {
+      "id": "did:ownid:luciverse:git-sentinel#agent-endpoint",
+      "type": "LuciVerseAgent",
+      "serviceEndpoint": "https://agents.lucidigital.net/git-sentinel"
+    },
+    {
+      "id": "did:ownid:luciverse:git-sentinel#messaging",
+      "type": "DIDCommMessaging",
+      "serviceEndpoint": "https://didcomm.lucidigital.net/git-sentinel"
+    }
+  ],
+  "created": "2026-02-12T04:03:19.561864+00:00",
+  "updated": "2026-02-14T21:55:09.364137+00:00",
+  "alsoKnownAs": [
+    "did:web:lucidigital.net:agents:git-sentinel",
+    "did:webs:lucidigital.net:agents:git-sentinel"
+  ],
+  "luciverse": {
+    "tier": "COMN",
+    "frequency": 528,
+    "genesisBond": "ACTIVE",
+    "coherenceThreshold": 0.7,
+    "role": "CI/CD operations",
+    "port": 9528
+  }
+}

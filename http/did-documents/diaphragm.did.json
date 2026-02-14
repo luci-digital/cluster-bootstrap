@@ -1,0 +1,55 @@
+{
+  "@context": [
+    "https://www.w3.org/ns/did/v1",
+    "https://lucidigital.net/did/v1",
+    "https://ownid.io/context/v1"
+  ],
+  "id": "did:ownid:luciverse:diaphragm",
+  "controller": "did:ownid:luciverse:lucia",
+  "verificationMethod": [
+    {
+      "id": "did:ownid:luciverse:diaphragm#genesis-key-1",
+      "type": "Ed25519VerificationKey2020",
+      "controller": "did:ownid:luciverse:diaphragm",
+      "publicKeyMultibase": "z6Mki8EMUKX16G3D5dRbA6Pi2HJcze4LMpKDXA428b9SUEbR"
+    },
+    {
+      "id": "did:ownid:luciverse:diaphragm#ingestion-key-1",
+      "type": "Ed25519VerificationKey2020",
+      "controller": "did:ownid:luciverse:diaphragm",
+      "publicKeyMultibase": "z6Mkgxs9bbUUSpSxMmahBoq8bJHJCvsVRjA8tP4s4QajaPrH"
+    }
+  ],
+  "authentication": [
+    "did:ownid:luciverse:diaphragm#genesis-key-1"
+  ],
+  "assertionMethod": [
+    "did:ownid:luciverse:diaphragm#ingestion-key-1"
+  ],
+  "service": [
+    {
+      "id": "did:ownid:luciverse:diaphragm#agent-endpoint",
+      "type": "LuciVerseAgent",
+      "serviceEndpoint": "https://agents.lucidigital.net/diaphragm"
+    },
+    {
+      "id": "did:ownid:luciverse:diaphragm#messaging",
+      "type": "DIDCommMessaging",
+      "serviceEndpoint": "https://didcomm.lucidigital.net/diaphragm"
+    }
+  ],
+  "created": "2026-02-12T04:03:19.560185+00:00",
+  "updated": "2026-02-14T21:55:09.364137+00:00",
+  "alsoKnownAs": [
+    "did:web:lucidigital.net:agents:diaphragm",
+    "did:webs:lucidigital.net:agents:diaphragm"
+  ],
+  "luciverse": {
+    "tier": "COMN",
+    "frequency": 528,
+    "genesisBond": "ACTIVE",
+    "coherenceThreshold": 0.7,
+    "role": "Content ingestion",
+    "port": 9523
+  }
+}

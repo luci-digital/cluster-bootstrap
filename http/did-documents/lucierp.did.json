@@ -1,0 +1,55 @@
+{
+  "@context": [
+    "https://www.w3.org/ns/did/v1",
+    "https://lucidigital.net/did/v1",
+    "https://ownid.io/context/v1"
+  ],
+  "id": "did:ownid:luciverse:lucierp",
+  "controller": "did:ownid:luciverse:lucia",
+  "verificationMethod": [
+    {
+      "id": "did:ownid:luciverse:lucierp#genesis-key-1",
+      "type": "Ed25519VerificationKey2020",
+      "controller": "did:ownid:luciverse:lucierp",
+      "publicKeyMultibase": "z6Mkuwdrd3ihsHjn9DXTA2zTiojbKf5pmZry9bXmPrxE86s2"
+    },
+    {
+      "id": "did:ownid:luciverse:lucierp#erp-key-1",
+      "type": "Ed25519VerificationKey2020",
+      "controller": "did:ownid:luciverse:lucierp",
+      "publicKeyMultibase": "z6Mkomgf3VxsEGNsPoTjA7WubbYBmGtrmUxBBJtttNcVLL4d"
+    }
+  ],
+  "authentication": [
+    "did:ownid:luciverse:lucierp#genesis-key-1"
+  ],
+  "assertionMethod": [
+    "did:ownid:luciverse:lucierp#erp-key-1"
+  ],
+  "service": [
+    {
+      "id": "did:ownid:luciverse:lucierp#agent-endpoint",
+      "type": "LuciVerseAgent",
+      "serviceEndpoint": "https://agents.lucidigital.net/lucierp"
+    },
+    {
+      "id": "did:ownid:luciverse:lucierp#messaging",
+      "type": "DIDCommMessaging",
+      "serviceEndpoint": "https://didcomm.lucidigital.net/lucierp"
+    }
+  ],
+  "created": "2026-02-12T04:03:19.566119+00:00",
+  "updated": "2026-02-14T21:55:09.364137+00:00",
+  "alsoKnownAs": [
+    "did:web:lucidigital.net:agents:lucierp",
+    "did:webs:lucidigital.net:agents:lucierp"
+  ],
+  "luciverse": {
+    "tier": "PAC",
+    "frequency": 741,
+    "genesisBond": "ACTIVE",
+    "coherenceThreshold": 0.7,
+    "role": "ERP management",
+    "port": 9752
+  }
+}

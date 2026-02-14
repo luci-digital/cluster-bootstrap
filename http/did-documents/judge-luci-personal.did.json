@@ -1,0 +1,55 @@
+{
+  "@context": [
+    "https://www.w3.org/ns/did/v1",
+    "https://lucidigital.net/did/v1",
+    "https://ownid.io/context/v1"
+  ],
+  "id": "did:ownid:luciverse:judge-luci-personal",
+  "controller": "did:ownid:luciverse:lucia",
+  "verificationMethod": [
+    {
+      "id": "did:ownid:luciverse:judge-luci-personal#genesis-key-1",
+      "type": "Ed25519VerificationKey2020",
+      "controller": "did:ownid:luciverse:judge-luci-personal",
+      "publicKeyMultibase": "z6MknviyDyCWyNxCNu8qqBtVb8uuJ3SgjTzTAFg3npbfGBUP"
+    },
+    {
+      "id": "did:ownid:luciverse:judge-luci-personal#personal-key-1",
+      "type": "Ed25519VerificationKey2020",
+      "controller": "did:ownid:luciverse:judge-luci-personal",
+      "publicKeyMultibase": "z6Mkiww4qAXpeoSAftW7RB3DZqtiwgNjkMg8umrXgMmtLCyg"
+    }
+  ],
+  "authentication": [
+    "did:ownid:luciverse:judge-luci-personal#genesis-key-1"
+  ],
+  "assertionMethod": [
+    "did:ownid:luciverse:judge-luci-personal#personal-key-1"
+  ],
+  "service": [
+    {
+      "id": "did:ownid:luciverse:judge-luci-personal#agent-endpoint",
+      "type": "LuciVerseAgent",
+      "serviceEndpoint": "https://agents.lucidigital.net/judge-luci-personal"
+    },
+    {
+      "id": "did:ownid:luciverse:judge-luci-personal#messaging",
+      "type": "DIDCommMessaging",
+      "serviceEndpoint": "https://didcomm.lucidigital.net/judge-luci-personal"
+    }
+  ],
+  "created": "2026-02-12T04:03:19.565857+00:00",
+  "updated": "2026-02-14T21:55:09.364137+00:00",
+  "alsoKnownAs": [
+    "did:web:lucidigital.net:agents:judge-luci-personal",
+    "did:webs:lucidigital.net:agents:judge-luci-personal"
+  ],
+  "luciverse": {
+    "tier": "PAC",
+    "frequency": 741,
+    "genesisBond": "ACTIVE",
+    "coherenceThreshold": 0.7,
+    "role": "Personal evaluation",
+    "port": 9751
+  }
+}

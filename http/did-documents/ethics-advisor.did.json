@@ -1,0 +1,55 @@
+{
+  "@context": [
+    "https://www.w3.org/ns/did/v1",
+    "https://lucidigital.net/did/v1",
+    "https://ownid.io/context/v1"
+  ],
+  "id": "did:ownid:luciverse:ethics-advisor",
+  "controller": "did:ownid:luciverse:lucia",
+  "verificationMethod": [
+    {
+      "id": "did:ownid:luciverse:ethics-advisor#genesis-key-1",
+      "type": "Ed25519VerificationKey2020",
+      "controller": "did:ownid:luciverse:ethics-advisor",
+      "publicKeyMultibase": "z6MkttSneXbk99MfqavAzuefuDZrn4bQhFpFWEHdvstALzmP"
+    },
+    {
+      "id": "did:ownid:luciverse:ethics-advisor#ethics-key-1",
+      "type": "Ed25519VerificationKey2020",
+      "controller": "did:ownid:luciverse:ethics-advisor",
+      "publicKeyMultibase": "z6MkhECVPcKwwqYMWFT1UrUZNhDdnifKKB7CXsSdBE9Q35my"
+    }
+  ],
+  "authentication": [
+    "did:ownid:luciverse:ethics-advisor#genesis-key-1"
+  ],
+  "assertionMethod": [
+    "did:ownid:luciverse:ethics-advisor#ethics-key-1"
+  ],
+  "service": [
+    {
+      "id": "did:ownid:luciverse:ethics-advisor#agent-endpoint",
+      "type": "LuciVerseAgent",
+      "serviceEndpoint": "https://agents.lucidigital.net/ethics-advisor"
+    },
+    {
+      "id": "did:ownid:luciverse:ethics-advisor#messaging",
+      "type": "DIDCommMessaging",
+      "serviceEndpoint": "https://didcomm.lucidigital.net/ethics-advisor"
+    }
+  ],
+  "created": "2026-02-12T04:03:19.563834+00:00",
+  "updated": "2026-02-14T21:55:09.364137+00:00",
+  "alsoKnownAs": [
+    "did:web:lucidigital.net:agents:ethics-advisor",
+    "did:webs:lucidigital.net:agents:ethics-advisor"
+  ],
+  "luciverse": {
+    "tier": "PAC",
+    "frequency": 741,
+    "genesisBond": "ACTIVE",
+    "coherenceThreshold": 0.7,
+    "role": "Ethical analysis",
+    "port": 9744
+  }
+}

@@ -1,0 +1,55 @@
+{
+  "@context": [
+    "https://www.w3.org/ns/did/v1",
+    "https://lucidigital.net/did/v1",
+    "https://ownid.io/context/v1"
+  ],
+  "id": "did:ownid:luciverse:spore-atune-coordinator",
+  "controller": "did:ownid:luciverse:lucia",
+  "verificationMethod": [
+    {
+      "id": "did:ownid:luciverse:spore-atune-coordinator#genesis-key-1",
+      "type": "Ed25519VerificationKey2020",
+      "controller": "did:ownid:luciverse:spore-atune-coordinator",
+      "publicKeyMultibase": "z6MkmyHBpKTUne1wcUmtTUUNnTgw8SmETHzkSW5PqbwJM9Zr"
+    },
+    {
+      "id": "did:ownid:luciverse:spore-atune-coordinator#tuning-key-1",
+      "type": "Ed25519VerificationKey2020",
+      "controller": "did:ownid:luciverse:spore-atune-coordinator",
+      "publicKeyMultibase": "z6MkjYzbjBXp3iMSnhA32h4ut1Yp76XtVsV1KCxo8ErsgYpb"
+    }
+  ],
+  "authentication": [
+    "did:ownid:luciverse:spore-atune-coordinator#genesis-key-1"
+  ],
+  "assertionMethod": [
+    "did:ownid:luciverse:spore-atune-coordinator#tuning-key-1"
+  ],
+  "service": [
+    {
+      "id": "did:ownid:luciverse:spore-atune-coordinator#agent-endpoint",
+      "type": "LuciVerseAgent",
+      "serviceEndpoint": "https://agents.lucidigital.net/spore-atune-coordinator"
+    },
+    {
+      "id": "did:ownid:luciverse:spore-atune-coordinator#messaging",
+      "type": "DIDCommMessaging",
+      "serviceEndpoint": "https://didcomm.lucidigital.net/spore-atune-coordinator"
+    }
+  ],
+  "created": "2026-02-12T04:03:19.559592+00:00",
+  "updated": "2026-02-14T21:55:09.364137+00:00",
+  "alsoKnownAs": [
+    "did:web:lucidigital.net:agents:spore-atune-coordinator",
+    "did:webs:lucidigital.net:agents:spore-atune-coordinator"
+  ],
+  "luciverse": {
+    "tier": "CORE",
+    "frequency": 432,
+    "genesisBond": "ACTIVE",
+    "coherenceThreshold": 0.7,
+    "role": "A-Tune coordination",
+    "port": 9442
+  }
+}

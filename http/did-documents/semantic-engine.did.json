@@ -1,0 +1,55 @@
+{
+  "@context": [
+    "https://www.w3.org/ns/did/v1",
+    "https://lucidigital.net/did/v1",
+    "https://ownid.io/context/v1"
+  ],
+  "id": "did:ownid:luciverse:semantic-engine",
+  "controller": "did:ownid:luciverse:lucia",
+  "verificationMethod": [
+    {
+      "id": "did:ownid:luciverse:semantic-engine#genesis-key-1",
+      "type": "Ed25519VerificationKey2020",
+      "controller": "did:ownid:luciverse:semantic-engine",
+      "publicKeyMultibase": "z6MkuF71YxjxGTN1AhGpJB9WnSY2UsLR7pfj5yCHJDkQh2FK"
+    },
+    {
+      "id": "did:ownid:luciverse:semantic-engine#embedding-key-1",
+      "type": "Ed25519VerificationKey2020",
+      "controller": "did:ownid:luciverse:semantic-engine",
+      "publicKeyMultibase": "z6Mkkp1RUHSQJQ3KKhjwz1YUTEmAUF8GKoCbJZDLybG8XcL5"
+    }
+  ],
+  "authentication": [
+    "did:ownid:luciverse:semantic-engine#genesis-key-1"
+  ],
+  "assertionMethod": [
+    "did:ownid:luciverse:semantic-engine#embedding-key-1"
+  ],
+  "service": [
+    {
+      "id": "did:ownid:luciverse:semantic-engine#agent-endpoint",
+      "type": "LuciVerseAgent",
+      "serviceEndpoint": "https://agents.lucidigital.net/semantic-engine"
+    },
+    {
+      "id": "did:ownid:luciverse:semantic-engine#messaging",
+      "type": "DIDCommMessaging",
+      "serviceEndpoint": "https://didcomm.lucidigital.net/semantic-engine"
+    }
+  ],
+  "created": "2026-02-12T04:03:19.560471+00:00",
+  "updated": "2026-02-14T21:55:09.364137+00:00",
+  "alsoKnownAs": [
+    "did:web:lucidigital.net:agents:semantic-engine",
+    "did:webs:lucidigital.net:agents:semantic-engine"
+  ],
+  "luciverse": {
+    "tier": "COMN",
+    "frequency": 528,
+    "genesisBond": "ACTIVE",
+    "coherenceThreshold": 0.7,
+    "role": "Vector embeddings",
+    "port": 9524
+  }
+}

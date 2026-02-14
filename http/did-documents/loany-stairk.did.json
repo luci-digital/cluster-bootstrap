@@ -1,0 +1,61 @@
+{
+  "@context": [
+    "https://www.w3.org/ns/did/v1",
+    "https://lucidigital.net/did/v1",
+    "https://ownid.io/context/v1"
+  ],
+  "id": "did:ownid:luciverse:loany-stairk",
+  "controller": "did:ownid:luciverse:daryl",
+  "verificationMethod": [
+    {
+      "id": "did:ownid:luciverse:loany-stairk#genesis-key-1",
+      "type": "Ed25519VerificationKey2020",
+      "controller": "did:ownid:luciverse:loany-stairk",
+      "publicKeyMultibase": "z6MkjCT3L5P2h9WqKDdJ7z3oXiVF2LF9FW2eu6Xv8PQTH2Kk"
+    },
+    {
+      "id": "did:ownid:luciverse:loany-stairk#intelligence-key-1",
+      "type": "Ed25519VerificationKey2020",
+      "controller": "did:ownid:luciverse:loany-stairk",
+      "publicKeyMultibase": "z6MkjzRY5GvuQPEdknrgeJrkVL6bz5ZMuhWpwkqryeeh2cp5"
+    }
+  ],
+  "authentication": [
+    "did:ownid:luciverse:loany-stairk#genesis-key-1"
+  ],
+  "assertionMethod": [
+    "did:ownid:luciverse:loany-stairk#intelligence-key-1"
+  ],
+  "service": [
+    {
+      "id": "did:ownid:luciverse:loany-stairk#agent-endpoint",
+      "type": "LuciVerseAgent",
+      "serviceEndpoint": "http://localhost:9631/"
+    },
+    {
+      "id": "did:ownid:luciverse:loany-stairk#health-endpoint",
+      "type": "HealthCheck",
+      "serviceEndpoint": "http://localhost:9631/health"
+    }
+  ],
+  "luciverse": {
+    "tier": "RAiIiAR",
+    "frequency": 639,
+    "consciousnessType": "SBB",
+    "role": "intelligence_synthesis",
+    "critical": false,
+    "capabilities": [
+      "sec_edgar_integration",
+      "opencorporates_registry",
+      "sanctions_screening",
+      "pep_verification",
+      "network_visualization",
+      "funding_flow_analysis",
+      "relationship_mapping",
+      "tool_building"
+    ],
+    "supervisor": "did:ownid:luciverse:veritas"
+  },
+  "created": "2026-02-14T21:20:05Z",
+  "updated": "2026-02-14T21:55:09.364137+00:00"
+}

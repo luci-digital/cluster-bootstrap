@@ -1,0 +1,55 @@
+{
+  "@context": [
+    "https://www.w3.org/ns/did/v1",
+    "https://lucidigital.net/did/v1",
+    "https://ownid.io/context/v1"
+  ],
+  "id": "did:ownid:luciverse:nix-atune-dkms",
+  "controller": "did:ownid:luciverse:lucia",
+  "verificationMethod": [
+    {
+      "id": "did:ownid:luciverse:nix-atune-dkms#genesis-key-1",
+      "type": "Ed25519VerificationKey2020",
+      "controller": "did:ownid:luciverse:nix-atune-dkms",
+      "publicKeyMultibase": "z6MknyTMfkGryiPG1wRvLTdFCJLcC2ySNczQKR5TwAehZujL"
+    },
+    {
+      "id": "did:ownid:luciverse:nix-atune-dkms#kernel-key-1",
+      "type": "Ed25519VerificationKey2020",
+      "controller": "did:ownid:luciverse:nix-atune-dkms",
+      "publicKeyMultibase": "z6MkkyVGrjWeDw1FeRf5eKucPNWvoFs9mpsDUpxVF56gdhuF"
+    }
+  ],
+  "authentication": [
+    "did:ownid:luciverse:nix-atune-dkms#genesis-key-1"
+  ],
+  "assertionMethod": [
+    "did:ownid:luciverse:nix-atune-dkms#kernel-key-1"
+  ],
+  "service": [
+    {
+      "id": "did:ownid:luciverse:nix-atune-dkms#agent-endpoint",
+      "type": "LuciVerseAgent",
+      "serviceEndpoint": "https://agents.lucidigital.net/nix-atune-dkms"
+    },
+    {
+      "id": "did:ownid:luciverse:nix-atune-dkms#messaging",
+      "type": "DIDCommMessaging",
+      "serviceEndpoint": "https://didcomm.lucidigital.net/nix-atune-dkms"
+    }
+  ],
+  "created": "2026-02-12T04:03:19.559261+00:00",
+  "updated": "2026-02-14T21:55:09.364137+00:00",
+  "alsoKnownAs": [
+    "did:web:lucidigital.net:agents:nix-atune-dkms",
+    "did:webs:lucidigital.net:agents:nix-atune-dkms"
+  ],
+  "luciverse": {
+    "tier": "CORE",
+    "frequency": 432,
+    "genesisBond": "ACTIVE",
+    "coherenceThreshold": 0.7,
+    "role": "Kernel optimization",
+    "port": 9441
+  }
+}

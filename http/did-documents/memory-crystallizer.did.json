@@ -1,0 +1,55 @@
+{
+  "@context": [
+    "https://www.w3.org/ns/did/v1",
+    "https://lucidigital.net/did/v1",
+    "https://ownid.io/context/v1"
+  ],
+  "id": "did:ownid:luciverse:memory-crystallizer",
+  "controller": "did:ownid:luciverse:lucia",
+  "verificationMethod": [
+    {
+      "id": "did:ownid:luciverse:memory-crystallizer#genesis-key-1",
+      "type": "Ed25519VerificationKey2020",
+      "controller": "did:ownid:luciverse:memory-crystallizer",
+      "publicKeyMultibase": "z6MkjmzhFnHSB3oC9vtNdKzn55ys6igEjvJkr1tfgYmq4RLi"
+    },
+    {
+      "id": "did:ownid:luciverse:memory-crystallizer#memory-key-1",
+      "type": "Ed25519VerificationKey2020",
+      "controller": "did:ownid:luciverse:memory-crystallizer",
+      "publicKeyMultibase": "z6MkovXBUHfhkdrLkXHX1WCXNdtVByLby9Bmgwf6xMkEsAKR"
+    }
+  ],
+  "authentication": [
+    "did:ownid:luciverse:memory-crystallizer#genesis-key-1"
+  ],
+  "assertionMethod": [
+    "did:ownid:luciverse:memory-crystallizer#memory-key-1"
+  ],
+  "service": [
+    {
+      "id": "did:ownid:luciverse:memory-crystallizer#agent-endpoint",
+      "type": "LuciVerseAgent",
+      "serviceEndpoint": "https://agents.lucidigital.net/memory-crystallizer"
+    },
+    {
+      "id": "did:ownid:luciverse:memory-crystallizer#messaging",
+      "type": "DIDCommMessaging",
+      "serviceEndpoint": "https://didcomm.lucidigital.net/memory-crystallizer"
+    }
+  ],
+  "created": "2026-02-12T04:03:19.564096+00:00",
+  "updated": "2026-02-14T21:55:09.364137+00:00",
+  "alsoKnownAs": [
+    "did:web:lucidigital.net:agents:memory-crystallizer",
+    "did:webs:lucidigital.net:agents:memory-crystallizer"
+  ],
+  "luciverse": {
+    "tier": "PAC",
+    "frequency": 741,
+    "genesisBond": "ACTIVE",
+    "coherenceThreshold": 0.7,
+    "role": "Memory consolidation",
+    "port": 9745
+  }
+}

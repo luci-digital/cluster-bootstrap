@@ -1,0 +1,55 @@
+{
+  "@context": [
+    "https://www.w3.org/ns/did/v1",
+    "https://lucidigital.net/did/v1",
+    "https://ownid.io/context/v1"
+  ],
+  "id": "did:ownid:luciverse:gr8sawk",
+  "controller": "did:ownid:luciverse:lucia",
+  "verificationMethod": [
+    {
+      "id": "did:ownid:luciverse:gr8sawk#genesis-key-1",
+      "type": "Ed25519VerificationKey2020",
+      "controller": "did:ownid:luciverse:gr8sawk",
+      "publicKeyMultibase": "z6MkrpyNfWDy4RRFcXDfCdbMspmkTs2eEcqXrgce5VBdPRbt"
+    },
+    {
+      "id": "did:ownid:luciverse:gr8sawk#hardware-key-1",
+      "type": "Ed25519VerificationKey2020",
+      "controller": "did:ownid:luciverse:gr8sawk",
+      "publicKeyMultibase": "z6Mko9xgKauSsTCeY44XiHekSMgJvdn3fdyQDeCPeggAFjEY"
+    }
+  ],
+  "authentication": [
+    "did:ownid:luciverse:gr8sawk#genesis-key-1"
+  ],
+  "assertionMethod": [
+    "did:ownid:luciverse:gr8sawk#hardware-key-1"
+  ],
+  "service": [
+    {
+      "id": "did:ownid:luciverse:gr8sawk#agent-endpoint",
+      "type": "LuciVerseAgent",
+      "serviceEndpoint": "https://agents.lucidigital.net/gr8sawk"
+    },
+    {
+      "id": "did:ownid:luciverse:gr8sawk#messaging",
+      "type": "DIDCommMessaging",
+      "serviceEndpoint": "https://didcomm.lucidigital.net/gr8sawk"
+    }
+  ],
+  "created": "2026-02-12T04:03:19.558983+00:00",
+  "updated": "2026-02-14T21:55:09.364137+00:00",
+  "alsoKnownAs": [
+    "did:web:lucidigital.net:agents:gr8sawk",
+    "did:webs:lucidigital.net:agents:gr8sawk"
+  ],
+  "luciverse": {
+    "tier": "CORE",
+    "frequency": 432,
+    "genesisBond": "ACTIVE",
+    "coherenceThreshold": 0.7,
+    "role": "Hardware planning",
+    "port": 9440
+  }
+}

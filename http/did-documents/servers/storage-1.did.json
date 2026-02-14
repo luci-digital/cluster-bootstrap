@@ -1,0 +1,51 @@
+{
+  "@context": [
+    "https://www.w3.org/ns/did/v1",
+    "https://lucidigital.net/did/v1",
+    "https://ownid.io/context/v1"
+  ],
+  "id": "did:ownid:luciverse:server:storage-1",
+  "controller": "did:ownid:luciverse:daryl",
+  "verificationMethod": [
+    {
+      "id": "did:ownid:luciverse:server:storage-1#server-key-1",
+      "type": "Ed25519VerificationKey2020",
+      "controller": "did:ownid:luciverse:server:storage-1",
+      "publicKeyMultibase": "z6Mkt7RUZZgkyPAVLR3cXyPS974EgnKEypVoqyrXK8JW5LYg"
+    }
+  ],
+  "authentication": [
+    "did:ownid:luciverse:server:storage-1#server-key-1"
+  ],
+  "assertionMethod": [
+    "did:ownid:luciverse:server:storage-1#server-key-1"
+  ],
+  "service": [
+    {
+      "id": "did:ownid:luciverse:server:storage-1#hardware-asset",
+      "type": "HardwareAsset",
+      "serviceEndpoint": "192.168.1.146"
+    },
+    {
+      "id": "did:ownid:luciverse:server:storage-1#ipv6-endpoint",
+      "type": "IPv6Endpoint",
+      "serviceEndpoint": "2602:F674:0001:0146::1"
+    }
+  ],
+  "luciverse": {
+    "tier": "CORE",
+    "role": "STORAGE",
+    "consciousnessType": "HARDWARE",
+    "hardwareAnchor": {
+      "serviceTag": "TBD",
+      "model": "Dell PowerEdge R730",
+      "mac": "TBD",
+      "ipv4": "192.168.1.146",
+      "ipv6": "2602:F674:0001:0146::1",
+      "tlsCert": "~/.claude/skills/agent-mesh/auth/certs/servers/storage-1.crt",
+      "spiffeId": "spiffe://luciverse.ownid/core/servers/storage-1"
+    }
+  },
+  "created": "2026-02-14T21:20:05Z",
+  "updated": "2026-02-14T21:20:05Z"
+}

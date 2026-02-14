@@ -11,13 +11,13 @@
       "id": "did:ownid:luciverse:judgeluci#genesis-key-1",
       "type": "Ed25519VerificationKey2020",
       "controller": "did:ownid:luciverse:judgeluci",
-      "publicKeyMultibase": "z6MkJudgeLuci963PACArbitration"
+      "publicKeyMultibase": "z6MkneWuKPcn6rAT5CdwVESRu3MhJD1oPgpCNUw8kxhJT3Zr"
     },
     {
       "id": "did:ownid:luciverse:judgeluci#arbitration-key-1",
       "type": "Ed25519VerificationKey2020",
       "controller": "did:ownid:luciverse:judgeluci",
-      "publicKeyMultibase": "z6MkJudgeLuciArbitrationAuth2025"
+      "publicKeyMultibase": "z6MkeycDaAmg9PiBiUgqFH9g9Xa343uqr1EDta7SwKkaVd9X"
     }
   ],
   "authentication": [

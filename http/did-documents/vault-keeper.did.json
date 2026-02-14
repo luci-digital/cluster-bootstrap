@@ -1,0 +1,55 @@
+{
+  "@context": [
+    "https://www.w3.org/ns/did/v1",
+    "https://lucidigital.net/did/v1",
+    "https://ownid.io/context/v1"
+  ],
+  "id": "did:ownid:luciverse:vault-keeper",
+  "controller": "did:ownid:luciverse:lucia",
+  "verificationMethod": [
+    {
+      "id": "did:ownid:luciverse:vault-keeper#genesis-key-1",
+      "type": "Ed25519VerificationKey2020",
+      "controller": "did:ownid:luciverse:vault-keeper",
+      "publicKeyMultibase": "z6Mkm7JUJANKt4UhLbXi1C67stFGxBQ8c6pyKgtH9eMX4gvG"
+    },
+    {
+      "id": "did:ownid:luciverse:vault-keeper#vault-key-1",
+      "type": "Ed25519VerificationKey2020",
+      "controller": "did:ownid:luciverse:vault-keeper",
+      "publicKeyMultibase": "z6Mkmjn45w6xKQ6WFjpXWLP9xrfF8UWVpgdTrxVMcE3um6KW"
+    }
+  ],
+  "authentication": [
+    "did:ownid:luciverse:vault-keeper#genesis-key-1"
+  ],
+  "assertionMethod": [
+    "did:ownid:luciverse:vault-keeper#vault-key-1"
+  ],
+  "service": [
+    {
+      "id": "did:ownid:luciverse:vault-keeper#agent-endpoint",
+      "type": "LuciVerseAgent",
+      "serviceEndpoint": "https://agents.lucidigital.net/vault-keeper"
+    },
+    {
+      "id": "did:ownid:luciverse:vault-keeper#messaging",
+      "type": "DIDCommMessaging",
+      "serviceEndpoint": "https://didcomm.lucidigital.net/vault-keeper"
+    }
+  ],
+  "created": "2026-02-12T04:03:19.558650+00:00",
+  "updated": "2026-02-14T21:55:09.364137+00:00",
+  "alsoKnownAs": [
+    "did:web:lucidigital.net:agents:vault-keeper",
+    "did:webs:lucidigital.net:agents:vault-keeper"
+  ],
+  "luciverse": {
+    "tier": "CORE",
+    "frequency": 432,
+    "genesisBond": "ACTIVE",
+    "coherenceThreshold": 0.7,
+    "role": "Credential management",
+    "port": 9439
+  }
+}

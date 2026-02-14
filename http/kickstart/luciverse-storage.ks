@@ -534,6 +534,30 @@ if command -v atune-adm &>/dev/null; then
     echo "A-Tune profile activation failed"
 fi
 
+# ---------------------------------------------------------------------------
+# DID Document Provisioning (for identity resolution)
+# ---------------------------------------------------------------------------
+
+echo "Fetching DID documents for identity resolution..."
+mkdir -p /opt/luciverse/did-documents
+
+AGENTS="daryl lucia veritas aethon sensai niamod schema-architect state-guardian security-sentinel telemetry-observer validation-sentinel vault-keeper gr8sawk nix-atune-dkms spore-atune-coordinator cortana juniper mirrai diaphragm semantic-engine integration-broker voice-interface api-federator flow-conductor git-sentinel lyr-darrah juniper-network-analyst aifam-onl-java-builder judgeluci judge-luci crewai-bridge intent-interpreter ethics-advisor memory-crystallizer dream-weaver midguyver dharma-fiqh satya-halal karma-sukuk judge-luci-personal lucierp aifam-onl-orchestrator toml-braider loany-stairk"
+DID_COUNT=0
+for agent in $AGENTS; do
+    if curl -sf "http://192.168.1.145:8000/did-documents/${agent}.did.json" \
+        -o "/opt/luciverse/did-documents/${agent}.did.json" 2>/dev/null; then
+        DID_COUNT=$((DID_COUNT + 1))
+    fi
+done
+echo "Fetched ${DID_COUNT} DID documents"
+
+# Also fetch server DID documents
+mkdir -p /opt/luciverse/did-documents/servers
+for server in fabric-1 fabric-2 fabric-3 infra-1 core-gpu-1 storage-1 storage-2 compute-gpu-1 compute-gpu-2 compute-1 compute-2 sm-gpu-1; do
+    curl -sf "http://192.168.1.145:8000/did-documents/servers/${server}.did.json" \
+        -o "/opt/luciverse/did-documents/servers/${server}.did.json" 2>/dev/null || true
+done
+
 echo "STORAGE post-install complete"
 
 # Thread to Lucia via Diggy+Twiggy

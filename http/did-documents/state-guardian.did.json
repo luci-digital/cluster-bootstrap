@@ -1,0 +1,55 @@
+{
+  "@context": [
+    "https://www.w3.org/ns/did/v1",
+    "https://lucidigital.net/did/v1",
+    "https://ownid.io/context/v1"
+  ],
+  "id": "did:ownid:luciverse:state-guardian",
+  "controller": "did:ownid:luciverse:lucia",
+  "verificationMethod": [
+    {
+      "id": "did:ownid:luciverse:state-guardian#genesis-key-1",
+      "type": "Ed25519VerificationKey2020",
+      "controller": "did:ownid:luciverse:state-guardian",
+      "publicKeyMultibase": "z6MkncuoGuU8GkjaoRyMeh2M9eksm6pS72z7LaSAbduvUmDn"
+    },
+    {
+      "id": "did:ownid:luciverse:state-guardian#state-key-1",
+      "type": "Ed25519VerificationKey2020",
+      "controller": "did:ownid:luciverse:state-guardian",
+      "publicKeyMultibase": "z6Mkeo5RRAX7P9zoZs3mwf3W5QunfMvXwvpDxbtRSAnTpxSG"
+    }
+  ],
+  "authentication": [
+    "did:ownid:luciverse:state-guardian#genesis-key-1"
+  ],
+  "assertionMethod": [
+    "did:ownid:luciverse:state-guardian#state-key-1"
+  ],
+  "service": [
+    {
+      "id": "did:ownid:luciverse:state-guardian#agent-endpoint",
+      "type": "LuciVerseAgent",
+      "serviceEndpoint": "https://agents.lucidigital.net/state-guardian"
+    },
+    {
+      "id": "did:ownid:luciverse:state-guardian#messaging",
+      "type": "DIDCommMessaging",
+      "serviceEndpoint": "https://didcomm.lucidigital.net/state-guardian"
+    }
+  ],
+  "created": "2026-02-12T04:03:19.557249+00:00",
+  "updated": "2026-02-14T21:55:09.364137+00:00",
+  "alsoKnownAs": [
+    "did:web:lucidigital.net:agents:state-guardian",
+    "did:webs:lucidigital.net:agents:state-guardian"
+  ],
+  "luciverse": {
+    "tier": "CORE",
+    "frequency": 432,
+    "genesisBond": "ACTIVE",
+    "coherenceThreshold": 0.7,
+    "role": "State persistence",
+    "port": 9435
+  }
+}

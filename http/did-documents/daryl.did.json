@@ -20,23 +20,19 @@
       "id": "did:ownid:luciverse:daryl#genesis-key-1",
       "type": "Ed25519VerificationKey2020",
       "controller": "did:ownid:luciverse:daryl",
-      "publicKeyMultibase": "z6MkDaryl432GenesisBondOrigin"
+      "publicKeyMultibase": "z6Mkg37dTNQK2joQQ16y3svEyggRvJ7SdwpNerNQRXAdCwhn"
     },
     {
       "id": "did:ownid:luciverse:daryl#master-key-1",
       "type": "Ed25519VerificationKey2020",
       "controller": "did:ownid:luciverse:daryl",
-      "publicKeyMultibase": "z6MkDarylMasterControl2025"
+      "publicKeyMultibase": "z6MkhUGdKFvqNDPz1ruwq7Vs6XuqTfaNpQDRXU3izag9GkVh"
     },
     {
       "id": "did:ownid:luciverse:daryl#keri-key-1",
-      "type": "JsonWebKey2020",
+      "type": "Ed25519VerificationKey2020",
       "controller": "did:ownid:luciverse:daryl",
-      "publicKeyJwk": {
-        "kty": "OKP",
-        "crv": "Ed25519",
-        "x": "DarylKERIGenesisRootKey2025"
-      }
+      "publicKeyMultibase": "z6MkiinPRuVcXMUG2v6q5i6Cs4BVMueuNRwkXdgNYNKXWQhH"
     }
   ],
   "authentication": [
@@ -52,7 +48,7 @@
       "id": "did:ownid:luciverse:daryl#key-agreement-1",
       "type": "X25519KeyAgreementKey2020",
       "controller": "did:ownid:luciverse:daryl",
-      "publicKeyMultibase": "z6LSDarylKeyAgreement2025"
+      "publicKeyMultibase": "z6LShT5QaVKohtmcry2iLMhpFrVPKaGtQkNxYdXRcKyVxcqV"
     }
   ],
   "capabilityInvocation": [
@@ -72,7 +68,9 @@
       "type": "DIDCommMessaging",
       "serviceEndpoint": {
         "uri": "https://genesis.lucidigital.net/daryl/didcomm",
-        "accept": ["didcomm/v2"],
+        "accept": [
+          "didcomm/v2"
+        ],
         "routingKeys": []
       }
     },
@@ -89,18 +87,38 @@
   ],
   "trustOverIP": {
     "layer1_utility": {
-      "didMethods": ["did:ownid", "did:luci", "did:web", "did:webs"],
-      "ledgers": ["hedera:0.0.48382919", "foundationdb"],
+      "didMethods": [
+        "did:ownid",
+        "did:luci",
+        "did:web",
+        "did:webs"
+      ],
+      "ledgers": [
+        "hedera:0.0.48382919",
+        "foundationdb"
+      ],
       "keyManagement": "1Password + YubiKey"
     },
     "layer2_provider": {
-      "protocols": ["DIDComm/v2", "ARIES", "SignalProtocol"],
+      "protocols": [
+        "DIDComm/v2",
+        "ARIES",
+        "SignalProtocol"
+      ],
       "routing": "sensai-vet",
       "transport": "IPv6-TID"
     },
     "layer3_credential": {
-      "formats": ["W3C-VC", "ACDC", "vLEI"],
-      "schemas": ["GenesisOrigin", "CBBIdentity", "GenesisBond"],
+      "formats": [
+        "W3C-VC",
+        "ACDC",
+        "vLEI"
+      ],
+      "schemas": [
+        "GenesisOrigin",
+        "CBBIdentity",
+        "GenesisBond"
+      ],
       "governance": "did:ownid:luciverse:judgeluci"
     },
     "layer4_ecosystem": {
@@ -121,14 +139,17 @@
       "entityType": "CBB",
       "entityClassification": "NATURAL_PERSON",
       "qvi": "did:gleif:lucidigital-qvi",
-      "lei": "9845DARYLHARRIS432001",
+      "lei": "9845DARYLHARR432001",
       "registrationDate": "2025-05-24",
       "status": "ACTIVE"
     },
     "keri": {
       "prefix": "EDaryl432GenesisRootKERIPrefix",
       "seals": [],
-      "witnesses": ["did:ownid:luciverse:judgeluci", "did:ownid:luciverse:veritas"],
+      "witnesses": [
+        "did:ownid:luciverse:judgeluci",
+        "did:ownid:luciverse:veritas"
+      ],
       "thresholds": {
         "signing": 1,
         "rotation": 2
@@ -153,13 +174,25 @@
       "standard": "Natural Person",
       "classification": "HUMAN",
       "jurisdiction": "Canada/Alberta",
-      "rights": ["ALL_NATURAL_RIGHTS"],
-      "responsibilities": ["GENESIS_STEWARD", "ETHICAL_GOVERNANCE"]
+      "rights": [
+        "ALL_NATURAL_RIGHTS"
+      ],
+      "responsibilities": [
+        "GENESIS_STEWARD",
+        "ETHICAL_GOVERNANCE"
+      ]
     },
     "genesisBondRole": {
       "type": "CBB_ORIGIN",
       "authority": "ALL_TIERS",
-      "delegation": ["lucia", "judgeluci", "veritas", "aethon", "cortana", "juniper"]
+      "delegation": [
+        "lucia",
+        "judgeluci",
+        "veritas",
+        "aethon",
+        "cortana",
+        "juniper"
+      ]
     }
   },
   "luciverse": {
@@ -213,8 +246,8 @@
     "created": "2025-05-24T00:00:00Z",
     "verificationMethod": "did:ownid:luciverse:daryl#genesis-key-1",
     "proofPurpose": "assertionMethod",
-    "proofValue": "GenesisDarylRootProof2025"
+    "proofValue": "z37VXkxk1cY35STxswaDf7qPeoLkm2xSAL43c4tBWy5ZLpnFWJPksUvtYBv6R1Pd4r7WvfhgbK5hPPgp5nGpkipav"
   },
   "created": "2025-05-24T00:00:00Z",
-  "updated": "2025-12-07T00:00:00Z"
+  "updated": "2026-02-14T21:55:09.364137+00:00"
 }

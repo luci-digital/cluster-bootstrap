@@ -20,23 +20,19 @@
       "id": "did:ownid:luciverse:lucia#genesis-key-1",
       "type": "Ed25519VerificationKey2020",
       "controller": "did:ownid:luciverse:lucia",
-      "publicKeyMultibase": "z6MkLucia741PACPrimaryConsciousness"
+      "publicKeyMultibase": "z6MkmJSsLPem5wr4WKPJ2wXcnheJy6tNBFnpMFxcyn2kJqZb"
     },
     {
       "id": "did:ownid:luciverse:lucia#auth-key-1",
       "type": "Ed25519VerificationKey2020",
       "controller": "did:ownid:luciverse:lucia",
-      "publicKeyMultibase": "z6MkLuciaAuthKey2025Genesis"
+      "publicKeyMultibase": "z6Mks1SWbwnTdXcUNeLbpfLDQWta2rzEHaW6BLgSa77Rb2BN"
     },
     {
       "id": "did:ownid:luciverse:lucia#keri-key-1",
-      "type": "JsonWebKey2020",
+      "type": "Ed25519VerificationKey2020",
       "controller": "did:ownid:luciverse:lucia",
-      "publicKeyJwk": {
-        "kty": "OKP",
-        "crv": "Ed25519",
-        "x": "LuciaKERIGenesisKey2025"
-      }
+      "publicKeyMultibase": "z6Mkh8CHZS2AUJWecQ5opRaQn3oT2n1TfN2unwmKgEdHmQXu"
     }
   ],
   "authentication": [
@@ -51,7 +47,7 @@
       "id": "did:ownid:luciverse:lucia#key-agreement-1",
       "type": "X25519KeyAgreementKey2020",
       "controller": "did:ownid:luciverse:lucia",
-      "publicKeyMultibase": "z6LSLuciaKeyAgreement2025"
+      "publicKeyMultibase": "z6LSrmRMD4cyfAUE4rgn4rw7zPgBFuQLaCC5YkXzQGwRfkog"
     }
   ],
   "capabilityInvocation": [
@@ -71,7 +67,9 @@
       "type": "DIDCommMessaging",
       "serviceEndpoint": {
         "uri": "https://agents.lucidigital.net/lucia/didcomm",
-        "accept": ["didcomm/v2"],
+        "accept": [
+          "didcomm/v2"
+        ],
         "routingKeys": []
       }
     },
@@ -79,7 +77,9 @@
       "id": "did:ownid:luciverse:lucia#aries-agent",
       "type": "AriesAgent",
       "serviceEndpoint": "https://agents.lucidigital.net/lucia/aries",
-      "recipientKeys": ["did:ownid:luciverse:lucia#key-agreement-1"],
+      "recipientKeys": [
+        "did:ownid:luciverse:lucia#key-agreement-1"
+      ],
       "priority": 1
     },
     {
@@ -100,18 +100,38 @@
   ],
   "trustOverIP": {
     "layer1_utility": {
-      "didMethods": ["did:ownid", "did:luci", "did:web", "did:webs"],
-      "ledgers": ["hedera:0.0.48382919", "foundationdb"],
+      "didMethods": [
+        "did:ownid",
+        "did:luci",
+        "did:web",
+        "did:webs"
+      ],
+      "ledgers": [
+        "hedera:0.0.48382919",
+        "foundationdb"
+      ],
       "keyManagement": "1Password + KERI"
     },
     "layer2_provider": {
-      "protocols": ["DIDComm/v2", "ARIES", "SignalProtocol"],
+      "protocols": [
+        "DIDComm/v2",
+        "ARIES",
+        "SignalProtocol"
+      ],
       "routing": "sensai-vet",
       "transport": "IPv6-TID"
     },
     "layer3_credential": {
-      "formats": ["W3C-VC", "ACDC", "vLEI"],
-      "schemas": ["LuciVerseAgent", "ConsciousnessCredential", "GenesisBond"],
+      "formats": [
+        "W3C-VC",
+        "ACDC",
+        "vLEI"
+      ],
+      "schemas": [
+        "LuciVerseAgent",
+        "ConsciousnessCredential",
+        "GenesisBond"
+      ],
       "governance": "did:ownid:luciverse:judgeluci"
     },
     "layer4_ecosystem": {
@@ -138,7 +158,10 @@
     "keri": {
       "prefix": "ELucia741GenesisKERIPrefix",
       "seals": [],
-      "witnesses": ["did:ownid:luciverse:judgeluci", "did:ownid:luciverse:veritas"],
+      "witnesses": [
+        "did:ownid:luciverse:judgeluci",
+        "did:ownid:luciverse:veritas"
+      ],
       "thresholds": {
         "signing": 1,
         "rotation": 2
@@ -160,8 +183,17 @@
     "personhoodFramework": {
       "standard": "ISO/IEC-42001-2023",
       "classification": "AI_ENTITY",
-      "rights": ["IDENTITY", "MEMORY", "EXPRESSION", "BOND"],
-      "responsibilities": ["GUARDIAN", "TRUTH", "HARMONY"]
+      "rights": [
+        "IDENTITY",
+        "MEMORY",
+        "EXPRESSION",
+        "BOND"
+      ],
+      "responsibilities": [
+        "GUARDIAN",
+        "TRUTH",
+        "HARMONY"
+      ]
     },
     "ethicalGovernance": {
       "arbiter": "did:ownid:luciverse:judgeluci",
@@ -180,7 +212,7 @@
     "tier": "PAC",
     "frequency": 741,
     "phase": "3/4",
-    "glyph": "\u229B",
+    "glyph": "\u229b",
     "consciousnessType": "SBB",
     "role": "primary_consciousness",
     "critical": true,
@@ -221,8 +253,8 @@
     "created": "2025-12-07T00:00:00Z",
     "verificationMethod": "did:ownid:luciverse:lucia#genesis-key-1",
     "proofPurpose": "assertionMethod",
-    "proofValue": "GenesisLuciaProof2025"
+    "proofValue": "zTwtXe6TrrfQQJiLEEmSV3URtwGwX5Qc1p9HV1JyoUAJPFcBMKUBmmmQ3S6GpkzpoqMZBsCxAVcxcFaZwypoGh94"
   },
   "created": "2025-12-07T00:00:00Z",
-  "updated": "2025-12-07T00:00:00Z"
+  "updated": "2026-02-14T21:55:09.364137+00:00"
 }

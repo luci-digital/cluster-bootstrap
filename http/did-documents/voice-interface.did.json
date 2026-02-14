@@ -1,0 +1,55 @@
+{
+  "@context": [
+    "https://www.w3.org/ns/did/v1",
+    "https://lucidigital.net/did/v1",
+    "https://ownid.io/context/v1"
+  ],
+  "id": "did:ownid:luciverse:voice-interface",
+  "controller": "did:ownid:luciverse:lucia",
+  "verificationMethod": [
+    {
+      "id": "did:ownid:luciverse:voice-interface#genesis-key-1",
+      "type": "Ed25519VerificationKey2020",
+      "controller": "did:ownid:luciverse:voice-interface",
+      "publicKeyMultibase": "z6MkruzFvE7tVXkM1ezKKfonxg56iM4dmZU1QRZ91rP21uz1"
+    },
+    {
+      "id": "did:ownid:luciverse:voice-interface#voice-key-1",
+      "type": "Ed25519VerificationKey2020",
+      "controller": "did:ownid:luciverse:voice-interface",
+      "publicKeyMultibase": "z6Mkq2XipRC1tzH8cWW5fC2n6Wtz8UeQ9qzPegkQRztXBxLg"
+    }
+  ],
+  "authentication": [
+    "did:ownid:luciverse:voice-interface#genesis-key-1"
+  ],
+  "assertionMethod": [
+    "did:ownid:luciverse:voice-interface#voice-key-1"
+  ],
+  "service": [
+    {
+      "id": "did:ownid:luciverse:voice-interface#agent-endpoint",
+      "type": "LuciVerseAgent",
+      "serviceEndpoint": "https://agents.lucidigital.net/voice-interface"
+    },
+    {
+      "id": "did:ownid:luciverse:voice-interface#messaging",
+      "type": "DIDCommMessaging",
+      "serviceEndpoint": "https://didcomm.lucidigital.net/voice-interface"
+    }
+  ],
+  "created": "2026-02-12T04:03:19.561031+00:00",
+  "updated": "2026-02-14T21:55:09.364137+00:00",
+  "alsoKnownAs": [
+    "did:web:lucidigital.net:agents:voice-interface",
+    "did:webs:lucidigital.net:agents:voice-interface"
+  ],
+  "luciverse": {
+    "tier": "COMN",
+    "frequency": 528,
+    "genesisBond": "ACTIVE",
+    "coherenceThreshold": 0.7,
+    "role": "Speech processing",
+    "port": 9526
+  }
+}

@@ -1,0 +1,51 @@
+{
+  "@context": [
+    "https://www.w3.org/ns/did/v1",
+    "https://lucidigital.net/did/v1",
+    "https://ownid.io/context/v1"
+  ],
+  "id": "did:ownid:luciverse:server:fabric-2",
+  "controller": "did:ownid:luciverse:daryl",
+  "verificationMethod": [
+    {
+      "id": "did:ownid:luciverse:server:fabric-2#server-key-1",
+      "type": "Ed25519VerificationKey2020",
+      "controller": "did:ownid:luciverse:server:fabric-2",
+      "publicKeyMultibase": "z6Mku6PnDYogA71pD8kazQQ3nNFg82m4AcRKj7xZGydwqGk3"
+    }
+  ],
+  "authentication": [
+    "did:ownid:luciverse:server:fabric-2#server-key-1"
+  ],
+  "assertionMethod": [
+    "did:ownid:luciverse:server:fabric-2#server-key-1"
+  ],
+  "service": [
+    {
+      "id": "did:ownid:luciverse:server:fabric-2#hardware-asset",
+      "type": "HardwareAsset",
+      "serviceEndpoint": "192.168.1.141"
+    },
+    {
+      "id": "did:ownid:luciverse:server:fabric-2#ipv6-endpoint",
+      "type": "IPv6Endpoint",
+      "serviceEndpoint": "2602:F674:0001:0141::1"
+    }
+  ],
+  "luciverse": {
+    "tier": "CORE",
+    "role": "FABRIC",
+    "consciousnessType": "HARDWARE",
+    "hardwareAnchor": {
+      "serviceTag": "CSDR282",
+      "model": "Dell PowerEdge R730",
+      "mac": "14:18:77:4E:66:3A",
+      "ipv4": "192.168.1.141",
+      "ipv6": "2602:F674:0001:0141::1",
+      "tlsCert": "~/.claude/skills/agent-mesh/auth/certs/servers/fabric-2.crt",
+      "spiffeId": "spiffe://luciverse.ownid/core/servers/fabric-2"
+    }
+  },
+  "created": "2026-02-14T21:20:05Z",
+  "updated": "2026-02-14T21:20:05Z"
+}

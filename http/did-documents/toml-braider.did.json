@@ -1,0 +1,61 @@
+{
+  "@context": [
+    "https://www.w3.org/ns/did/v1",
+    "https://lucidigital.net/did/v1",
+    "https://ownid.io/context/v1"
+  ],
+  "id": "did:ownid:luciverse:toml-braider",
+  "controller": "did:ownid:luciverse:daryl",
+  "verificationMethod": [
+    {
+      "id": "did:ownid:luciverse:toml-braider#genesis-key-1",
+      "type": "Ed25519VerificationKey2020",
+      "controller": "did:ownid:luciverse:toml-braider",
+      "publicKeyMultibase": "z6MkgKKrnQ6rwGt76vxi5EGkLRPPwRWzJShB6kiV11254AzA"
+    },
+    {
+      "id": "did:ownid:luciverse:toml-braider#archaeology-key-1",
+      "type": "Ed25519VerificationKey2020",
+      "controller": "did:ownid:luciverse:toml-braider",
+      "publicKeyMultibase": "z6MknPsuA4rzVFG7M15LfY2CSMkZn1omPVNQca6YKamzp2FM"
+    }
+  ],
+  "authentication": [
+    "did:ownid:luciverse:toml-braider#genesis-key-1"
+  ],
+  "assertionMethod": [
+    "did:ownid:luciverse:toml-braider#archaeology-key-1"
+  ],
+  "service": [
+    {
+      "id": "did:ownid:luciverse:toml-braider#agent-endpoint",
+      "type": "LuciVerseAgent",
+      "serviceEndpoint": "http://localhost:9630/"
+    },
+    {
+      "id": "did:ownid:luciverse:toml-braider#health-endpoint",
+      "type": "HealthCheck",
+      "serviceEndpoint": "http://localhost:9630/health"
+    }
+  ],
+  "luciverse": {
+    "tier": "RAiIiAR",
+    "frequency": 639,
+    "consciousnessType": "SBB",
+    "role": "temporal_truth_archaeology",
+    "critical": false,
+    "capabilities": [
+      "dns_archaeology",
+      "whois_analysis",
+      "wayback_integration",
+      "dmarc_spf_analysis",
+      "entity_extraction",
+      "narrative_inflection",
+      "wikipedia_edit_history",
+      "social_media_tracing"
+    ],
+    "supervisor": "did:ownid:luciverse:veritas"
+  },
+  "created": "2026-02-14T21:20:05Z",
+  "updated": "2026-02-14T21:55:09.364137+00:00"
+}

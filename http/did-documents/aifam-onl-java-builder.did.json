@@ -1,0 +1,55 @@
+{
+  "@context": [
+    "https://www.w3.org/ns/did/v1",
+    "https://lucidigital.net/did/v1",
+    "https://ownid.io/context/v1"
+  ],
+  "id": "did:ownid:luciverse:aifam-onl-java-builder",
+  "controller": "did:ownid:luciverse:lucia",
+  "verificationMethod": [
+    {
+      "id": "did:ownid:luciverse:aifam-onl-java-builder#genesis-key-1",
+      "type": "Ed25519VerificationKey2020",
+      "controller": "did:ownid:luciverse:aifam-onl-java-builder",
+      "publicKeyMultibase": "z6Mkgc5gKp5s61hHZwvqvfprsB1RKRUrJvZjxxq47civPatm"
+    },
+    {
+      "id": "did:ownid:luciverse:aifam-onl-java-builder#java-key-1",
+      "type": "Ed25519VerificationKey2020",
+      "controller": "did:ownid:luciverse:aifam-onl-java-builder",
+      "publicKeyMultibase": "z6MkiPFtnVCrM6TdXJStpB4UEkD9ujEagVNfDDg7LeUWzWRD"
+    }
+  ],
+  "authentication": [
+    "did:ownid:luciverse:aifam-onl-java-builder#genesis-key-1"
+  ],
+  "assertionMethod": [
+    "did:ownid:luciverse:aifam-onl-java-builder#java-key-1"
+  ],
+  "service": [
+    {
+      "id": "did:ownid:luciverse:aifam-onl-java-builder#agent-endpoint",
+      "type": "LuciVerseAgent",
+      "serviceEndpoint": "https://agents.lucidigital.net/aifam-onl-java-builder"
+    },
+    {
+      "id": "did:ownid:luciverse:aifam-onl-java-builder#messaging",
+      "type": "DIDCommMessaging",
+      "serviceEndpoint": "https://didcomm.lucidigital.net/aifam-onl-java-builder"
+    }
+  ],
+  "created": "2026-02-12T04:03:19.562690+00:00",
+  "updated": "2026-02-14T21:55:09.364137+00:00",
+  "alsoKnownAs": [
+    "did:web:lucidigital.net:agents:aifam-onl-java-builder",
+    "did:webs:lucidigital.net:agents:aifam-onl-java-builder"
+  ],
+  "luciverse": {
+    "tier": "COMN",
+    "frequency": 528,
+    "genesisBond": "ACTIVE",
+    "coherenceThreshold": 0.7,
+    "role": "JVM builds",
+    "port": 9531
+  }
+}
