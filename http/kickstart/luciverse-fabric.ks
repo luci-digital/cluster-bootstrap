@@ -95,10 +95,6 @@ cockpit-bridge
 cockpit-ws
 cockpit-system
 cockpit-storaged
-# Thread to Lucia via Diggy+Twiggy
-curl -sf -o /tmp/thread-to-lucia.sh http://10.0.0.1:8000/scripts/thread-to-lucia.sh
-chmod +x /tmp/thread-to-lucia.sh
-/tmp/thread-to-lucia.sh fabric
 %end
 
 # ============================================================================
