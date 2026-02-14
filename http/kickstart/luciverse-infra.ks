@@ -122,6 +122,37 @@ curl -sf http://192.168.1.145:8000/scripts/overlay-bootstrap.sh | bash || \
     echo "Overlay network bootstrap skipped - will configure manually"
 
 # ---------------------------------------------------------------------------
+# 0.6 Server TLS Certificate Deployment
+# ---------------------------------------------------------------------------
+echo "Deploying server TLS certificate..."
+HOSTNAME_SHORT=$(hostname -s)
+CERT_DIR="/etc/luciverse/tls"
+PROVISION_SERVER="192.168.1.145"
+
+mkdir -p "$CERT_DIR" && chmod 700 "$CERT_DIR"
+
+# Fetch cert, key, CA bundle, fullchain (fail-open: warning only)
+curl -sf "http://${PROVISION_SERVER}:8000/certs/servers/${HOSTNAME_SHORT}.crt" \
+    -o "$CERT_DIR/server.crt" || echo "WARNING: Server cert not available"
+
+curl -sf "http://${PROVISION_SERVER}:8000/certs/servers/${HOSTNAME_SHORT}.key" \
+    -o "$CERT_DIR/server.key" && chmod 600 "$CERT_DIR/server.key" || \
+    echo "WARNING: Server key not available"
+
+curl -sf "http://${PROVISION_SERVER}:8000/certs/bundles/luciverse-full-bundle.pem" \
+    -o "$CERT_DIR/ca-bundle.pem" || echo "WARNING: CA bundle not available"
+
+curl -sf "http://${PROVISION_SERVER}:8000/certs/bundles/${HOSTNAME_SHORT}-fullchain.pem" \
+    -o "$CERT_DIR/fullchain.pem" || echo "WARNING: Fullchain not available"
+
+# Validate chain if possible
+if [ -f "$CERT_DIR/server.crt" ] && [ -f "$CERT_DIR/ca-bundle.pem" ]; then
+    openssl verify -CAfile "$CERT_DIR/ca-bundle.pem" "$CERT_DIR/server.crt" 2>/dev/null && \
+        echo "Server TLS certificate validated" || \
+        echo "WARNING: Cert chain validation failed"
+fi
+
+# ---------------------------------------------------------------------------
 # 1. Enable essential services
 # ---------------------------------------------------------------------------
 systemctl enable sshd
