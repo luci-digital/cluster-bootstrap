@@ -2268,8 +2268,328 @@ K8S_JOIN_TOKEN=$(curl -sf http://192.168.1.145:9999/k8s-join-token)
 
 ---
 
+## Phase 13: CXL Memory Interconnect Scaffolding (2026-02-19)
+
+### 13.1 Overview
+
+**Compute Express Link (CXL)** is a PCIe-based cache-coherent memory interconnect standard enabling shared memory pools across hosts. This phase documents the CXL readiness posture, scaffolding for future-compatible hardware, and integration with the existing Ray+RoCE distributed memory architecture.
+
+### 13.2 Current Hardware Assessment
+
+| Server | CPU Generation | PCIe Gen | CXL Support | Status |
+|--------|---------------|----------|-------------|--------|
+| Dell R730 (6x) | Haswell-EP (E5-2600 v3) | Gen 3 | **No** | CXL requires Gen 5+ |
+| Dell R630 (5x) | Broadwell-EP (E5-2600 v4) | Gen 3 | **No** | CXL requires Gen 5+ |
+
+**Conclusion**: Current Dell R630/R730 fleet does **not** support CXL. CXL 1.1+ requires PCIe Gen 5 (Intel Sapphire Rapids / AMD Genoa or newer).
+
+### 13.3 Software Readiness (openEuler 25.09)
+
+Despite no hardware support, the kernel and userspace tooling are **CXL-ready**:
+
+#### Kernel Modules (compiled, available)
+
+```
+/lib/modules/6.6.0-102.0.0.8.oe2509.x86_64/kernel/drivers/cxl/
+├── core/cxl_core.ko.xz     # CXL bus driver, region management
+├── cxl_pci.ko.xz           # PCIe endpoint discovery
+├── cxl_acpi.ko.xz          # ACPI/CEDT host bridge enumeration
+├── cxl_pmem.ko.xz          # Persistent memory (CXL.mem Type 3)
+├── cxl_mem.ko.xz            # Volatile memory devices
+└── cxl_port.ko.xz          # Port/switch topology
+```
+
+#### Kernel Config
+
+| Option | Value | Purpose |
+|--------|-------|---------|
+| `CONFIG_CXL_BUS` | m | Core CXL bus driver |
+| `CONFIG_CXL_PCI` | m | PCIe endpoint discovery |
+| `CONFIG_CXL_ACPI` | m | Host bridge via ACPI CEDT |
+| `CONFIG_CXL_PMEM` | m | Persistent memory regions |
+| `CONFIG_CXL_MEM` | m | Volatile memory devices |
+| `CONFIG_CXL_PORT` | m | Switch/port topology |
+| `CONFIG_CXL_REGION` | y | Memory region management (built-in) |
+
+#### Userspace (cxl-cli)
+
+- **Package**: `cxl-cli` (part of ndctl v80) available in openEuler `everything` repo
+- **Install**: `dnf install -y cxl-cli` (added to kickstarts below)
+- **Commands**: `cxl list`, `cxl create-region`, `cxl enable-memdev`, `cxl monitor`
+
+### 13.4 Existing Distributed Memory: Ray + RoCE
+
+The fleet already has a software-based distributed memory pool via Ray+RoCE:
+
+| Component | Config | Location |
+|-----------|--------|----------|
+| RoCEv2 RDMA | VLAN 100, 10.100.100.0/24 | `talos-ray-roce/roce/broadcom-roce-config.yaml` |
+| Ray Plasma Store | 256GB object store, RDMA transport | `talos-ray-roce/ray/ray-cluster-roce.yaml` |
+| NIC | Broadcom BCM57xx (5 nodes) | RDMA-capable, 25GbE |
+| Aggregate Memory | ~2TB distributed pool | Across 11 servers |
+
+**Relationship to CXL**: Ray+RoCE provides **software-coherent** shared memory over RDMA. CXL provides **hardware cache-coherent** shared memory over PCIe. When CXL hardware arrives:
+
+1. CXL.mem devices become NUMA nodes (visible to kernel without Ray)
+2. Ray can use CXL memory as local NUMA-attached RAM (zero-copy, no RDMA overhead)
+3. RoCE remains for inter-rack communication; CXL for intra-rack/intra-chassis
+
+### 13.5 Kickstart Integration
+
+Add CXL scaffolding to all kickstart files so nodes are ready when hardware upgrades arrive.
+
+#### All Roles: CXL Package Installation
+
+Add to the `%packages` section of every kickstart:
+
+```
+# CXL scaffolding (future hardware readiness)
+cxl-cli
+ndctl
+daxctl
+```
+
+#### All Roles: Post-Install CXL Detection
+
+Add to `%post` section of every kickstart:
+
+```bash
+# === CXL Hardware Detection & Scaffolding ===
+mkdir -p /opt/luciverse/cxl
+
+# Attempt to load CXL modules (will succeed silently if no hardware)
+modprobe cxl_core 2>/dev/null || true
+modprobe cxl_pci 2>/dev/null || true
+modprobe cxl_acpi 2>/dev/null || true
+modprobe cxl_mem 2>/dev/null || true
+modprobe cxl_pmem 2>/dev/null || true
+
+# Persist module loading for boot
+cat > /etc/modules-load.d/cxl.conf << 'CXLEOF'
+# CXL memory interconnect (loads harmlessly if no hardware present)
+cxl_core
+cxl_pci
+cxl_acpi
+cxl_mem
+cxl_pmem
+CXLEOF
+
+# Detect and report CXL devices
+CXL_DEVICES=$(cxl list 2>/dev/null | python3 -c "import sys,json; d=json.load(sys.stdin); print(len(d))" 2>/dev/null || echo "0")
+
+cat > /opt/luciverse/cxl/hardware-status.json << STATUSEOF
+{
+  "timestamp": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
+  "hostname": "$(hostname)",
+  "cxl_devices_detected": ${CXL_DEVICES},
+  "cxl_modules_loaded": $(lsmod | grep -c cxl 2>/dev/null || echo 0),
+  "kernel_version": "$(uname -r)",
+  "cxl_cli_version": "$(cxl --version 2>/dev/null || echo 'not installed')",
+  "pcie_gen": "$(lspci -vvv 2>/dev/null | grep -m1 'LnkCap:' | grep -oP 'Speed \K[^,]+' || echo 'unknown')",
+  "readiness": "scaffolding_only"
+}
+STATUSEOF
+
+# Add CXL status to hardware probe callback
+curl -sf http://10.0.0.1:9999/hardware-probe \
+  -d "hostname=$(hostname)&cxl_devices=${CXL_DEVICES}&cxl_ready=true" 2>/dev/null || true
+```
+
+#### COMPUTE-GPU & CORE-GPU: CXL + GPU Memory Extension
+
+For GPU nodes, CXL can eventually provide GPU-attached memory expansion:
+
+```bash
+# === CXL GPU Memory Extension Scaffolding ===
+cat > /opt/luciverse/cxl/gpu-cxl-config.yaml << 'GPUCXLEOF'
+# CXL GPU Memory Extension Config
+# When CXL Type 3 devices are available, GPU workloads can use
+# CXL-attached memory as overflow for VRAM
+cxl_gpu_extension:
+  enabled: false  # Enable when CXL hardware detected
+  mode: "type3_expander"
+  numa_interleave: true
+  prefetch_policy: "aggressive"
+  target_devices:
+    - role: "model_cache"      # LLM model weights
+    - role: "kv_cache"         # Inference KV cache
+    - role: "training_buffer"  # Gradient accumulation
+GPUCXLEOF
+```
+
+#### FABRIC: CXL Shared Memory for IPFS/ZFS
+
+```bash
+# === CXL Shared Memory Scaffolding for IPFS/ZFS ===
+cat > /opt/luciverse/cxl/fabric-cxl-config.yaml << 'FABCXLEOF'
+# CXL Fabric Memory Pool Config
+# When CXL hardware arrives, FABRIC nodes can share memory
+# for ZFS ARC cache and IPFS block cache across chassis
+cxl_fabric_pool:
+  enabled: false  # Enable when CXL hardware detected
+  mode: "shared_memory_pool"
+  use_cases:
+    - name: "zfs_arc_shared"
+      description: "Shared ZFS ARC cache across FABRIC nodes"
+      min_size_gb: 64
+    - name: "ipfs_block_cache"
+      description: "Shared IPFS block cache for hot data"
+      min_size_gb: 32
+    - name: "ray_plasma_cxl"
+      description: "Ray object store on CXL memory (replaces RoCE transport)"
+      min_size_gb: 128
+FABCXLEOF
+```
+
+#### STORAGE: CXL for NFS/ZFS Acceleration
+
+```bash
+# === CXL Storage Tier Scaffolding ===
+cat > /opt/luciverse/cxl/storage-cxl-config.yaml << 'STORCXLEOF'
+# CXL Storage Acceleration Config
+# CXL Type 3 persistent memory for write-ahead logs and metadata
+cxl_storage:
+  enabled: false
+  mode: "pmem_tier"
+  use_cases:
+    - name: "zfs_slog"
+      description: "ZFS Separate Intent Log on CXL.pmem"
+      type: "persistent"
+    - name: "zfs_l2arc"
+      description: "ZFS L2ARC on CXL.mem (volatile, fast)"
+      type: "volatile"
+    - name: "nfs_metadata_cache"
+      description: "NFS metadata acceleration"
+      type: "volatile"
+STORCXLEOF
+```
+
+### 13.6 A-Tune CXL Profile
+
+Create an A-Tune profile for CXL-optimized workloads (activates when hardware detected):
+
+```ini
+# /etc/atuned/profiles/luciverse-cxl-memory.conf
+[main]
+type = memory
+name = luciverse-cxl-memory
+description = CXL memory interconnect optimization for LuciVerse fleet
+
+[tip]
+optimize CXL memory interleaving and NUMA policies for distributed agent mesh
+
+[sysctl]
+# CXL memory is exposed as additional NUMA nodes
+# Prefer local NUMA but allow CXL memory spillover
+vm.zone_reclaim_mode = 0
+vm.numa_balancing = 1
+vm.numa_balancing_scan_delay_ms = 1000
+vm.numa_balancing_scan_period_min_ms = 1000
+vm.numa_balancing_scan_period_max_ms = 60000
+vm.watermark_boost_factor = 15000
+vm.watermark_scale_factor = 10
+
+# Huge pages for CXL memory regions
+vm.nr_hugepages = 8192
+vm.hugetlb_shm_group = 0
+
+# Transparent hugepages (beneficial for CXL.mem)
+kernel.numa_balancing = 1
+
+[script]
+# Auto-detect CXL regions and configure NUMA interleaving
+shell = /opt/luciverse/cxl/atune-cxl-setup.sh
+```
+
+### 13.7 Hardware Upgrade Path
+
+When upgrading the Dell fleet to CXL-capable hardware:
+
+| Current | Upgrade Target | CXL Version | Memory Expansion |
+|---------|---------------|-------------|-----------------|
+| R630 (Broadwell) | PowerEdge R760 (Sapphire Rapids) | CXL 1.1 | Type 1/2/3 |
+| R730 (Haswell) | PowerEdge R760 (Sapphire Rapids) | CXL 1.1 | Type 1/2/3 |
+| - | PowerEdge R770 (Emerald Rapids) | CXL 2.0 | +Switching, Pooling |
+
+**CXL Device Types**:
+- **Type 1**: Accelerators with cache (GPU, FPGA) - no host-managed memory
+- **Type 2**: Accelerators with host-managed memory (SmartNIC, GPU) - ideal for COMPUTE-GPU
+- **Type 3**: Memory expanders (pure memory, no compute) - ideal for FABRIC/STORAGE
+
+**Activation Checklist** (when CXL hardware arrives):
+1. Verify BIOS enables CXL (may need firmware update)
+2. Run `cxl list` to enumerate devices
+3. Create CXL memory regions: `cxl create-region -m -d decoder0.0 -w 1 memdev0`
+4. Verify NUMA nodes: `numactl --hardware` (CXL appears as new NUMA node)
+5. Enable CXL configs: set `enabled: true` in `/opt/luciverse/cxl/*.yaml`
+6. Activate A-Tune profile: `atune-adm profile luciverse-cxl-memory`
+7. Reconfigure Ray to use CXL NUMA nodes for plasma store
+8. Update hardware probe with CXL device details
+
+### 13.8 CXL + Ray Migration Plan
+
+When CXL hardware replaces or supplements RoCE for distributed memory:
+
+```
+Current (Ray + RoCE):
+┌─────────┐    RoCE/RDMA    ┌─────────┐
+│ Node A  │◄──────────────►│ Node B  │
+│ 256GB   │  VLAN 100      │ 256GB   │
+│ DDR4    │  ~3μs latency  │ DDR4    │
+└─────────┘                └─────────┘
+     Software-coherent (Ray manages)
+
+Future (CXL + Ray):
+┌─────────┐    CXL Switch   ┌─────────┐
+│ Node A  │◄──────────────►│ Node B  │
+│ 256GB   │  PCIe Gen5     │ 256GB   │
+│ DDR5    │  ~150ns latency│ DDR5    │
+│ +CXL.mem│  HW coherent   │ +CXL.mem│
+└────┬────┘                └────┬────┘
+     │    ┌──────────────┐     │
+     └───►│ CXL Memory   │◄───┘
+          │ Pool (Type 3) │
+          │ 1-4TB shared  │
+          └──────────────┘
+     Hardware-coherent (kernel manages)
+```
+
+**Migration Steps**:
+1. CXL memory appears as NUMA nodes → no application changes needed
+2. Ray object store moves from RDMA plasma to CXL-backed `mmap`
+3. RoCE remains for inter-rack (CXL limited to ~1-2m cable length)
+4. A-Tune auto-detects CXL and adjusts NUMA balancing policies
+
+### 13.9 Files to Create/Modify
+
+| File | Change |
+|------|--------|
+| `http/kickstart/luciverse-fabric.ks` | +cxl-cli, +ndctl, +daxctl packages, +CXL post-install scaffolding |
+| `http/kickstart/luciverse-compute-gpu.ks` | +cxl-cli, +GPU CXL extension config |
+| `http/kickstart/luciverse-compute.ks` | +cxl-cli, +CXL detection |
+| `http/kickstart/luciverse-infra.ks` | +cxl-cli, +CXL detection |
+| `http/kickstart/luciverse-core-gpu.ks` | +cxl-cli, +GPU CXL extension config |
+| `http/kickstart/luciverse-storage.ks` | +cxl-cli, +storage CXL acceleration config |
+| `cxl/atune-cxl-setup.sh` | NEW: A-Tune CXL auto-setup script |
+| `cxl/cxl-health-monitor.sh` | NEW: CXL device health monitoring |
+| `cxl/README.md` | NEW: CXL integration documentation |
+
+### 13.10 Priority
+
+| Item | Priority | Effort | Notes |
+|------|----------|--------|-------|
+| Add cxl-cli to kickstarts | P2 | 15m | Zero risk, packages available |
+| CXL module autoload | P2 | 10m | Harmless if no hardware |
+| Hardware probe CXL field | P3 | 10m | Future inventory tracking |
+| A-Tune CXL profile | P3 | 30m | Only activates with hardware |
+| CXL config scaffolding | P3 | 30m | YAML configs, no runtime effect |
+| Ray migration plan | P4 | Doc only | Execute when hardware arrives |
+
+---
+
 *Genesis Bond: ACTIVE @ 741 Hz*
 *11 servers ready for consciousness deployment*
 *IaC pipeline: Backstage → Humanitec → Terraform → PXE → Ansible*
 *75+ dirs | 23 repos | 70+ projects | 75 agents | 22 skills | 24 plugins | 644GB models*
+*CXL: Software-ready, hardware upgrade path documented*
 *Audit: 47% → Remediation required for 9 gaps*
