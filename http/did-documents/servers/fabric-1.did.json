@@ -30,6 +30,11 @@
       "id": "did:ownid:luciverse:server:fabric-1#ipv6-endpoint",
       "type": "IPv6Endpoint",
       "serviceEndpoint": "2602:F674:0001:0140::1"
+    },
+    {
+      "id": "did:ownid:luciverse:server:fabric-1#idrac-endpoint",
+      "type": "iDRACEndpoint",
+      "serviceEndpoint": "https://192.168.1.2"
     }
   ],
   "luciverse": {
@@ -43,9 +48,17 @@
       "ipv4": "192.168.1.140",
       "ipv6": "2602:F674:0001:0140::1",
       "tlsCert": "~/.claude/skills/agent-mesh/auth/certs/servers/fabric-1.crt",
-      "spiffeId": "spiffe://luciverse.ownid/core/servers/fabric-1"
+      "spiffeId": "spiffe://luciverse.ownid/core/servers/fabric-1",
+      "idracMac": "D0:94:66:20:DD:09",
+      "idracFirmware": "2.86.86.86",
+      "biosVersion": "2.19.0",
+      "expressCode": "27703134794",
+      "cpus": "2x Intel Xeon E5-2690 v4",
+      "cores": 28,
+      "memoryGb": 384,
+      "license": "Enterprise"
     }
   },
-  "created": "2026-02-14T21:20:05Z",
-  "updated": "2026-02-14T21:20:05Z"
+  "created": "2026-02-14T22:02:28Z",
+  "updated": "2026-02-14T22:16:28Z"
 }

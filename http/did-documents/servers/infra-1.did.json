@@ -30,6 +30,11 @@
       "id": "did:ownid:luciverse:server:infra-1#ipv6-endpoint",
       "type": "IPv6Endpoint",
       "serviceEndpoint": "2602:F674:0001:0144::1"
+    },
+    {
+      "id": "did:ownid:luciverse:server:infra-1#idrac-endpoint",
+      "type": "iDRACEndpoint",
+      "serviceEndpoint": "https://192.168.1.33"
     }
   ],
   "luciverse": {
@@ -43,9 +48,14 @@
       "ipv4": "192.168.1.144",
       "ipv6": "2602:F674:0001:0144::1",
       "tlsCert": "~/.claude/skills/agent-mesh/auth/certs/servers/infra-1.crt",
-      "spiffeId": "spiffe://luciverse.ownid/core/servers/infra-1"
+      "spiffeId": "spiffe://luciverse.ownid/core/servers/infra-1",
+      "idracMac": "B0:83:FE:C5:90:94",
+      "idracFirmware": "2.86.86.86",
+      "biosVersion": "2.19.0",
+      "expressCode": "3351194282",
+      "license": "Enterprise"
     }
   },
-  "created": "2026-02-14T21:20:05Z",
-  "updated": "2026-02-14T21:20:05Z"
+  "created": "2026-02-14T22:02:28Z",
+  "updated": "2026-02-14T22:16:28Z"
 }

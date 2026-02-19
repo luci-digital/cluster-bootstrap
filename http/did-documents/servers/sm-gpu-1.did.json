@@ -30,6 +30,11 @@
       "id": "did:ownid:luciverse:server:sm-gpu-1#ipv6-endpoint",
       "type": "IPv6Endpoint",
       "serviceEndpoint": "2602:F674:0100:0170::1"
+    },
+    {
+      "id": "did:ownid:luciverse:server:sm-gpu-1#idrac-endpoint",
+      "type": "BMCEndpoint",
+      "serviceEndpoint": "https://192.168.1.165"
     }
   ],
   "luciverse": {
@@ -43,9 +48,15 @@
       "ipv4": "192.168.1.170",
       "ipv6": "2602:F674:0100:0170::1",
       "tlsCert": "~/.claude/skills/agent-mesh/auth/certs/servers/sm-gpu-1.crt",
-      "spiffeId": "spiffe://luciverse.ownid/comn/servers/sm-gpu-1"
+      "spiffeId": "spiffe://luciverse.ownid/comn/servers/sm-gpu-1",
+      "idracMac": "0C:C4:7A:AD:B1:40",
+      "idracFirmware": "3.93",
+      "biosVersion": "3.4",
+      "cpus": "Intel Xeon E5-2667 v3",
+      "cores": 8,
+      "memoryGb": 64
     }
   },
-  "created": "2026-02-14T21:20:05Z",
-  "updated": "2026-02-14T21:20:05Z"
+  "created": "2026-02-14T22:02:28Z",
+  "updated": "2026-02-14T22:16:28Z"
 }

@@ -30,6 +30,11 @@
       "id": "did:ownid:luciverse:server:compute-gpu-1#ipv6-endpoint",
       "type": "IPv6Endpoint",
       "serviceEndpoint": "2602:F674:0100:0150::1"
+    },
+    {
+      "id": "did:ownid:luciverse:server:compute-gpu-1#idrac-endpoint",
+      "type": "iDRACEndpoint",
+      "serviceEndpoint": "https://192.168.1.182"
     }
   ],
   "luciverse": {
@@ -43,9 +48,10 @@
       "ipv4": "192.168.1.150",
       "ipv6": "2602:F674:0100:0150::1",
       "tlsCert": "~/.claude/skills/agent-mesh/auth/certs/servers/compute-gpu-1.crt",
-      "spiffeId": "spiffe://luciverse.ownid/comn/servers/compute-gpu-1"
+      "spiffeId": "spiffe://luciverse.ownid/comn/servers/compute-gpu-1",
+      "idracMac": "64:00:6A:C4:10:F0"
     }
   },
-  "created": "2026-02-14T21:20:05Z",
-  "updated": "2026-02-14T21:20:05Z"
+  "created": "2026-02-14T22:02:28Z",
+  "updated": "2026-02-14T22:16:28Z"
 }
