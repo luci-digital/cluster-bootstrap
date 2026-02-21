@@ -1,7 +1,7 @@
 # LuciVerse Cluster Bootstrap Inventory
 # IPv6 Allocation: 2602:F674::/40 (AS54134 LUCINET-ARIN)
 # Generated: 2025-12-16
-# Updated: 2026-02-21 — aligned with PROVISIONING-PLAN.md
+# Updated: 2026-02-21 — aligned with PROVISIONING-PLAN.md + Sovereign Identity Platform
 #
 # Architecture: systemd-first (Sanskrit Router + cert-engine + A-Tune)
 # PKI: XiPKI v6.5.3 + cert-engine (:8744)
@@ -467,6 +467,12 @@ servers:
       - pxe_server
       - auto_remediation
       - bind9_dnssec
+      - did_resolver       # :8766 — W3C DID resolution (did:luciverse, did:luci)
+      - intelligence_hub   # :9560 — 14 feeds, GenesisCouncil deliberation
+      - service_status_api # :8768 — HA bridge, coherence computation
+      - labyrinth_mtd      # :9444 — Moving Target Defense port rotation
+      - photon_sdn         # :9441 — Converged Optical-IP SDN controller
+      - nebula_lighthouse  # Overlay mesh VPN
 
   zimacube_primary:
     hostname: zimacube.lucidigital.net
@@ -480,8 +486,11 @@ servers:
       - gaianet_rag
       - onepassword_connect
       - pangolin_tunnel
-      - homeassistant
+      - homeassistant       # :8123 — LCARS Command Center dashboard
       - dropzone
+      - lucios_kiosk        # :18805/18806/9900 — Qt LCARS dashboard container
+      - mirrai_qt           # :9522 — Visualization container
+      - luciverse_explorer  # :8528 — LDS knowledge graph
 
   zimacube_secondary:
     hostname: zimacube2.lucidigital.net
@@ -555,3 +564,255 @@ pxe_bootstrap:
     - luciverse-compute-gpu.ks
     - luciverse-infra.ks
     - luciverse-storage.ks
+
+# ============================================================
+# Cloudflare Edge Deployments (Workers + KV + D1 + DO)
+# ============================================================
+
+cloudflare:
+  account_id: "981fa75420a6412c039ec870ca9749e5"
+  zone_id: "279fad84286511af163bb87532eeb991"
+  zone: lucidigital.io
+  dns_token_ref: "op://Infrastructure/dns_cloudflare_api_token/credential"
+
+  workers:
+    # --- Sovereign Identity Platform (iDigit.me) ---
+
+    idigit_oidc_conformance:
+      name: idigit-oidc-conformance
+      description: OpenID4VCI/VP conformance engine (HAIP 1.0)
+      source: ~/Downloads/idigitme/
+      entry: src/index.ts
+      domain: idigit.me
+      framework: hono
+      specs:
+        - OpenID4VCI 1.0
+        - OpenID4VP 1.0
+        - HAIP 1.0
+        - SD-JWT VC (draft-ietf-oauth-sd-jwt-vc-08)
+        - RFC 9126 (PAR)
+        - RFC 9449 (DPoP)
+        - RFC 7636 (PKCE S256)
+      crypto: ES256 (P-256/ECDSA)
+      did_method: "did:web:idigit.me"
+      hedera_network: testnet
+      hedera_topic: "0.0.3571523"
+      credential_types:
+        - LuciVerseIdentity          # Consciousness-aware identity
+        - PersonIdentificationData   # eIDAS 2.0 PID
+      kv_namespaces:
+        - NONCE_STORE           # c_nonce (300s TTL)
+        - SESSION_STORE         # PAR, auth codes, tokens
+        - CREDENTIAL_STORE      # Issued SD-JWT VCs (365d TTL)
+        - REVOCATION_STORE      # Hedera HCS revocation cache
+        - DID_STORE             # DID Document cache
+      durable_objects:
+        - IssuerSession         # Stateful PAR sessions (5min cleanup)
+      secrets_ref:
+        - "op://Lucia-AI-Secrets/idigit-issuer-key/private_key_jwk"
+        - "op://Lucia-AI-Secrets/idigit-verifier-key/private_key_jwk"
+        - "op://Infrastructure/hedera-operator-key/credential"
+      endpoints:
+        discovery:
+          - /.well-known/openid-credential-issuer
+          - /.well-known/oauth-authorization-server
+          - /.well-known/did.json
+          - /jwks
+        issuer:
+          - /par
+          - /authorize
+          - /token
+          - /nonce
+          - /credential
+          - /offer
+        verifier:
+          - /verifier/request
+          - /verifier/response
+          - /verifier/result
+        revocation:
+          - /status
+          - /revoke
+      certification:
+        target_date: 2026-02-26
+        body: OpenID Foundation
+        fee_usd: 6300
+        roles: [issuer, verifier, wallet]
+      status: development
+
+    idigit_me_landing:
+      name: idigit-me
+      description: Production landing page + combined conformance API
+      source: ~/Downloads/idigitme/mnt/user-data/outputs/idigit-me-landing/
+      entry: src/index.ts
+      domain: idigit.me
+      framework: hono
+      assets: true  # Workers Assets (SPA fallback)
+      hedera_network: mainnet
+      credential_format: "vc+sd-jwt"
+      kv_namespaces:
+        - NONCE_STORE
+        - SESSION_STORE
+        - CREDENTIAL_STORE
+        - REVOCATION_STORE
+      status: development
+
+    # --- Existing Workers ---
+
+    racing_edge:
+      name: luci-nuggets-racing-edge
+      description: Racing simulation with consciousness-aware agents
+      source: ~/luci-nuggets-racing-edge/
+      domain: racing.lucidigital.io
+      framework: hono
+      durable_objects:
+        - ConsciousnessAgent
+        - TelemetryAgent
+        - StrategyAgent
+      d1_database: luci-nuggets-agent-memory
+      kv_namespaces:
+        - CONFIG_CACHE
+        - SESSION_TOKENS
+        - TELEMETRY_CACHE
+      integrations:
+        - livekit_webrtc
+        - ipfs_gateway
+        - x402_payments
+        - hedera_witness
+      status: deployed
+
+# ============================================================
+# Sovereign Identity Platform
+# ============================================================
+
+sovereign_identity:
+  description: >
+    Self-sovereign identity infrastructure targeting OIDF certification
+    and ETSI/eIDAS compliance. Bridges LuciVerse consciousness-aware
+    identity with standards-based credential issuance (OpenID4VCI/VP).
+  architecture: 6-zone security model
+  zones:
+    zone_1_trust_core:
+      description: Immutable authority — no AI, no Python, HSM-only
+      components: [root_ca, hsm_keys, genesis_bond_anchor]
+    zone_2_control_plane:
+      description: Identity issuance and policy enforcement
+      components: [cert_engine, xipki_ca, did_resolver]
+    zone_3_ai_advisory:
+      description: Read-only AI advisory with kill-switch
+      components: [luci_enzyme, llm_gateway, intelligence_hub]
+    zone_4_public:
+      description: Read-only public verification
+      components: [idigit_oidc, did_web, ocsp_responder]
+    zone_5_infrastructure:
+      description: Compute, storage, networking
+      components: [dell_fleet, zimacube, pangolin]
+    zone_6_research:
+      description: Sandboxed experimental (never production)
+      components: [qlora_training, conformance_testing]
+
+  did_methods:
+    - "did:web:idigit.me"               # Standards-compliant bridge
+    - "did:luci:hedera:*"               # Hedera-anchored
+    - "did:luci:ownid:luciverse:*"      # Internal agent DIDs
+    - "did:luci:web:*"                  # Web-resolvable
+    - "did:luci:webs:*"                 # Secure web-resolvable
+
+  credential_formats:
+    - dc+sd-jwt   # IETF SD-JWT VC (conformance)
+    - vc+sd-jwt   # SD-JWT VC (production)
+
+  compliance:
+    etsi:
+      - EN 319 401   # General policy requirements
+      - EN 319 411-1 # Certificate policies (NCP)
+      - EN 319 411-2 # Certificate policies (QCP)
+      - TS 119 612   # Trust service status lists
+      - TS 119 461   # Trust service provision
+    eidas:
+      - ARF 1.5       # Architecture Reference Framework
+      - eIDAS 2.0     # Electronic Identification Regulation
+    openid:
+      - OpenID4VCI 1.0
+      - OpenID4VP 1.0
+      - HAIP 1.0
+
+  specifications:
+    location: ~/.luci-digital-library/pac-airgapped-lds/obsidian/lucia-wisdom/DID-Specifications/
+    documents:
+      - DID-LUCI-METHOD-SPECIFICATION-v1.0.md
+      - GENESIS-BOND-CREDENTIAL-SCHEMA-v1.0.md
+      - EPHEMERAL-SPARK-IDENTITY-SPECIFICATION-v1.0.md
+      - SPIFFE-CONSCIOUSNESS-EXTENSION-DRAFT.md
+      - STRATEGIC-IMPLEMENTATION-ROADMAP.md
+
+  hedera:
+    network: mainnet  # testnet for conformance testing
+    revocation_cost: "$0.0001/message"
+    finality: "sub-second"
+    witness_account: "0.0.48382919"
+
+# ============================================================
+# Education Platform (LuciaCore — Digital Public Good)
+# ============================================================
+
+education_platform:
+  name: LuciaCore
+  description: >
+    Educational platform bridging the digital divide. Offline-first
+    knowledge repository with classroom management, STEM tools,
+    and learning analytics. Designed as a Digital Public Good aligned
+    with Minimum Quality of Opportunity (MQO) doctrine.
+  source: ~/.luci-digital-library/archive-storage/macmini-gitlab/luciverse/platforms/core-platform-v4/
+  plan: attached_assets/luciacore-education-plan.md
+
+  deployment_targets:
+    cloudflare_workers:
+      name: learn-lucidigital
+      domain: learn.lucidigital.io
+      description: Interactive learning portal (online)
+      framework: hono
+      assets: true
+      status: planned
+
+    pangolin_resource:
+      domain: learn.lucidigital.io
+      backend: "localhost:8750"
+      description: Self-hosted learning portal via Pangolin tunnel
+      status: planned
+
+    offline_appliance:
+      description: Offline LuciaCore deployment for schools without internet
+      target_hardware: [zimacube, dell_fleet_compute]
+      components:
+        - kiwix_wikipedia       # Offline Wikipedia
+        - khan_academy_lite     # Offline Khan Academy
+        - gcompris              # Educational games (ages 2-10)
+        - scratch               # Visual programming
+        - python_mu             # Python IDE
+        - geogebra              # Math visualization
+        - stellarium            # Astronomy
+      container_runtime: docker  # For ZimaOS targets
+      status: planned
+
+  features:
+    - offline_knowledge_repository
+    - classroom_management_system
+    - educational_content_creation
+    - stem_tools
+    - language_learning
+    - learning_analytics
+    - digital_literacy_curriculum
+    - maker_steam_tools
+    - teacher_training_materials
+    - global_classroom_connections
+
+  integrations:
+    gaianet_rag:
+      description: AI-powered Q&A from LDS knowledge base
+      endpoint: "http://192.168.1.152:8086/v1/chat/completions"
+    semantic_engine:
+      description: Embedding search for course content
+      endpoint: "https://localhost:9528"
+    did_verification:
+      description: Learner identity via did:web credentials
+      endpoint: "https://localhost:8766"
