@@ -2616,7 +2616,15 @@ async def main():
     # Start web server
     runner = web.AppRunner(listener.app)
     await runner.setup()
-    site = web.TCPSite(runner, '0.0.0.0', 9999)
+    ssl_ctx = None
+    _cert = os.environ.get("AGENT_CERT", "")
+    _key = os.environ.get("AGENT_KEY", "")
+    if _cert and _key and os.path.isfile(_cert) and os.path.isfile(_key):
+        import ssl
+        ssl_ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
+        ssl_ctx.load_cert_chain(_cert, _key)
+        logger.info("TLS enabled: %s", _cert)
+    site = web.TCPSite(runner, '0.0.0.0', 9999, ssl_context=ssl_ctx)
     await site.start()
 
     logger.info("🚀 Provisioning listener started on port 9999")
