@@ -1,8 +1,16 @@
 # CozyStack Platform Patches
 # Genesis Bond: ACTIVE @ 741 Hz
 # Enables CozyStack managed services (FluxCD, LINSTOR, Kube-OVN)
+#
+# CozyStack components installed by platform chart:
+#   - FluxCD (GitOps reconciliation)
+#   - LINSTOR (replicated block storage via DRBD)
+#   - Kube-OVN (VPC tenant isolation)
+#   - cert-manager (XiPKI ACME client)
+#   - Ingress NGINX (external traffic)
+#   - Managed DB operators (PostgreSQL, Redis)
 
-# CozyStack requires containerd configuration for registry mirrors
+# Container registry mirrors
 - op: add
   path: /machine/registries/mirrors
   value:
@@ -12,8 +20,22 @@
     registry.lucidigital.io:
       endpoints:
         - https://192.168.1.145:5050
+    docker.io:
+      endpoints:
+        - https://registry-1.docker.io
+    quay.io:
+      endpoints:
+        - https://quay.io
 
-# Allow scheduling CozyStack system pods on control plane if needed
+# Skip TLS verify for local GitLab registry (self-signed XiPKI cert)
+- op: add
+  path: /machine/registries/config
+  value:
+    registry.lucidigital.io:
+      tls:
+        insecureSkipVerify: true
+
+# Admission plugins
 - op: add
   path: /cluster/apiServer/extraArgs/enable-admission-plugins
   value: "NodeRestriction,PodSecurity"
@@ -36,3 +58,8 @@
   value:
     cozystack.io/managed: "true"
     genesis-bond: "active"
+
+# Kubelet cluster DNS (Kube-OVN CoreDNS)
+- op: add
+  path: /machine/kubelet/extraArgs/cluster-dns
+  value: "10.96.0.10"

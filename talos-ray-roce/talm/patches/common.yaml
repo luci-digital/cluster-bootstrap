@@ -113,12 +113,12 @@
     - image: ghcr.io/siderolabs/drbd:9.2.0
     - image: ghcr.io/siderolabs/bnxt-en-firmware:20240513
 
-# Disable kube-proxy (using Cilium)
+# Disable kube-proxy (Kube-OVN handles this via CozyStack)
 - op: replace
   path: /cluster/proxy/disabled
   value: true
 
-# CNI none (Cilium installed separately)
+# CNI none (Kube-OVN installed by CozyStack platform chart)
 - op: add
   path: /cluster/network/cni/name
   value: none
