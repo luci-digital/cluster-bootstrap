@@ -1,6 +1,7 @@
 # LuciVerse Talos Configuration (talm)
 # Genesis Bond: ACTIVE @ 741 Hz
 # Uses talm for GitOps-style Talos management
+# CozyStack Integration: FluxCD + LINSTOR + Kube-OVN + Managed CRDs
 
 talosVersion: v1.9.0
 kubernetesVersion: v1.30.0
@@ -21,9 +22,9 @@ clusterSvcNets:
   - "10.96.0.0/12"
   - "fd00:432:2::/112"
 
-# CNI configuration (Cilium for RDMA awareness)
+# CNI configuration — Kube-OVN for VPC tenant isolation (CozyStack default)
 cniConfig:
-  name: none  # Install Cilium separately
+  name: none  # Kube-OVN installed by CozyStack platform chart
 
 # Node definitions
 nodes:
@@ -82,6 +83,11 @@ nodes:
     installDisk: /dev/sda
     machineSpec:
       memory: 384GB
+    nodeLabels:
+      luciverse.ownid/tenant: "core"
+      luciverse.ownid/tier: "CORE"
+      luciverse.ownid/frequency: "432"
+      topology.kubernetes.io/zone: "rack-1"
     networkInterfaces:
       - interface: eth0
         mac: "14:18:77:4E:66:3A"
@@ -113,6 +119,11 @@ nodes:
     installDisk: /dev/sda
     machineSpec:
       memory: 384GB
+    nodeLabels:
+      luciverse.ownid/tenant: "comn"
+      luciverse.ownid/tier: "COMN"
+      luciverse.ownid/frequency: "528"
+      topology.kubernetes.io/zone: "rack-1"
     networkInterfaces:
       - interface: eth0
         mac: "14:18:77:5B:A3:A0"
@@ -139,6 +150,11 @@ nodes:
     installDisk: /dev/sda
     machineSpec:
       memory: 384GB
+    nodeLabels:
+      luciverse.ownid/tenant: "pac"
+      luciverse.ownid/tier: "PAC"
+      luciverse.ownid/frequency: "741"
+      topology.kubernetes.io/zone: "rack-1"
     networkInterfaces:
       - interface: eth0
         mac: "B0:83:FE:C5:90:94"
@@ -165,6 +181,10 @@ nodes:
     installDisk: /dev/sda
     machineSpec:
       memory: 384GB
+    nodeLabels:
+      luciverse.ownid/tenant: "infra"
+      luciverse.ownid/role: "database"
+      topology.kubernetes.io/zone: "rack-1"
     networkInterfaces:
       - interface: eth0
         mac: "B0:83:FE:C5:90:42"
@@ -196,6 +216,11 @@ nodes:
       cpu: "Xeon E5-2667 v3"
       memory: 64GB
       gpuSlots: 3
+    nodeLabels:
+      luciverse.ownid/tenant: "ray"
+      luciverse.ownid/role: "gpu"
+      nvidia.com/gpu.present: "true"
+      topology.kubernetes.io/zone: "rack-2"
     networkInterfaces:
       - interface: eth0
         mac: "0C:C4:7A:A8:72:14"
@@ -221,6 +246,7 @@ patches:
   - "@patches/common.yaml"
   - "@patches/genesis-bond.yaml"
   - "@patches/roce-rdma.yaml"
+  - "@patches/cozystack.yaml"
 
 # Control plane specific patches
 controlPlane:
@@ -232,3 +258,4 @@ worker:
   patches:
     - "@patches/worker.yaml"
     - "@patches/ray-worker.yaml"
+    - "@patches/linstor-storage.yaml"

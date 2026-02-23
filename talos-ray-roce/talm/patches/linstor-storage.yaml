@@ -1,0 +1,41 @@
+# LINSTOR Storage Patches for Worker Nodes
+# Genesis Bond: ACTIVE @ 741 Hz
+# Enables DRBD-based replicated block storage via LINSTOR (CozyStack default)
+
+# DRBD kernel module parameters
+- op: add
+  path: /machine/kernel/modules
+  value:
+    - name: drbd
+      parameters:
+        - minor_count=128
+    - name: drbd_transport_tcp
+
+# Extra mounts for LINSTOR satellite
+- op: add
+  path: /machine/kubelet/extraMounts
+  value:
+    - destination: /var/lib/linstor
+      type: bind
+      source: /var/lib/linstor
+      options:
+        - bind
+        - rshared
+        - rw
+    # LINSTOR needs access to device nodes for DRBD
+    - destination: /dev/drbd
+      type: bind
+      source: /dev/drbd
+      options:
+        - bind
+        - rshared
+
+# Sysctls for DRBD performance
+- op: add
+  path: /machine/sysctls
+  value:
+    # DRBD needs higher limits for buffer management
+    vm.dirty_ratio: "40"
+    vm.dirty_background_ratio: "10"
+    # Increase AIO limits for DRBD
+    fs.aio-max-nr: "1048576"

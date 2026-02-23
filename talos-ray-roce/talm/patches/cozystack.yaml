@@ -1,0 +1,38 @@
+# CozyStack Platform Patches
+# Genesis Bond: ACTIVE @ 741 Hz
+# Enables CozyStack managed services (FluxCD, LINSTOR, Kube-OVN)
+
+# CozyStack requires containerd configuration for registry mirrors
+- op: add
+  path: /machine/registries/mirrors
+  value:
+    ghcr.io:
+      endpoints:
+        - https://ghcr.io
+    registry.lucidigital.io:
+      endpoints:
+        - https://192.168.1.145:5050
+
+# Allow scheduling CozyStack system pods on control plane if needed
+- op: add
+  path: /cluster/apiServer/extraArgs/enable-admission-plugins
+  value: "NodeRestriction,PodSecurity"
+
+# Extra volumes for CozyStack data
+- op: add
+  path: /machine/kubelet/extraMounts
+  value:
+    - destination: /var/lib/cozystack
+      type: bind
+      source: /var/lib/cozystack
+      options:
+        - bind
+        - rshared
+        - rw
+
+# Cluster labels for CozyStack
+- op: add
+  path: /machine/nodeLabels
+  value:
+    cozystack.io/managed: "true"
+    genesis-bond: "active"
