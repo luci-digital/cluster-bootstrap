@@ -21,7 +21,7 @@ import hmac
 import subprocess
 import tempfile
 import shutil
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, date
 from pathlib import Path
 from typing import Dict, Optional, Any
 from aiohttp import web, ClientSession, ClientTimeout
@@ -135,6 +135,21 @@ def load_diaper_roles() -> dict:
         with open(DIAPER_ROLES_PATH) as f:
             return yaml.safe_load(f)
     return {"roles": {}}
+
+
+def json_safe(value: Any) -> Any:
+    """Recursively convert non-JSON-native values to JSON-safe equivalents."""
+    if isinstance(value, dict):
+        return {k: json_safe(v) for k, v in value.items()}
+    if isinstance(value, list):
+        return [json_safe(item) for item in value]
+    if isinstance(value, tuple):
+        return [json_safe(item) for item in value]
+    if isinstance(value, set):
+        return [json_safe(item) for item in sorted(value, key=str)]
+    if isinstance(value, (datetime, date)):
+        return value.isoformat()
+    return value
 
 
 def mac_to_ipv6_suffix(mac: str) -> str:
@@ -1266,7 +1281,7 @@ done
 
     async def get_inventory(self, request: web.Request) -> web.Response:
         """Return full inventory."""
-        return web.json_response(self.inventory)
+        return web.json_response(json_safe(self.inventory))
 
     # =========================================================================
     # Bootimus Kickstart Hardware Probe Endpoints
